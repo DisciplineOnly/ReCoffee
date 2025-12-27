@@ -13,7 +13,7 @@ export default function Hero() {
                     </span>
 
                     <h2 className="md:text-7xl leading-[1.1] text-5xl font-normal text-slate-900 tracking-tight font-serif mb-8">
-                        ReCaffe: <br /> Redefining Coffee
+                        ReCaffee -  <br /> Рестартирай сетивата си!
                     </h2>
 
                     <p className="md:text-xl leading-relaxed text-lg font-light text-slate-600 max-w-md mb-10">
