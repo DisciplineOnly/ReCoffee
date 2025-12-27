@@ -30,7 +30,7 @@ export default function VisitUs() {
                     </a>
                 </div>
                 <div className="text-center mt-12">
-                    <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-transparent hover:border-slate-900 pb-1 transition-all">
+                    <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-transparent hover:border-brand-primary pb-1 transition-all">
                         View All 7 Locations
                     </a>
                 </div>

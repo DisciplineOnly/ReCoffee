@@ -13,7 +13,7 @@ export default function Marquee() {
     );
 
     return (
-        <div className="w-full bg-slate-900 py-3 overflow-hidden whitespace-nowrap">
+        <div className="w-full bg-brand-primary py-4 overflow-hidden whitespace-nowrap">
             <div className="inline-flex items-center animate-marquee">
                 {/* Duplicated content for seamless scrolling */}
                 {content}

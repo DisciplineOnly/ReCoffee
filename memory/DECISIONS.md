@@ -45,3 +45,22 @@ This document tracks key architectural decisions, their context, and their statu
 - **Consequences**:
   - Requires immediate refactoring of existing codebase.
   - Clear separation of concerns simplifies onboarding.
+
+## ID-004: Brand Identity & Theming
+- **Status**: Accepted
+- **Date**: 2025-12-27
+- **Context**: The application is being rebranded to "ReCaffe" with a specific color palette and logo.
+- **Decision**:
+  - **Brand Name**: ReCaffe
+  - **Logo Source**: User provided image.
+  - **Color Palette**:
+    - **Primary**: `#BF2645` (Vibrant Red)
+    - **Secondary**: `#017DC7` (Bright Blue)
+    - **Accent**: `#9B5440` (Coffee Brown)
+  - **Implementation**:
+    - Extend Tailwind theme with `brand` colors.
+    - Replace "Ceremony" with "ReCaffe".
+    - Update styling to utilize new palette.
+- **Consequences**:
+  - Major visual overhaul required.
+  - Existing `orange` and `slate` based designs must be migrated to the new palette.

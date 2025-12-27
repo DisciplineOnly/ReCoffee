@@ -15,7 +15,7 @@ export default function ShopFavorites() {
                     </div>
                     <a href="#" className="group flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-slate-900 pb-1">
                         Shop All Coffee
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-brand-primary" />
                     </a>
                 </div>
 
@@ -30,7 +30,7 @@ export default function ShopFavorites() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-orange-800 transition-colors">Mass Appeal</h4>
+                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-brand-primary transition-colors">Mass Appeal</h4>
                             <div className="flex gap-2 text-xs text-slate-500 uppercase tracking-wide mb-2">
                                 <span>Colombia</span>
                                 <span className="text-slate-300">•</span>
@@ -39,7 +39,7 @@ export default function ShopFavorites() {
                             <p className="text-sm text-slate-600 font-light italic">Milk chocolate, caramel, red apple.</p>
                             <div className="mt-4 flex justify-between items-center border-t border-slate-100 pt-3">
                                 <span className="text-sm font-medium">$19.00</span>
-                                <button className="text-slate-400 hover:text-slate-900 transition-colors">
+                                <button className="text-slate-400 hover:text-brand-primary transition-colors">
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </div>
@@ -55,7 +55,7 @@ export default function ShopFavorites() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-orange-800 transition-colors">Thesis</h4>
+                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-brand-primary transition-colors">Thesis</h4>
                             <div className="flex gap-2 text-xs text-slate-500 uppercase tracking-wide mb-2">
                                 <span>Signature Blend</span>
                                 <span className="text-slate-300">•</span>
@@ -64,7 +64,7 @@ export default function ShopFavorites() {
                             <p className="text-sm text-slate-600 font-light italic">Dark chocolate, roasted nut, molasses.</p>
                             <div className="mt-4 flex justify-between items-center border-t border-slate-100 pt-3">
                                 <span className="text-sm font-medium">$17.50</span>
-                                <button className="text-slate-400 hover:text-slate-900 transition-colors">
+                                <button className="text-slate-400 hover:text-brand-primary transition-colors">
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </div>
@@ -80,7 +80,7 @@ export default function ShopFavorites() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-orange-800 transition-colors">Gedeb Yirgacheffe</h4>
+                            <h4 className="font-serif text-xl md:text-2xl text-slate-900 group-hover:text-brand-primary transition-colors">Gedeb Yirgacheffe</h4>
                             <div className="flex gap-2 text-xs text-slate-500 uppercase tracking-wide mb-2">
                                 <span>Ethiopia</span>
                                 <span className="text-slate-300">•</span>
@@ -89,7 +89,7 @@ export default function ShopFavorites() {
                             <p className="text-sm text-slate-600 font-light italic">Blueberry jam, lavender, honeycomb.</p>
                             <div className="mt-4 flex justify-between items-center border-t border-slate-100 pt-3">
                                 <span className="text-sm font-medium">$24.00</span>
-                                <button className="text-slate-400 hover:text-slate-900 transition-colors">
+                                <button className="text-slate-400 hover:text-brand-primary transition-colors">
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </div>

@@ -19,7 +19,7 @@ export default function Philosophy() {
                 </p>
                 <div className="flex flex-col gap-6">
                     <div className="flex items-start gap-4">
-                        <div className="p-2 bg-white rounded-full text-orange-900">
+                        <div className="p-2 bg-white rounded-full text-brand-primary">
                             <Globe className="w-5 h-5" />
                         </div>
                         <div>
@@ -28,7 +28,7 @@ export default function Philosophy() {
                         </div>
                     </div>
                     <div className="flex items-start gap-4">
-                        <div className="p-2 bg-white rounded-full text-orange-900">
+                        <div className="p-2 bg-white rounded-full text-brand-primary">
                             <Flame className="w-5 h-5" />
                         </div>
                         <div>
@@ -38,7 +38,7 @@ export default function Philosophy() {
                     </div>
                 </div>
                 <div className="mt-12">
-                    <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-slate-900 pb-1 hover:text-orange-700 hover:border-orange-700 transition-all">
+                    <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-brand-primary pb-1 hover:text-brand-primary transition-all">
                         Read Our Story
                     </a>
                 </div>
