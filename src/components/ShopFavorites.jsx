@@ -11,7 +11,7 @@ export default function ShopFavorites() {
                         <span className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-3 block">
                             Curated Selection
                         </span>
-                        <h3 class="font-serif text-3xl md:text-5xl text-slate-900">Weekly Favorites</h3>
+                        <h3 className="font-serif text-3xl md:text-5xl text-slate-900">Weekly Favorites</h3>
                     </div>
                     <a href="#" className="group flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-slate-900 pb-1">
                         Shop All Coffee
