@@ -1,23 +1,15 @@
 import React from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Marquee from './components/Marquee';
-import ShopFavorites from './components/ShopFavorites';
-import Philosophy from './components/Philosophy';
-import Subscription from './components/Subscription';
-import VisitUs from './components/VisitUs';
-import Footer from './components/Footer';
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
+import Home from './pages/Home';
 
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <Hero />
-      <Marquee />
-      <ShopFavorites />
-      <Philosophy />
-      <Subscription />
-      <VisitUs />
+      <main className="flex-grow">
+        <Home />
+      </main>
       <Footer />
     </div>
   );
