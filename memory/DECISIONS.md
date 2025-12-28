@@ -84,3 +84,24 @@ This document tracks key architectural decisions, their context, and their statu
   - Slightly increased initial development time for extraction
   - Better maintainability for content updates
 
+## ID-006: E-Commerce Architecture & State Management
+- **Status**: Accepted
+- **Date**: 2025-12-28
+- **Context**: The application requires full e-commerce functionality including product catalog, shopping cart, and checkout flow.
+- **Decision**:
+  - **State Management**: React Context API for cart and checkout state
+    - *Rationale*: Lightweight, built-in solution sufficient for our needs without external dependencies
+  - **Cart Persistence**: LocalStorage for cart state persistence
+    - *Rationale*: Maintains cart across sessions without backend complexity
+  - **Routing**: React Router v6 for multi-page navigation
+    - *Rationale*: Industry standard, excellent documentation, type-safe
+  - **Payment Integration**: Placeholder UI for payment selection (Stripe/PayPal integration deferred)
+    - *Rationale*: Focus on UX flow first, actual payment processing requires backend
+  - **Product Data**: Static JSON initially, designed for easy backend migration
+    - *Rationale*: Rapid prototyping, clear data structure for future API integration
+- **Consequences**:
+  - Need to implement CartContext and CheckoutContext
+  - Cart state will be client-side only (no backend sync initially)
+  - Payment processing will be simulated until backend integration
+  - Easy migration path to full backend when needed
+

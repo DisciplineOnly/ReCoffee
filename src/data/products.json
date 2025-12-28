@@ -1,0 +1,202 @@
+[
+    {
+        "id": "prod_001",
+        "slug": "mass-appeal",
+        "name": "Mass Appeal",
+        "nameEn": "Mass Appeal",
+        "description": "Млечен шоколад, карамел, червена ябълка. Балансирано кафе с гладък вкус, идеално за всеки ден.",
+        "descriptionEn": "Milk chocolate, caramel, red apple. Balanced coffee with smooth taste, perfect for everyday.",
+        "price": 45.00,
+        "currency": "BGN",
+        "images": [
+            "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg"
+        ],
+        "category": "single-origin",
+        "origin": "Colombia",
+        "process": "Washed",
+        "roastLevel": 2,
+        "flavorNotes": [
+            "Млечен шоколад",
+            "Карамел",
+            "Червена ябълка"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": true
+    },
+    {
+        "id": "prod_002",
+        "slug": "thesis",
+        "name": "Thesis",
+        "nameEn": "Thesis",
+        "description": "Тъмен шоколад, печени ядки, меласа. Нашата фирмена смес със сезонни зърна.",
+        "descriptionEn": "Dark chocolate, roasted nuts, molasses. Our signature blend with seasonal beans.",
+        "price": 38.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2940&auto=format&fit=crop"
+        ],
+        "category": "blend",
+        "origin": "Signature Blend",
+        "process": "Seasonal",
+        "roastLevel": 3,
+        "flavorNotes": [
+            "Тъмен шоколад",
+            "Печени ядки",
+            "Меласа"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": true
+    },
+    {
+        "id": "prod_003",
+        "slug": "gedeb-yirgacheffe",
+        "name": "Gedeb Yirgacheffe",
+        "nameEn": "Gedeb Yirgacheffe",
+        "description": "Боровинково конфитюр, лавандула, пчелен мед. Ограничено издание от Етиопия.",
+        "descriptionEn": "Blueberry jam, lavender, honeycomb. Limited edition from Ethiopia.",
+        "price": 52.00,
+        "currency": "BGN",
+        "images": [
+            "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/4734259a-bad7-422f-981e-ce01e79184f2_1600w.jpg"
+        ],
+        "category": "limited",
+        "origin": "Ethiopia",
+        "process": "Natural",
+        "roastLevel": 1,
+        "flavorNotes": [
+            "Боровинково конфитюр",
+            "Лавандула",
+            "Пчелен мед"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": true
+    },
+    {
+        "id": "prod_004",
+        "slug": "brazil-santos",
+        "name": "Brazil Santos",
+        "nameEn": "Brazil Santos",
+        "description": "Лешник, какао, карамелизирана захар. Класическо бразилско кафе с богат вкус.",
+        "descriptionEn": "Hazelnut, cocoa, caramelized sugar. Classic Brazilian coffee with rich flavor.",
+        "price": 42.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=2961&auto=format&fit=crop"
+        ],
+        "category": "single-origin",
+        "origin": "Brazil",
+        "process": "Pulped Natural",
+        "roastLevel": 3,
+        "flavorNotes": [
+            "Лешник",
+            "Какао",
+            "Карамелизирана захар"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": false
+    },
+    {
+        "id": "prod_005",
+        "slug": "espresso-blend",
+        "name": "Espresso Blend",
+        "nameEn": "Espresso Blend",
+        "description": "Тъмна череша, тъмен шоколад, бадем. Перфектна смес за еспресо.",
+        "descriptionEn": "Dark cherry, dark chocolate, almond. Perfect blend for espresso.",
+        "price": 40.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=2787&auto=format&fit=crop"
+        ],
+        "category": "blend",
+        "origin": "Multi-Origin",
+        "process": "Various",
+        "roastLevel": 4,
+        "flavorNotes": [
+            "Тъмна череша",
+            "Тъмен шоколад",
+            "Бадем"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": false
+    },
+    {
+        "id": "prod_006",
+        "slug": "kenya-aa",
+        "name": "Kenya AA",
+        "nameEn": "Kenya AA",
+        "description": "Черна боровинка, грейпфрут, захарна тръстика. Ярко и живо кенийско кафе.",
+        "descriptionEn": "Blackcurrant, grapefruit, sugarcane. Bright and vibrant Kenyan coffee.",
+        "price": 48.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1511920170033-f8396924c348?q=80&w=2787&auto=format&fit=crop"
+        ],
+        "category": "single-origin",
+        "origin": "Kenya",
+        "process": "Washed",
+        "roastLevel": 2,
+        "flavorNotes": [
+            "Черна боровинка",
+            "Грейпфрут",
+            "Захарна тръстика"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": false
+    },
+    {
+        "id": "prod_007",
+        "slug": "decaf-colombia",
+        "name": "Decaf Colombia",
+        "nameEn": "Decaf Colombia",
+        "description": "Млечен шоколад, орех, мед. Безкофеиново кафе без компромис във вкуса.",
+        "descriptionEn": "Milk chocolate, walnut, honey. Decaf coffee without compromising taste.",
+        "price": 46.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=2787&auto=format&fit=crop"
+        ],
+        "category": "single-origin",
+        "origin": "Colombia",
+        "process": "Swiss Water",
+        "roastLevel": 2,
+        "flavorNotes": [
+            "Млечен шоколад",
+            "Орех",
+            "Мед"
+        ],
+        "weight": 250,
+        "inStock": true,
+        "featured": false
+    },
+    {
+        "id": "prod_008",
+        "slug": "seasonal-microlot",
+        "name": "Seasonal Microlot",
+        "nameEn": "Seasonal Microlot",
+        "description": "Променящи се вкусови ноти. Ограничена серия от малки партиди.",
+        "descriptionEn": "Changing flavor notes. Limited series from small batches.",
+        "price": 58.00,
+        "currency": "BGN",
+        "images": [
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2940&auto=format&fit=crop"
+        ],
+        "category": "limited",
+        "origin": "Rotating",
+        "process": "Various",
+        "roastLevel": 2,
+        "flavorNotes": [
+            "Сезонни",
+            "Уникални",
+            "Изненадващи"
+        ],
+        "weight": 250,
+        "inStock": false,
+        "featured": false
+    }
+]
