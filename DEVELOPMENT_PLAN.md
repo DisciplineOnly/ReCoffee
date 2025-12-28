@@ -815,49 +815,58 @@ export default function Cart() {
 **Duration**: 10-15 hours
 **Priority**: High
 **Dependencies**: Phase 5 complete
-**Status**: PENDING
+**Status**: ✅ COMPLETE
 
-### 6.1 Database Setup
+### 6.1 Database Setup ✅
 **Task**: Initialize PostgreSQL/Supabase project
 
 **Deliverables**:
-- [ ] Supabase project created
-- [ ] Database schema applied (Tables: products, orders)
-- [ ] RLS policies configured
-- [ ] Environment variables set (`.env`)
+- [x] Supabase project created
+- [x] Database schema applied (Tables: products, orders)
+- [x] RLS policies configured
+- [x] Environment variables set (`.env`)
 
 **Acceptance Criteria**:
-- [ ] Database accessible via connection string
-- [ ] All tables exist with correct types
-- [ ] RLS prevents unauthorized access (Guest Insert / Admin Read)
+- [x] Database accessible via connection string
+- [x] All tables exist with correct types
+- [x] RLS prevents unauthorized access (Guest Insert / Admin Read)
 
-### 6.2 Data Seeding
+### 6.2 Data Seeding ✅
 **Task**: Migrate local JSON data to Database
 
 **Deliverables**:
-- [ ] Seeding script (`scripts/seed-db.js`)
-- [ ] Product data inserted into DB
+- [x] Seeding script (`scripts/seed-db.js`)
+- [x] Product data inserted into DB
 
 **Acceptance Criteria**:
-- [ ] All 8 initial products key data present in DB
-- [ ] Images linked correctly
+- [x] All 8 initial products key data present in DB
+- [x] Images linked correctly
 
-### 6.3 API Client Integration
+### 6.3 API Client Integration ✅
 **Task**: Connect frontend to Database
 
 **Deliverables**:
-- [ ] Supabase client configuration (`src/lib/supabase.js`)
-- [ ] Replace `products.json` imports with async data fetching
-- [ ] Create `useProducts` hook
+- [x] Supabase client configuration (`src/lib/supabase.js`)
+- [x] Replace `products.json` imports with async data fetching
+- [x] Create `useProducts` hook
 
 **Acceptance Criteria**:
-- [ ] Shop page loads products from DB
-- [ ] Product Detail page loads from DB
-- [ ] Loading states handle async latency
-- ✅ Product detail (stack layout)
-- ✅ Cart (full width items)
-- ✅ Checkout (single column)
-- ✅ Filter sidebar (modal on mobile)
+- [x] Shop page loads products from DB
+- [x] Product Detail page loads from DB
+- [x] Loading states handle async latency
+
+### 6.4 Checkout Refactor ✅
+**Task**: Enable real order persistence in Checkout
+
+**Deliverables**:
+- [x] Refactor `ReviewStep.jsx` to usage Supabase API
+- [x] Remove LocalStorage order simulation
+- [x] Implement sequential transaction (Order -> Order Items)
+
+**Acceptance Criteria**:
+- [x] Orders are saved to `orders` table
+- [x] Order items are saved to `order_items` table
+- [x] Success page still works
 
 **Acceptance Criteria**:
 - ✅ All pages responsive

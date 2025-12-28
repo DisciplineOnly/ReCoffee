@@ -4,6 +4,7 @@ import { ArrowLeft, Check, Edit } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import { useCart } from '../../contexts/CartContext';
+import { supabase } from '../../lib/supabase';
 
 export default function ReviewStep() {
     const { t } = useTranslation();
@@ -59,34 +60,65 @@ export default function ReviewStep() {
 
         setIsSubmitting(true);
 
-        // Simulate order processing
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            // Generate order number
+            const orderNumber = generateOrderNumber();
 
-        // Create order object
-        const order = {
-            orderNumber: generateOrderNumber(),
-            date: new Date().toISOString(),
-            client: checkoutData.client,
-            delivery: checkoutData.delivery,
-            payment: checkoutData.payment,
-            items: cart,
-            subtotal,
-            deliveryFee: delivery,
-            total
-        };
+            // 1. Create Order
+            const { data: orderData, error: orderError } = await supabase
+                .from('orders')
+                .insert({
+                    order_number: orderNumber,
+                    status: 'pending',
+                    subtotal,
+                    delivery_fee: delivery,
+                    total,
+                    client_info: checkoutData.client,
+                    delivery_info: checkoutData.delivery
+                })
+                .select()
+                .single();
 
-        // Save order to localStorage (simulating backend)
-        const orders = JSON.parse(localStorage.getItem('recoffee_orders') || '[]');
-        orders.push(order);
-        localStorage.setItem('recoffee_orders', JSON.stringify(orders));
-        localStorage.setItem('recoffee_last_order', JSON.stringify(order));
+            if (orderError) throw orderError;
 
-        // Clear cart and reset checkout
-        clearCart();
-        resetCheckout();
+            // 2. Create Order Items
+            const orderItems = cart.map(item => ({
+                order_id: orderData.id,
+                product_id: item.product.id,
+                quantity: item.quantity,
+                unit_price: item.product.price,
+                grind_type: item.grindType
+            }));
 
-        // Navigate to success page
-        navigate('/checkout/success');
+            const { error: itemsError } = await supabase
+                .from('order_items')
+                .insert(orderItems);
+
+            if (itemsError) throw itemsError;
+
+            // Success!
+            // Save minimal order info to display on Success page (since we can't query by ID publicly)
+            const successOrder = {
+                orderNumber: orderNumber,
+                items: cart,
+                total: total,
+                delivery: checkoutData.delivery, // Required for success page calculation
+                client: checkoutData.client
+            };
+
+            // We use localStorage just to pass data to the success page securely/temporarily
+            localStorage.setItem('recoffee_last_order', JSON.stringify(successOrder));
+
+            clearCart();
+            resetCheckout();
+            navigate('/checkout/success');
+
+        } catch (error) {
+            console.error('Order placement failed:', error);
+            alert('Възникна грешка при обработката на поръчката. Моля опитайте отново.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
