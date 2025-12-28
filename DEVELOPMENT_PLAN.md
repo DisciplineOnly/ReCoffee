@@ -811,6 +811,62 @@ export default function Cart() {
 
 ---
 
+## Phase 6: Backend & Database Integration
+**Duration**: 10-15 hours
+**Priority**: High
+**Dependencies**: Phase 5 complete
+**Status**: PENDING
+
+### 6.1 Database Setup
+**Task**: Initialize PostgreSQL/Supabase project
+
+**Deliverables**:
+- [ ] Supabase project created
+- [ ] Database schema applied (Tables: products, orders)
+- [ ] RLS policies configured
+- [ ] Environment variables set (`.env`)
+
+**Acceptance Criteria**:
+- [ ] Database accessible via connection string
+- [ ] All tables exist with correct types
+- [ ] RLS prevents unauthorized access (Guest Insert / Admin Read)
+
+### 6.2 Data Seeding
+**Task**: Migrate local JSON data to Database
+
+**Deliverables**:
+- [ ] Seeding script (`scripts/seed-db.js`)
+- [ ] Product data inserted into DB
+
+**Acceptance Criteria**:
+- [ ] All 8 initial products key data present in DB
+- [ ] Images linked correctly
+
+### 6.3 API Client Integration
+**Task**: Connect frontend to Database
+
+**Deliverables**:
+- [ ] Supabase client configuration (`src/lib/supabase.js`)
+- [ ] Replace `products.json` imports with async data fetching
+- [ ] Create `useProducts` hook
+
+**Acceptance Criteria**:
+- [ ] Shop page loads products from DB
+- [ ] Product Detail page loads from DB
+- [ ] Loading states handle async latency
+- ✅ Product detail (stack layout)
+- ✅ Cart (full width items)
+- ✅ Checkout (single column)
+- ✅ Filter sidebar (modal on mobile)
+
+**Acceptance Criteria**:
+- ✅ All pages responsive
+- ✅ Touch targets adequate (44px min)
+- ✅ Text readable
+- ✅ No horizontal scroll
+
+---
+
 ## Testing Checklist
 
 ### Functional Testing

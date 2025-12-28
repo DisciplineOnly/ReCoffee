@@ -105,3 +105,18 @@ This document tracks key architectural decisions, their context, and their statu
   - Payment processing will be simulated until backend integration
   - Easy migration path to full backend when needed
 
+
+## ID-007: Database Architecture
+- **Status**: Accepted
+- **Date**: 2025-12-28
+- **Context**: The application needs to move from client-side JSON/LocalStorage to a robust, scalable backend database to handle dynamic product inventory and order tracking.
+- **Decision**:
+  - **Database Engine**: PostgreSQL 16+.
+    - *Rationale*: ACID compliance for financial transactions, JSONB support for flexible address schemas, robust Row Level Security (RLS).
+  - **Schema Design**: Relational model with normalized Core Entities (Products, Orders) and specific Junction Tables (Product_Flavors). **No User entity** as the store operates on a strict Guest Checkout model.
+  - **Data Privacy**: RLS policies will enforce strict access control (Public Insert / Admin Read).
+  - **Host**: Supabase (recommended) for managed Postgres + API generation.
+- **Consequences**:
+  - Requires migration strategy for existing client-side code to fetch data from API.
+  - Development environment needs Postgres.
+  - No user registration/login flow simplifies the architecture significantly.
