@@ -64,3 +64,23 @@ This document tracks key architectural decisions, their context, and their statu
 - **Consequences**:
   - Major visual overhaul required.
   - Existing `orange` and `slate` based designs must be migrated to the new palette.
+
+## ID-005: Internationalization & Localization
+- **Status**: Accepted
+- **Date**: 2025-12-28
+- **Context**: The application needs to support Bulgarian language for the local market while maintaining code maintainability.
+- **Decision**:
+  - **Approach**: Centralized translation system using JSON-based language files.
+  - **Default Language**: Bulgarian (bg)
+  - **Fallback Language**: English (en) for development/testing
+  - **Implementation**:
+    - Create `src/lib/translations/` directory structure
+    - Separate translation files per language: `bg.json`, `en.json`
+    - Implement a lightweight translation hook/utility
+    - Extract all hardcoded strings to translation keys
+- **Consequences**:
+  - All user-facing text must use translation keys
+  - Future language additions will be straightforward
+  - Slightly increased initial development time for extraction
+  - Better maintainability for content updates
+

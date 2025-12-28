@@ -1,7 +1,9 @@
 import React from 'react';
 import { ArrowRight, Plus } from 'lucide-react';
+import { useTranslation } from '../../lib/translations';
 
 export default function ShopFavorites() {
+    const { t } = useTranslation();
     return (
         <section className="bg-white py-24 md:py-32">
             <div className="md:px-12 max-w-[1400px] mr-auto ml-auto pr-6 pl-6">
@@ -9,12 +11,12 @@ export default function ShopFavorites() {
                 <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
                     <div>
                         <span className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-3 block">
-                            Curated Selection
+                            {t('shop.badge')}
                         </span>
-                        <h3 className="font-serif text-3xl md:text-5xl text-slate-900">Weekly Favorites</h3>
+                        <h3 className="font-serif text-3xl md:text-5xl text-slate-900">{t('shop.title')}</h3>
                     </div>
                     <a href="#" className="group flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-slate-900 pb-1">
-                        Shop All Coffee
+                        {t('shop.cta')}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-brand-primary" />
                     </a>
                 </div>
@@ -26,7 +28,7 @@ export default function ShopFavorites() {
                         <div className="relative bg-[#F4F1EE] aspect-[4/5] mb-6 overflow-hidden">
                             <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg" className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500" alt="Coffee Bag" />
                             <div className="absolute top-4 left-4">
-                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">Single Origin</span>
+                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">{t('shop.badge_single')}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -51,7 +53,7 @@ export default function ShopFavorites() {
                         <div className="relative bg-[#EAEAEA] aspect-[4/5] mb-6 overflow-hidden">
                             <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2940&auto=format&fit=crop" className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500" alt="Coffee Bag" />
                             <div className="absolute top-4 left-4">
-                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">Blend</span>
+                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">{t('shop.badge_blend')}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -76,7 +78,7 @@ export default function ShopFavorites() {
                         <div className="relative bg-[#F0EBE5] aspect-[4/5] mb-6 overflow-hidden">
                             <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/4734259a-bad7-422f-981e-ce01e79184f2_1600w.jpg" className="group-hover:scale-105 transition-transform duration-500 opacity-90 mix-blend-multiply w-full h-full object-cover" alt="Coffee Bag" />
                             <div className="absolute top-4 left-4">
-                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">Limited</span>
+                                <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-widest px-3 py-1 font-medium">{t('shop.badge_limited')}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">

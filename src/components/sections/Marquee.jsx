@@ -1,13 +1,16 @@
 import React from 'react';
+import { useTranslation } from '../../lib/translations';
 
 export default function Marquee() {
+    const { t } = useTranslation();
+
     const content = (
         <>
-            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">Free shipping on orders over $50</span>
+            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{t('marquee.free_shipping')}</span>
             <span className="text-white/30">•</span>
-            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">Roasted fresh in Annapolis</span>
+            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{t('marquee.fresh_roasted')}</span>
             <span className="text-white/30">•</span>
-            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">Sustainably Sourced</span>
+            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{t('marquee.sustainable')}</span>
             <span className="text-white/30">•</span>
         </>
     );

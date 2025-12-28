@@ -1,0 +1,77 @@
+{
+    "header": {
+        "nav": {
+            "shop": "Shop",
+            "subscription": "Subscription",
+            "wholesale": "Wholesale",
+            "locations": "Locations",
+            "learn": "Learn",
+            "account": "Account"
+        }
+    },
+    "hero": {
+        "badge": "Freshly Roasted",
+        "title": "ReCoffee - Restart Your Senses!",
+        "description": "Experience the boldest flavors and artisanal roasting. Our signature beans deliver a bright, balanced cup every time.",
+        "cta_primary": "Shop Our Roast",
+        "cta_secondary": "View All Blends",
+        "roast_intensity": "Roast Intensity",
+        "roast_level": "Bold & Smooth"
+    },
+    "marquee": {
+        "free_shipping": "Free shipping on orders over $50",
+        "fresh_roasted": "Roasted fresh in Annapolis",
+        "sustainable": "Sustainably Sourced"
+    },
+    "shop": {
+        "badge": "Curated Selection",
+        "title": "Weekly Favorites",
+        "cta": "Shop All Coffee",
+        "badge_single": "Single Origin",
+        "badge_blend": "Blend",
+        "badge_limited": "Limited"
+    },
+    "philosophy": {
+        "badge": "Our Philosophy",
+        "title": "Sourcing with Intentionality",
+        "description": "We travel the globe to build sustainable relationships with producers who share our obsession for quality. Every batch is roasted to highlight the unique terroir of its origin.",
+        "direct_trade": "Direct Trade",
+        "direct_trade_desc": "Building equity in the supply chain.",
+        "precision": "Precision Roasting",
+        "precision_desc": "Small batches, meticulously profiled.",
+        "cta": "Read Our Story"
+    },
+    "subscription": {
+        "title": "ReCaffe Refills",
+        "description": "Artisan coffee delivered right to your door. Save 15% with our flexible ReCaffe subscription and never miss a morning brew.",
+        "cta_primary": "Start Subscription",
+        "cta_secondary": "Gift a Box"
+    },
+    "visit": {
+        "badge": "Locations",
+        "title": "Visit Our Cafes",
+        "cta": "View All 7 Locations"
+    },
+    "footer": {
+        "newsletter_text": "Join our community for brewing guides, new release alerts, and exclusive events.",
+        "newsletter_placeholder": "Email Address",
+        "newsletter_button": "Join",
+        "links": {
+            "all_coffee": "All Coffee",
+            "subscriptions": "Subscriptions",
+            "equipment": "Equipment",
+            "merch": "Merch",
+            "our_story": "Our Story",
+            "careers": "Careers",
+            "contact": "Contact",
+            "partner": "Partner with Us",
+            "client_login": "Client Login",
+            "training": "Training"
+        },
+        "legal": {
+            "privacy": "Privacy Policy",
+            "terms": "Terms of Service"
+        },
+        "copyright": "© 2024 ReCaffe Coffee"
+    }
+}

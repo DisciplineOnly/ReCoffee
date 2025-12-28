@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Search, ShoppingBag } from 'lucide-react';
-
+import { useTranslation } from '../../lib/translations';
 import logo from '../../assets/logo.jpg';
 
 export default function Header() {
     const [scrolled, setScrolled] = useState(false);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -23,9 +24,9 @@ export default function Header() {
 
                 {/* Left Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Shop</a>
-                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Subscription</a>
-                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Wholesale</a>
+                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.shop')}</a>
+                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.subscription')}</a>
+                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.wholesale')}</a>
                 </nav>
 
                 {/* Mobile Menu Icon */}
@@ -43,9 +44,9 @@ export default function Header() {
                 {/* Right Nav */}
                 <nav className="flex items-center justify-end gap-6 md:gap-8">
                     <div className="hidden md:flex items-center gap-8">
-                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Locations</a>
-                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Learn</a>
-                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">Account</a>
+                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.locations')}</a>
+                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.learn')}</a>
+                        <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.account')}</a>
                     </div>
 
                     <div className="flex items-center gap-4 md:gap-6">

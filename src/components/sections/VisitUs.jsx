@@ -1,14 +1,17 @@
 import React from 'react';
+import { useTranslation } from '../../lib/translations';
 
 export default function VisitUs() {
+    const { t } = useTranslation();
+
     return (
         <section className="py-24 bg-white">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 <div className="text-center mb-16">
                     <span className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-3 block">
-                        Locations
+                        {t('visit.badge')}
                     </span>
-                    <h3 className="font-serif text-3xl md:text-5xl text-slate-900">Visit Our Cafes</h3>
+                    <h3 className="font-serif text-3xl md:text-5xl text-slate-900">{t('visit.title')}</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -31,7 +34,7 @@ export default function VisitUs() {
                 </div>
                 <div className="text-center mt-12">
                     <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-transparent hover:border-brand-primary pb-1 transition-all">
-                        View All 7 Locations
+                        {t('visit.cta')}
                     </a>
                 </div>
             </div>
