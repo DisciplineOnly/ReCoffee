@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from '../lib/translations';
 import ProductCard from '../components/shop/ProductCard';
 import { SlidersHorizontal, X } from 'lucide-react';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import products from '../data/products.json';
 
 export default function Shop() {
     const { t } = useTranslation();
+    const [isLoading, setIsLoading] = useState(true);
     const [filters, setFilters] = useState({
         category: [],
         priceRange: [0, 100],
@@ -14,6 +16,12 @@ export default function Shop() {
     });
     const [sortBy, setSortBy] = useState('featured');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+    useEffect(() => {
+        // Simulate initial loading
+        const timer = setTimeout(() => setIsLoading(false), 800);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Filter products
     const filteredProducts = useMemo(() => {
@@ -88,32 +96,32 @@ export default function Shop() {
     };
 
     const FilterSidebar = () => (
-        <div className="bg-white p-6 rounded-lg">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold uppercase tracking-wider">{t('shopPage.filters')}</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900">{t('shopPage.filters')}</h3>
                 <button
                     onClick={clearFilters}
-                    className="text-xs text-brand-secondary hover:text-brand-primary transition-colors"
+                    className="text-xs font-bold text-brand-primary hover:text-slate-900 transition-colors uppercase tracking-widest"
                 >
                     {t('shopPage.clear_filters')}
                 </button>
             </div>
 
             {/* Category Filter */}
-            <div className="mb-6">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-3">
+            <div className="mb-8">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                     {t('shopPage.category')}
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {['single-origin', 'blend', 'limited'].map(category => (
-                        <label key={category} className="flex items-center gap-2 cursor-pointer">
+                        <label key={category} className="flex items-center gap-3 cursor-pointer group">
                             <input
                                 type="checkbox"
                                 checked={filters.category.includes(category)}
                                 onChange={() => toggleCategory(category)}
-                                className="w-4 h-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary"
+                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
                             />
-                            <span className="text-sm text-slate-700">
+                            <span className={`text-sm font-medium transition-colors ${filters.category.includes(category) ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
                                 {t(`shop.badge_${category.replace('-', '_')}`)}
                             </span>
                         </label>
@@ -122,24 +130,26 @@ export default function Shop() {
             </div>
 
             {/* Roast Level Filter */}
-            <div className="mb-6">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-3">
+            <div className="mb-8">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                     {t('shopPage.roast_level')}
                 </h4>
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map(level => (
-                        <label key={level} className="flex items-center gap-2 cursor-pointer">
+                        <label key={level} className="flex items-center gap-3 cursor-pointer group">
                             <input
                                 type="checkbox"
                                 checked={filters.roastLevel.includes(level)}
                                 onChange={() => toggleRoastLevel(level)}
-                                className="w-4 h-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary"
+                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
                             />
                             <div className="flex items-center gap-2">
                                 {[...Array(5)].map((_, i) => (
                                     <div
                                         key={i}
-                                        className={`w-2 h-2 rounded-full ${i < level ? 'bg-brand-accent' : 'bg-slate-200'
+                                        className={`w-2 h-2 rounded-full transition-colors ${i < level
+                                            ? (filters.roastLevel.includes(level) ? 'bg-brand-accent' : 'bg-brand-accent/40 group-hover:bg-brand-accent/60')
+                                            : 'bg-slate-200'
                                             }`}
                                     />
                                 ))}
@@ -151,55 +161,78 @@ export default function Shop() {
 
             {/* In Stock Filter */}
             <div className="mb-6">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-3 cursor-pointer group">
                     <input
                         type="checkbox"
                         checked={filters.inStockOnly}
                         onChange={(e) => setFilters(prev => ({ ...prev, inStockOnly: e.target.checked }))}
-                        className="w-4 h-4 text-brand-primary border-slate-300 rounded focus:ring-brand-primary"
+                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
                     />
-                    <span className="text-sm text-slate-700">{t('shopPage.in_stock')}</span>
+                    <span className={`text-sm font-medium transition-colors ${filters.inStockOnly ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                        {t('shopPage.in_stock')}
+                    </span>
                 </label>
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#F6F4F2] py-24">
+        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl md:text-5xl font-serif text-slate-900 mb-2">
-                        {t('shopPage.title')}
-                    </h1>
-                    <p className="text-slate-600">
-                        {filteredProducts.length} {t('shopPage.showing_results').replace('{{count}}', filteredProducts.length)}
-                    </p>
+                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-slate-900 mb-4 font-bold">
+                            {t('shopPage.title')}
+                        </h1>
+                        <p className="text-slate-500 font-medium tracking-wide">
+                            {filteredProducts.length} {t('shopPage.showing_results').replace('{{count}}', filteredProducts.length)}
+                        </p>
+                    </div>
+
+                    {/* Desktop Sort Dropdown */}
+                    <div className="hidden lg:block">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Подреди по:</span>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="bg-transparent border-none text-sm font-bold text-slate-900 focus:ring-0 cursor-pointer hover:text-brand-primary transition-colors pr-8 bg-no-repeat bg-[right_center] appearance-none"
+                                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\' /%3E%3C/svg%3E")', backgroundSize: '1em' }}
+                            >
+                                <option value="featured text-slate-500">{t('shopPage.sort_featured')}</option>
+                                <option value="price-asc">{t('shopPage.sort_price_asc')}</option>
+                                <option value="price-desc">{t('shopPage.sort_price_desc')}</option>
+                                <option value="name">{t('shopPage.sort_name')}</option>
+                                <option value="newest">{t('shopPage.sort_newest')}</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex gap-8">
+                <div className="flex gap-12">
                     {/* Desktop Filters Sidebar */}
-                    <div className="hidden lg:block w-64 flex-shrink-0">
+                    <div className="hidden lg:block w-72 flex-shrink-0">
                         <FilterSidebar />
                     </div>
 
                     {/* Products Grid */}
                     <div className="flex-1">
                         {/* Mobile Filter Button & Sort */}
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center justify-between mb-8 lg:hidden">
                             <button
                                 onClick={() => setShowMobileFilters(true)}
-                                className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium"
+                                className="flex items-center gap-2 px-6 py-3 bg-white rounded-xl text-sm font-bold uppercase tracking-widest shadow-sm border border-slate-100"
                             >
-                                <SlidersHorizontal className="w-4 h-4" />
+                                <SlidersHorizontal className="w-4 h-4 text-brand-primary" />
                                 {t('shopPage.filters')}
                             </button>
 
-                            {/* Sort Dropdown */}
+                            {/* Sort Dropdown for Mobile */}
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                className="px-4 py-3 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary shadow-sm"
                             >
                                 <option value="featured">{t('shopPage.sort_featured')}</option>
                                 <option value="price-asc">{t('shopPage.sort_price_asc')}</option>
@@ -209,19 +242,25 @@ export default function Shop() {
                             </select>
                         </div>
 
-                        {/* Products Grid */}
-                        {filteredProducts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Products Content */}
+                        {isLoading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="bg-white rounded-2xl aspect-[3/4] animate-pulse" />
+                                ))}
+                            </div>
+                        ) : filteredProducts.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-up duration-500">
                                 {filteredProducts.map(product => (
                                     <ProductCard key={product.id} product={product} />
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-20">
-                                <p className="text-xl text-slate-500">{t('shopPage.no_products')}</p>
+                            <div className="text-center py-32 bg-white rounded-3xl border border-dashed border-slate-200">
+                                <p className="text-2xl font-serif text-slate-400 mb-6">{t('shopPage.no_products')}</p>
                                 <button
                                     onClick={clearFilters}
-                                    className="mt-4 text-brand-primary hover:text-brand-secondary transition-colors"
+                                    className="px-8 py-4 bg-brand-primary text-white text-sm font-bold uppercase tracking-widest rounded-xl hover:bg-slate-900 transition-all shadow-lg hover:shadow-brand-primary/20"
                                 >
                                     {t('shopPage.clear_filters')}
                                 </button>
@@ -232,15 +271,15 @@ export default function Shop() {
 
                 {/* Mobile Filters Modal */}
                 {showMobileFilters && (
-                    <div className="fixed inset-0 bg-black/50 z-50 lg:hidden">
-                        <div className="absolute right-0 top-0 bottom-0 w-80 bg-white p-6 overflow-y-auto">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-lg font-bold uppercase tracking-wider">
+                    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden animate-in fade-in">
+                        <div className="absolute right-0 top-0 bottom-0 w-full max-w-xs bg-white p-8 overflow-y-auto animate-in slide-in-from-right duration-500">
+                            <div className="flex items-center justify-between mb-10">
+                                <h3 className="text-xl font-bold uppercase tracking-wider text-slate-900">
                                     {t('shopPage.filters')}
                                 </h3>
                                 <button
                                     onClick={() => setShowMobileFilters(false)}
-                                    className="text-slate-400 hover:text-slate-900"
+                                    className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:text-slate-900 transition-colors"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Package, Calendar, CreditCard, ArrowRight } from 'lucide-react';
+import { CheckCircle, Package, Calendar, CreditCard, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 
 export default function CheckoutSuccess() {
@@ -21,111 +21,168 @@ export default function CheckoutSuccess() {
 
     if (!order) return null;
 
+    // Estimate delivery date (3-5 business days)
+    const getEstimatedDelivery = () => {
+        const date = new Date(order.date);
+        date.setDate(date.getDate() + 3);
+        const start = date.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long' });
+        date.setDate(date.getDate() + 2);
+        const end = date.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long' });
+        return `${start} - ${end}`;
+    };
+
     return (
-        <div className="min-h-screen bg-[#F6F4F2] py-24">
-            <div className="max-w-3xl mx-auto px-6">
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+            <div className="max-w-4xl mx-auto px-6">
+                <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 slide-in-up">
                     {/* Header */}
-                    <div className="bg-green-600 p-8 text-center text-white">
-                        <CheckCircle className="w-16 h-16 mx-auto mb-4 animate-bounce" />
-                        <h1 className="text-3xl font-serif mb-2">{t('order.confirmed')}</h1>
-                        <p className="opacity-90">{t('order.thank_you')}</p>
+                    <div className="bg-brand-primary p-12 text-center text-white relative">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                            <div className="absolute -top-24 -left-24 w-64 h-64 bg-white rounded-full blur-3xl" />
+                            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-white rounded-full blur-3xl" />
+                        </div>
+
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 animate-in zoom-in duration-700">
+                                <CheckCircle className="w-10 h-10 text-white" />
+                            </div>
+                            <h1 className="text-4xl md:text-5xl font-serif mb-4 font-bold">{t('order.confirmed')}</h1>
+                            <p className="text-lg opacity-90 max-w-md mx-auto">{t('order.thank_you')}</p>
+                        </div>
                     </div>
 
-                    <div className="p-8">
+                    <div className="p-8 md:p-12">
                         {/* Order Info Bar */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 border-b border-slate-100 pb-8">
-                            <div className="flex items-start gap-3">
-                                <Package className="w-5 h-5 text-brand-primary" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 bg-slate-50 rounded-2xl p-8 border border-slate-100">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
+                                    <Package className="w-5 h-5 text-brand-primary" />
+                                </div>
                                 <div>
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
                                         {t('order.order_number')}
                                     </p>
-                                    <p className="text-sm font-medium text-slate-900">{order.orderNumber}</p>
+                                    <p className="text-sm font-bold text-slate-900">{order.orderNumber}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Calendar className="w-5 h-5 text-brand-primary" />
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
+                                    <Mail className="w-5 h-5 text-brand-primary" />
+                                </div>
                                 <div>
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">
-                                        Дата
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
+                                        Електронна поща
                                     </p>
-                                    <p className="text-sm font-medium text-slate-900">
-                                        {new Date(order.date).toLocaleDateString('bg-BG')}
-                                    </p>
+                                    <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{order.client.email}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <CreditCard className="w-5 h-5 text-brand-primary" />
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
+                                    <Truck className="w-5 h-5 text-brand-primary" />
+                                </div>
                                 <div>
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">
-                                        {t('checkout.payment_method')}
+                                    <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
+                                        Доставка
                                     </p>
-                                    <p className="text-sm font-medium text-slate-900">
-                                        {order.payment.method === 'card' ? t('checkout.card_payment') :
-                                            order.payment.method === 'cash' ? t('checkout.cash_on_delivery') :
-                                                t('checkout.bank_transfer')}
-                                    </p>
+                                    <p className="text-sm font-bold text-slate-900">{getEstimatedDelivery()}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Content Sections */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
                             <div>
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
+                                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-6">
                                     {t('order.delivery_information')}
                                 </h3>
-                                <div className="text-sm text-slate-600 space-y-1">
-                                    <p className="font-medium text-slate-900">
+                                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                    <p className="font-bold text-slate-900 mb-3 text-lg">
                                         {order.client.firstName} {order.client.lastName}
                                     </p>
-                                    {order.delivery.type !== 'pickup' ? (
-                                        <>
-                                            <p>{order.delivery.address.street}</p>
-                                            <p>{order.delivery.address.postalCode} {order.delivery.address.city}</p>
-                                        </>
-                                    ) : (
-                                        <p>{t(`checkout.${order.delivery.pickupLocation}`)}</p>
-                                    )}
-                                    <p>{order.client.phone}</p>
+                                    <div className="text-slate-600 space-y-1.5 font-medium">
+                                        {order.delivery.type !== 'pickup' ? (
+                                            <>
+                                                <p className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
+                                                    {order.delivery.address.street}
+                                                </p>
+                                                <p className="pl-3.5">{order.delivery.address.postalCode} {order.delivery.address.city}</p>
+                                            </>
+                                        ) : (
+                                            <p className="flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
+                                                {t(`checkout.${order.delivery.pickupLocation}`)}
+                                            </p>
+                                        )}
+                                        <p className="pl-3.5 pt-2 text-sm">{order.client.phone}</p>
+                                    </div>
                                 </div>
                             </div>
+
                             <div>
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
-                                    Обобщение
+                                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-6">
+                                    Детайли на поръчката
                                 </h3>
-                                <div className="space-y-2">
-                                    {order.items.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between text-sm">
-                                            <span className="text-slate-600">
-                                                {item.product.name} x{item.quantity}
-                                            </span>
-                                            <span className="text-slate-900 font-medium">
-                                                {(item.product.price * item.quantity).toFixed(2)} лв
-                                            </span>
+                                <div className="space-y-4">
+                                    <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {order.items.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                        <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-900">{item.product.name}</p>
+                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {item.product.price.toFixed(2)} лв</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-sm font-bold text-slate-900">
+                                                    {(item.product.price * item.quantity).toFixed(2)} лв
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-6 border-t border-slate-100 space-y-2">
+                                        <div className="flex justify-between text-sm text-slate-500 font-medium">
+                                            <span>Междинна сума</span>
+                                            <span>{order.subtotal.toFixed(2)} лв</span>
                                         </div>
-                                    ))}
-                                    <div className="pt-2 border-t border-slate-100 flex justify-between font-bold text-slate-900">
-                                        <span>{t('cart.total')}</span>
-                                        <span className="text-brand-accent">{order.total.toFixed(2)} лв</span>
+                                        <div className="flex justify-between text-sm text-slate-500 font-medium">
+                                            <span>Доставка</span>
+                                            <span>{order.deliveryFee === 0 ? 'Безплатна' : `${order.deliveryFee.toFixed(2)} лв`}</span>
+                                        </div>
+                                        <div className="flex justify-between pt-4 font-bold text-xl text-slate-900">
+                                            <span>{t('cart.total')}</span>
+                                            <span className="text-brand-primary">{order.total.toFixed(2)} лв</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* CTA */}
-                        <div className="text-center pt-8 border-t border-slate-100">
+                        <div className="text-center pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-center gap-4">
                             <Link
                                 to="/shop"
-                                className="inline-flex items-center gap-2 bg-brand-primary text-white py-4 px-8 text-sm font-bold uppercase tracking-widest hover:bg-slate-900 transition-colors"
+                                className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-slate-900 text-white py-5 px-10 text-sm font-bold uppercase tracking-[0.2em] rounded-2xl hover:bg-brand-primary transition-all shadow-lg hover:shadow-brand-primary/20 active:scale-95"
                             >
                                 {t('order.continue_shopping')}
                                 <ArrowRight className="w-4 h-4" />
                             </Link>
+                            <button
+                                onClick={() => window.print()}
+                                className="w-full md:w-auto text-slate-400 hover:text-slate-900 font-bold text-xs uppercase tracking-widest py-4 px-8 transition-colors"
+                            >
+                                Принтирай разписка
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                <p className="text-center text-slate-400 text-sm mt-12 font-medium">
+                    Имате въпроси? Свържете се с нас на <a href="mailto:support@recafe.bg" className="text-brand-primary hover:underline">support@recafe.bg</a>
+                </p>
             </div>
         </div>
     );

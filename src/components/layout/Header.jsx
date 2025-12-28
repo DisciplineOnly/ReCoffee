@@ -7,8 +7,10 @@ import logo from '../../assets/logo.jpg';
 
 export default function Header() {
     const [scrolled, setScrolled] = useState(false);
+    const [animateBadge, setAnimateBadge] = useState(false);
     const { t } = useTranslation();
     const { getCartCount } = useCart();
+    const cartCount = getCartCount();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -17,6 +19,14 @@ export default function Header() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        if (cartCount > 0) {
+            setAnimateBadge(true);
+            const timer = setTimeout(() => setAnimateBadge(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [cartCount]);
 
     return (
         <header
@@ -57,10 +67,10 @@ export default function Header() {
                             <Search className="w-5 h-5" />
                         </button>
                         <Link to="/cart" className="relative text-slate-800 hover:text-brand-primary transition-colors group">
-                            <ShoppingBag className="w-5 h-5" />
-                            {getCartCount() > 0 && (
-                                <span className="absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold animate-bounce">
-                                    {getCartCount()}
+                            <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110" />
+                            {cartCount > 0 && (
+                                <span className={`absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold transition-transform ${animateBadge ? 'scale-125' : 'scale-100'}`}>
+                                    {cartCount}
                                 </span>
                             )}
                         </Link>
