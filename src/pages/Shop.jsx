@@ -3,11 +3,12 @@ import { useTranslation } from '../lib/translations';
 import ProductCard from '../components/shop/ProductCard';
 import { SlidersHorizontal, X } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import products from '../data/products.json';
+import { useProducts } from '../hooks/useProducts';
 
 export default function Shop() {
     const { t } = useTranslation();
-    const [isLoading, setIsLoading] = useState(true);
+    const { products, loading: isLoading, error } = useProducts();
+
     const [filters, setFilters] = useState({
         category: [],
         priceRange: [0, 100],
@@ -16,12 +17,6 @@ export default function Shop() {
     });
     const [sortBy, setSortBy] = useState('featured');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
-
-    useEffect(() => {
-        // Simulate initial loading
-        const timer = setTimeout(() => setIsLoading(false), 800);
-        return () => clearTimeout(timer);
-    }, []);
 
     // Filter products
     const filteredProducts = useMemo(() => {

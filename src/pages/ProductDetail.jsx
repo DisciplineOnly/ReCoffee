@@ -4,15 +4,15 @@ import { useTranslation } from '../lib/translations';
 import { useCart } from '../contexts/CartContext';
 import { ArrowLeft, Check } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import products from '../data/products.json';
+import { useProducts } from '../hooks/useProducts';
 
 export default function ProductDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { addToCart } = useCart();
+    const { products, loading: productsLoading } = useProducts();
 
-    const [isLoading, setIsLoading] = useState(true);
     const [selectedGrind, setSelectedGrind] = useState('whole-bean');
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
@@ -20,13 +20,7 @@ export default function ProductDetail() {
 
     const product = products.find(p => p.slug === id);
 
-    useEffect(() => {
-        // Simulate loading
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
-    }, [id]);
-
-    if (!product && !isLoading) {
+    if (!product && !productsLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="text-center">
@@ -39,7 +33,7 @@ export default function ProductDetail() {
         );
     }
 
-    if (isLoading) {
+    if (productsLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <LoadingSpinner size="lg" color="primary" />
