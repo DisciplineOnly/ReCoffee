@@ -4,10 +4,10 @@ import { CartProvider } from './contexts/CartContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
+import Shop from './pages/Shop';
+import ProductDetail from './pages/ProductDetail';
 
 // Placeholder components - will be implemented in next phases
-const Shop = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Shop Page - Coming Soon</h1></div>;
-const ProductDetail = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Product Detail - Coming Soon</h1></div>;
 const Cart = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Cart - Coming Soon</h1></div>;
 const Checkout = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Checkout - Coming Soon</h1></div>;
 const CheckoutSuccess = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Order Confirmed - Coming Soon</h1></div>;

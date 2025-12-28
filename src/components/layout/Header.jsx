@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Menu, Search, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
+import { useCart } from '../../contexts/CartContext';
 import logo from '../../assets/logo.jpg';
 
 export default function Header() {
     const [scrolled, setScrolled] = useState(false);
     const { t } = useTranslation();
+    const { getCartCount } = useCart();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -24,7 +27,7 @@ export default function Header() {
 
                 {/* Left Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.shop')}</a>
+                    <Link to="/shop" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.shop')}</Link>
                     <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.subscription')}</a>
                     <a href="#" className="text-xs font-medium tracking-widest uppercase text-slate-600 hover:text-brand-primary transition-colors">{t('header.nav.wholesale')}</a>
                 </nav>
@@ -36,9 +39,9 @@ export default function Header() {
 
                 {/* Logo Center */}
                 <div className="flex flex-col items-center text-center justify-center">
-                    <a href="#" className="group">
+                    <Link to="/" className="group">
                         <img src={logo} alt="ReCaffe Logo" className="h-12 md:h-16 w-auto object-contain transition-transform group-hover:scale-105" />
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Right Nav */}
@@ -53,10 +56,14 @@ export default function Header() {
                         <button className="text-slate-800 hover:text-brand-primary transition-colors">
                             <Search className="w-5 h-5" />
                         </button>
-                        <a href="#" className="relative text-slate-800 hover:text-brand-primary transition-colors group">
+                        <Link to="/cart" className="relative text-slate-800 hover:text-brand-primary transition-colors group">
                             <ShoppingBag className="w-5 h-5" />
-                            <span className="absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity">0</span>
-                        </a>
+                            {getCartCount() > 0 && (
+                                <span className="absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold animate-bounce">
+                                    {getCartCount()}
+                                </span>
+                            )}
+                        </Link>
                     </div>
                 </nav>
             </div>

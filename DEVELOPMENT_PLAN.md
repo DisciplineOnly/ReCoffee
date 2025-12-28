@@ -105,6 +105,131 @@ npm install react-router-dom@6
 **Duration**: 10-12 hours
 **Priority**: High
 **Dependencies**: Phase 1 complete ✅
+**Status**: ✅ COMPLETE
+
+### 2.1 Shop Page Layout ✅
+**Task**: Create Shop page with product grid
+
+**Files Created**:
+- ✅ `src/pages/Shop.jsx`
+- ✅ `src/components/shop/ProductCard.jsx`
+- ✅ Filter sidebar (integrated in Shop.jsx)
+- ✅ Sort dropdown (integrated in Shop.jsx)
+
+**Acceptance Criteria**:
+- ✅ Product grid responsive (1/2/3 columns)
+- ✅ Products display correctly
+- ✅ Filters sidebar functional
+- ✅ Sort dropdown works
+- ✅ Empty state handled
+
+### 2.2 Product Card Component ✅
+**Task**: Build reusable ProductCard component
+
+**Features**:
+- ✅ Product image with category badge
+- ✅ Product name and details
+- ✅ Roast level indicator
+- ✅ Price display
+- ✅ Add to Cart button
+- ✅ Hover effects
+
+**Acceptance Criteria**:
+- ✅ Card matches design spec
+- ✅ Hover animation works
+- ✅ Click navigates to product detail
+- ✅ Add to Cart opens grind selector
+
+### 2.3 Filter & Sort Implementation ✅
+**Task**: Implement filtering and sorting logic
+
+**Filters**:
+- ✅ Category (checkbox group)
+- ✅ Price range (implemented, slider deferred)
+- ✅ Roast level (checkbox group)
+- ⏳ Origin (deferred - not enough variety in current data)
+- ✅ In stock toggle
+
+**Sort Options**:
+- ✅ Price: Low to High
+- ✅ Price: High to Low
+- ✅ Name: A-Z
+- ✅ Newest First
+- ✅ Featured First
+
+**Acceptance Criteria**:
+- ✅ All filters work independently
+- ✅ Multiple filters combine correctly
+- ✅ Sort updates product order
+- ⏳ Filter state preserved in URL (deferred to Phase 5)
+- ✅ Clear filters button works
+
+### 2.4 Product Detail Page ✅
+**Task**: Create detailed product view
+
+**Files Created**:
+- ✅ `src/pages/ProductDetail.jsx`
+- ✅ Image display (gallery deferred - single image)
+- ✅ Grind type selector (integrated)
+- ✅ Quantity selector (integrated)
+
+**Layout**:
+- ✅ Left: Product image
+- ✅ Right: Product info, selectors, Add to Cart
+
+**Acceptance Criteria**:
+- ✅ Product loads from URL param
+- ⏳ Image gallery works (deferred - single image for now)
+- ✅ Grind type selection works
+- ✅ Quantity selector works (min 1, max 10)
+- ✅ Add to Cart updates cart count
+- ✅ Success animation on add
+- ✅ 404 for invalid product ID
+
+### 2.5 Grind Type Selector Modal ✅
+**Task**: Create modal for grind type selection
+
+**Files Created**:
+- ✅ `src/components/ui/GrindTypeModal.jsx`
+
+**Options**:
+- ✅ Whole Bean (icon + label)
+- ✅ Espresso (icon + label)
+- ✅ Filter (icon + label)
+- ✅ French Press (icon + label)
+
+**Acceptance Criteria**:
+- ✅ Modal opens on "Add to Cart" click
+- ✅ Visual selection indicator
+- ✅ Confirm adds to cart
+- ✅ Cancel closes modal
+- ✅ Keyboard navigation (ESC to close)
+
+### 2.6 Header Updates ✅
+**Task**: Update header with cart badge and navigation
+
+**Files Updated**:
+- ✅ `src/components/layout/Header.jsx`
+
+**Features**:
+- ✅ Shop link navigates to /shop
+- ✅ Logo links to home
+- ✅ Cart badge shows count
+- ✅ Cart badge animates on update
+- ✅ Cart icon links to /cart
+
+**Acceptance Criteria**:
+- ✅ Cart count displays
+- ✅ Updates in real-time
+- ✅ Animation on add to cart
+- ✅ Clicks navigate to cart
+
+---
+
+## Phase 3: Shopping Cart
+**Duration**: 6-8 hours
+**Priority**: High
+**Dependencies**: Phase 2 complete ✅
 **Status**: 🚧 READY TO START
 
 **Implementation**:
