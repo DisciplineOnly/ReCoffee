@@ -230,6 +230,79 @@ npm install react-router-dom@6
 **Duration**: 6-8 hours
 **Priority**: High
 **Dependencies**: Phase 2 complete ✅
+**Status**: ✅ COMPLETE
+
+### 3.1 Cart Page Layout ✅
+**Task**: Build cart page with item list
+
+**Files Created**:
+- ✅ `src/pages/Cart.jsx`
+- ✅ `src/components/cart/CartItem.jsx`
+- ✅ `src/components/cart/CartSummary.jsx`
+- ✅ `src/components/cart/EmptyCart.jsx`
+
+**Acceptance Criteria**:
+- ✅ Cart items display correctly
+- ✅ Empty state shows when cart empty
+- ✅ Cart summary calculates correctly
+- ✅ Responsive layout
+
+### 3.2 Cart Item Component ✅
+**Task**: Build individual cart item
+
+**Features**:
+- ✅ Product image (small)
+- ✅ Product name and details
+- ✅ Grind type display
+- ✅ Quantity selector
+- ✅ Remove button
+- ✅ Price calculation
+
+**Acceptance Criteria**:
+- ✅ Quantity update works
+- ✅ Remove button works
+- ✅ Price updates in real-time
+- ✅ Confirmation on remove
+
+### 3.3 Cart Summary ✅
+**Task**: Build cart totals summary
+
+**Display**:
+- ✅ Subtotal
+- ✅ Delivery fee (5 лв or Free if > 100 лв)
+- ✅ Total
+- ✅ Free delivery progress bar
+
+**Actions**:
+- ✅ Continue Shopping (link to /shop)
+- ✅ Proceed to Checkout (link to /checkout)
+
+**Acceptance Criteria**:
+- ✅ Subtotal accurate
+- ✅ Delivery calculation correct
+- ✅ Free delivery threshold works
+- ✅ Total accurate
+- ✅ CTAs navigate correctly
+
+### 3.4 Empty Cart State ✅
+**Task**: Design empty cart experience
+
+**Content**:
+- ✅ Friendly message
+- ✅ Coffee cup icon with animation
+- ✅ "Browse Products" CTA
+
+**Acceptance Criteria**:
+- ✅ Displays when cart empty
+- ✅ CTA navigates to /shop
+- ✅ Visually appealing
+
+---
+
+## Phase 4: Checkout Flow
+**Duration**: 12-15 hours
+**Priority**: High
+**Dependencies**: Phase 3 complete ✅
 **Status**: 🚧 READY TO START
 
 **Implementation**:
