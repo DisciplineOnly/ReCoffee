@@ -7,10 +7,8 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
-
-// Placeholder components - will be implemented in next phases
-const Checkout = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Checkout - Coming Soon</h1></div>;
-const CheckoutSuccess = () => <div className="min-h-screen flex items-center justify-center"><h1 className="text-4xl font-serif">Order Confirmed - Coming Soon</h1></div>;
+import Checkout from './pages/Checkout';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 
 function App() {
   return (
