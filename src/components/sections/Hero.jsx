@@ -34,7 +34,7 @@ export default function Hero() {
                 </div>
 
                 {/* Hero Image */}
-                <div className="md:col-span-6 md:col-start-7 flex justify-center items-center order-1 md:order-2 relative">
+                <div className="md:col-span-6 md:col-start-7 flex flex-col justify-center items-center order-1 md:order-2 relative">
                     {/* Radial gradient for subtle glow */}
                     <div className="absolute inset-0 bg-white/10 blur-3xl rounded-full transform scale-75 -z-10"></div>
 
@@ -44,7 +44,7 @@ export default function Hero() {
                     </div>
 
                     {/* Floating Badge */}
-                    <div className="absolute -bottom-4 -left-4 md:bottom-12 md:-left-8 bg-white p-4 md:p-6 rounded-lg shadow-xl max-w-[12rem] z-20">
+                    <div className="relative mt-6 md:absolute md:mt-0 md:bottom-12 md:-left-8 bg-white p-4 md:p-6 rounded-lg shadow-xl max-w-[12rem] z-20">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-[10px] uppercase tracking-widest text-slate-400">{t('hero.roast_intensity')}</span>
                             <div className="flex gap-1">
