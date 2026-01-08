@@ -11,7 +11,6 @@ export default function Shop() {
 
     const [filters, setFilters] = useState({
         category: [],
-        priceRange: [0, 100],
         roastLevel: [],
         inStockOnly: false
     });
@@ -27,8 +26,7 @@ export default function Shop() {
             filtered = filtered.filter(p => filters.category.includes(p.category));
         }
 
-        // Price range filter
-        filtered = filtered.filter(p => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]);
+
 
         // Roast level filter
         if (filters.roastLevel.length > 0) {
@@ -61,7 +59,7 @@ export default function Shop() {
         }
 
         return filtered;
-    }, [filters, sortBy]);
+    }, [filters, sortBy, products]);
 
     const toggleCategory = (category) => {
         setFilters(prev => ({
@@ -84,7 +82,6 @@ export default function Shop() {
     const clearFilters = () => {
         setFilters({
             category: [],
-            priceRange: [0, 100],
             roastLevel: [],
             inStockOnly: false
         });
