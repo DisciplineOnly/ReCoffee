@@ -38,10 +38,13 @@ export function useProducts() {
                         .filter(f => f.product_id === product.id)
                         .map(f => f.flavor_name_bg);
 
-                    // Find local product to get the image URL
+                    // Find local product to get the image URL as fallback
                     // We match by slug since that is unique and stable
                     const localMatch = localProducts.find(lp => lp.slug === product.slug);
-                    const imageUrls = localMatch ? localMatch.images : [];
+                    const localImages = localMatch ? localMatch.images : [];
+
+                    // Prioritize DB image, fallback to local
+                    const validImages = product.image_url ? [product.image_url] : localImages;
 
                     return {
                         id: product.id,
@@ -52,7 +55,7 @@ export function useProducts() {
                         descriptionEn: product.description_en,
                         price: product.price,
                         currency: 'BGN', // Hardcoded for now
-                        images: imageUrls, // Fallback to local JSON images
+                        images: validImages,
                         category: product.category,
                         origin: product.origin,
                         process: product.process,
