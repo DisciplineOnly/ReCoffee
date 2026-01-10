@@ -15,7 +15,7 @@ export default function ShopFavorites() {
                         </span>
                         <h3 className="font-serif text-3xl md:text-5xl text-slate-900">{t('shop.title')}</h3>
                     </div>
-                    <a href="#" className="group flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-slate-900 pb-1">
+                    <a href="/shop" className="group flex items-center gap-2 text-xs font-bold tracking-[0.15em] uppercase text-slate-900 pb-1">
                         {t('shop.cta')}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-brand-primary" />
                     </a>
