@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from '../../lib/translations';
 import heroImage from '../../assets/hero-coffee.jpg';
 
@@ -24,12 +25,12 @@ export default function Hero() {
                     </p>
 
                     <div className="flex items-center gap-6">
-                        <a href="#" className="inline-block uppercase hover:text-white hover:border-white transition-all text-xs font-bold text-white tracking-[0.15em] border-white border-b-2 pb-1">
+                        <Link to="/shop" className="inline-block uppercase hover:text-white hover:border-white transition-all text-xs font-bold text-white tracking-[0.15em] border-white border-b-2 pb-1">
                             {t('hero.cta_primary')}
-                        </a>
-                        <a href="#" className="inline-block text-xs font-bold tracking-[0.15em] uppercase text-white/60 border-b border-transparent hover:text-white transition-all">
+                        </Link>
+                        <Link to="/shop?category=blend" className="inline-block text-xs font-bold tracking-[0.15em] uppercase text-white/60 border-b border-transparent hover:text-white transition-all">
                             {t('hero.cta_secondary')}
-                        </a>
+                        </Link>
                     </div>
                 </div>
 

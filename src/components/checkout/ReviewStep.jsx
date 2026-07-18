@@ -37,6 +37,14 @@ export default function ReviewStep() {
         return types[type] || type;
     };
 
+    const getCourierLabel = (courier) => {
+        const couriers = {
+            'econt': t('checkout.courier_econt'),
+            'speedy': t('checkout.courier_speedy')
+        };
+        return couriers[courier] || courier;
+    };
+
     const getPaymentMethodLabel = (method) => {
         const methods = {
             'card': t('checkout.card_payment'),
@@ -54,7 +62,7 @@ export default function ReviewStep() {
 
     const handlePlaceOrder = async () => {
         if (!termsAccepted) {
-            alert('Моля, приемете Условията за ползване');
+            alert(t('checkout.terms_alert'));
             return;
         }
 
@@ -64,20 +72,39 @@ export default function ReviewStep() {
             // Generate order number
             const orderNumber = generateOrderNumber();
 
+            // Attach the order to the customer account, if logged in
+            const { data: { session } } = await supabase.auth.getSession();
+
+            const orderPayload = {
+                order_number: orderNumber,
+                status: 'pending',
+                subtotal,
+                delivery_fee: delivery,
+                total,
+                client_info: checkoutData.client,
+                delivery_info: checkoutData.delivery,
+                payment_info: checkoutData.payment,
+                user_id: session?.user?.id || null
+            };
+
             // 1. Create Order
-            const { data: orderData, error: orderError } = await supabase
+            let { data: orderData, error: orderError } = await supabase
                 .from('orders')
-                .insert({
-                    order_number: orderNumber,
-                    status: 'pending',
-                    subtotal,
-                    delivery_fee: delivery,
-                    total,
-                    client_info: checkoutData.client,
-                    delivery_info: checkoutData.delivery
-                })
+                .insert(orderPayload)
                 .select()
                 .single();
+
+            // Pre-migration fallback: retry without the new columns if they don't exist yet
+            if (orderError && orderError.code === 'PGRST204') {
+                const legacyPayload = { ...orderPayload };
+                delete legacyPayload.payment_info;
+                delete legacyPayload.user_id;
+                ({ data: orderData, error: orderError } = await supabase
+                    .from('orders')
+                    .insert(legacyPayload)
+                    .select()
+                    .single());
+            }
 
             if (orderError) throw orderError;
 
@@ -101,7 +128,10 @@ export default function ReviewStep() {
             const successOrder = {
                 orderNumber: orderNumber,
                 items: cart,
+                subtotal: subtotal,
+                deliveryFee: delivery,
                 total: total,
+                date: new Date().toISOString(),
                 delivery: checkoutData.delivery, // Required for success page calculation
                 client: checkoutData.client
             };
@@ -115,7 +145,7 @@ export default function ReviewStep() {
 
         } catch (error) {
             console.error('Order placement failed:', error);
-            alert('Възникна грешка при обработката на поръчката. Моля опитайте отново.');
+            alert(t('checkout.order_error'));
         } finally {
             setIsSubmitting(false);
         }
@@ -177,7 +207,17 @@ export default function ReviewStep() {
                             <Check className="w-4 h-4 text-green-600" />
                             {getDeliveryTypeLabel(checkoutData.delivery.type)}
                         </p>
-                        {checkoutData.delivery.type !== 'pickup' ? (
+                        {checkoutData.delivery.type === 'pickup' ? (
+                            <p className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-green-600" />
+                                {t(`checkout.${checkoutData.delivery.pickupLocation}`)}
+                            </p>
+                        ) : checkoutData.delivery.type === 'office' ? (
+                            <p className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-green-600" />
+                                {getCourierLabel(checkoutData.delivery.courier)} — {checkoutData.delivery.courierOffice}, {checkoutData.delivery.courierCity}
+                            </p>
+                        ) : (
                             <>
                                 <p className="flex items-center gap-2">
                                     <Check className="w-4 h-4 text-green-600" />
@@ -185,15 +225,10 @@ export default function ReviewStep() {
                                 </p>
                                 {checkoutData.delivery.address.notes && (
                                     <p className="text-xs text-slate-500 ml-6">
-                                        Бележка: {checkoutData.delivery.address.notes}
+                                        {t('checkout.note_label')} {checkoutData.delivery.address.notes}
                                     </p>
                                 )}
                             </>
-                        ) : (
-                            <p className="flex items-center gap-2">
-                                <Check className="w-4 h-4 text-green-600" />
-                                {t(`checkout.${checkoutData.delivery.pickupLocation}`)}
-                            </p>
                         )}
                     </div>
                 </div>
@@ -291,7 +326,7 @@ export default function ReviewStep() {
                         disabled={!termsAccepted || isSubmitting}
                         className="flex-1 py-3 px-6 bg-brand-primary text-white text-sm font-bold uppercase tracking-widest hover:bg-slate-900 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? 'Обработка...' : t('checkout.place_order')}
+                        {isSubmitting ? t('checkout.processing') : t('checkout.place_order')}
                     </button>
                 </div>
             </div>

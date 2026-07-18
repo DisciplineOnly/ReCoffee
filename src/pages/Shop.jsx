@@ -1,32 +1,76 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from '../lib/translations';
 import ProductCard from '../components/shop/ProductCard';
 import { SlidersHorizontal, X } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useProducts } from '../hooks/useProducts';
+import { useSEO } from '../hooks/useSEO';
+
+const VALID_CATEGORIES = ['single-origin', 'blend', 'limited'];
 
 export default function Shop() {
     const { t } = useTranslation();
-    const { products, loading: isLoading, error } = useProducts();
+    const { products, loading: isLoading } = useProducts();
+    const [searchParams, setSearchParams] = useSearchParams();
+    useSEO({
+        title: t('shopPage.title'),
+        description: 'Магазинът на ReCoffee — специални кафета на зърна: единични произходи, смеси и лимитирани серии с доставка в цяла България.',
+    });
+
+    const searchQuery = (searchParams.get('q') || '').trim();
+    const categoryParam = searchParams.get('category');
 
     const [filters, setFilters] = useState({
-        category: [],
+        category: VALID_CATEGORIES.includes(categoryParam) ? [categoryParam] : [],
         roastLevel: [],
         inStockOnly: false
     });
     const [sortBy, setSortBy] = useState('featured');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+    // Keep category filter in sync with URL deep-links (footer/nav)
+    useEffect(() => {
+        if (VALID_CATEGORIES.includes(categoryParam)) {
+            setFilters(prev =>
+                prev.category.length === 1 && prev.category[0] === categoryParam
+                    ? prev
+                    : { ...prev, category: [categoryParam] }
+            );
+        }
+    }, [categoryParam]);
+
+    const clearSearch = () => {
+        const next = new URLSearchParams(searchParams);
+        next.delete('q');
+        setSearchParams(next, { replace: true });
+    };
+
     // Filter products
     const filteredProducts = useMemo(() => {
         let filtered = [...products];
+
+        // Search query filter (from the header search overlay)
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            filtered = filtered.filter(p => {
+                const haystack = [
+                    p.name,
+                    p.nameEn,
+                    p.origin,
+                    p.process,
+                    p.category,
+                    p.description,
+                    ...(p.flavorNotes || [])
+                ].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(q);
+            });
+        }
 
         // Category filter
         if (filters.category.length > 0) {
             filtered = filtered.filter(p => filters.category.includes(p.category));
         }
-
-
 
         // Roast level filter
         if (filters.roastLevel.length > 0) {
@@ -59,7 +103,7 @@ export default function Shop() {
         }
 
         return filtered;
-    }, [filters, sortBy, products]);
+    }, [filters, sortBy, products, searchQuery]);
 
     const toggleCategory = (category) => {
         setFilters(prev => ({
@@ -178,21 +222,35 @@ export default function Shop() {
                             {t('shopPage.title')}
                         </h1>
                         <p className="text-slate-500 font-medium tracking-wide">
-                            {filteredProducts.length} {t('shopPage.showing_results').replace('{{count}}', filteredProducts.length)}
+                            {t('shopPage.showing_results').replace('{{count}}', filteredProducts.length)}
                         </p>
+                        {searchQuery && (
+                            <div className="mt-3 inline-flex items-center gap-3 bg-white border border-slate-200 rounded-full pl-4 pr-2 py-1.5">
+                                <span className="text-sm text-slate-600">
+                                    {t('shopPage.search_results_for').replace('{{query}}', searchQuery)}
+                                </span>
+                                <button
+                                    onClick={clearSearch}
+                                    aria-label={t('shopPage.clear_search')}
+                                    className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 hover:text-slate-900 transition-colors"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Desktop Sort Dropdown */}
                     <div className="hidden lg:block">
                         <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Подреди по:</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{t('shopPage.sort_by')}</span>
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                                 className="bg-transparent border-none text-sm font-bold text-slate-900 focus:ring-0 cursor-pointer hover:text-brand-primary transition-colors pr-8 bg-no-repeat bg-[right_center] appearance-none"
                                 style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\' /%3E%3C/svg%3E")', backgroundSize: '1em' }}
                             >
-                                <option value="featured text-slate-500">{t('shopPage.sort_featured')}</option>
+                                <option value="featured">{t('shopPage.sort_featured')}</option>
                                 <option value="price-asc">{t('shopPage.sort_price_asc')}</option>
                                 <option value="price-desc">{t('shopPage.sort_price_desc')}</option>
                                 <option value="name">{t('shopPage.sort_name')}</option>

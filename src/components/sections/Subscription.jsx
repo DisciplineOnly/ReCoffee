@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { CalendarClock } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
@@ -17,12 +18,12 @@ export default function Subscription() {
                     {t('subscription.description')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="#" className="px-10 py-4 bg-brand-primary text-white font-bold tracking-widest text-xs uppercase hover:bg-white hover:text-brand-primary transition-all shadow-xl shadow-brand-primary/20">
+                    <Link to="/subscription" className="px-10 py-4 bg-brand-primary text-white font-bold tracking-widest text-xs uppercase hover:bg-white hover:text-brand-primary transition-all shadow-xl shadow-brand-primary/20">
                         {t('subscription.cta_primary')}
-                    </a>
-                    <a href="#" className="px-10 py-4 border-2 border-white/30 text-white font-bold tracking-widest text-xs uppercase hover:bg-white/10 transition-all">
+                    </Link>
+                    <Link to="/subscription" className="px-10 py-4 border-2 border-white/30 text-white font-bold tracking-widest text-xs uppercase hover:bg-white/10 transition-all">
                         {t('subscription.cta_secondary')}
-                    </a>
+                    </Link>
                 </div>
             </div>
         </section>

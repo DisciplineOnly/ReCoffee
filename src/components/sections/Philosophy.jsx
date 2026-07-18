@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Globe, Flame } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
@@ -40,9 +41,9 @@ export default function Philosophy() {
                     </div>
                 </div>
                 <div className="mt-12">
-                    <a href="#" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-brand-primary pb-1 hover:text-brand-primary transition-all">
+                    <Link to="/about" className="text-xs font-bold tracking-[0.15em] uppercase text-slate-900 border-b border-brand-primary pb-1 hover:text-brand-primary transition-all">
                         {t('philosophy.cta')}
-                    </a>
+                    </Link>
                 </div>
             </div>
         </section>

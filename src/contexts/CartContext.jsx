@@ -11,20 +11,18 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-    const [cart, setCart] = useState([]);
-
-    // Load cart from localStorage on mount
-    useEffect(() => {
-        const savedCart = localStorage.getItem('recoffee_cart');
-        if (savedCart) {
-            try {
-                setCart(JSON.parse(savedCart));
-            } catch (error) {
-                console.error('Failed to load cart from localStorage:', error);
-                localStorage.removeItem('recoffee_cart');
-            }
+    // Lazy init so the cart is available on the very first render —
+    // otherwise a hard refresh on /checkout redirects to /cart before load.
+    const [cart, setCart] = useState(() => {
+        try {
+            const savedCart = localStorage.getItem('recoffee_cart');
+            return savedCart ? JSON.parse(savedCart) : [];
+        } catch (error) {
+            console.error('Failed to load cart from localStorage:', error);
+            localStorage.removeItem('recoffee_cart');
+            return [];
         }
-    }, []);
+    });
 
     // Save cart to localStorage on change
     useEffect(() => {

@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from '../lib/translations';
 import { useCart } from '../contexts/CartContext';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Heart } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useProducts } from '../hooks/useProducts';
+import { useWishlist } from '../contexts/WishlistContext';
+import { useSEO } from '../hooks/useSEO';
+import { formatBgn, formatEur } from '../lib/price';
+import ProductReviews from '../components/shop/ProductReviews';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -12,6 +16,7 @@ export default function ProductDetail() {
     const { t } = useTranslation();
     const { addToCart } = useCart();
     const { products, loading: productsLoading } = useProducts();
+    const { isInWishlist, toggleWishlist } = useWishlist();
 
     const [selectedGrind, setSelectedGrind] = useState('whole-bean');
     const [quantity, setQuantity] = useState(1);
@@ -20,13 +25,18 @@ export default function ProductDetail() {
 
     const product = products.find(p => p.slug === id);
 
+    useSEO({
+        title: product ? product.name : undefined,
+        description: product ? `${product.name} — ${product.origin || ''}. ${(product.description || '').slice(0, 150)}` : undefined,
+    });
+
     if (!product && !productsLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="text-center">
-                    <h1 className="text-4xl font-serif text-slate-900 mb-4">Продуктът не е намерен</h1>
+                    <h1 className="text-4xl font-serif text-slate-900 mb-4">{t('product.not_found')}</h1>
                     <Link to="/shop" className="text-brand-primary hover:text-brand-secondary">
-                        Назад към магазина
+                        {t('product.back_to_shop')}
                     </Link>
                 </div>
             </div>
@@ -105,12 +115,34 @@ export default function ProductDetail() {
                             />
                         </div>
 
-                        {/* Category Badge */}
-                        <div className="absolute top-6 left-6">
+                        {/* Badges */}
+                        <div className="absolute top-6 left-6 flex flex-col items-start gap-2">
                             <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 font-bold shadow-sm">
                                 {t(`shop.badge_${product.category.replace('-', '_')}`)}
                             </span>
+                            {product.isNew && (
+                                <span className="bg-brand-secondary text-white text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 font-bold shadow-sm">
+                                    {t('shop.badge_new')}
+                                </span>
+                            )}
+                            {product.onSale && (
+                                <span className="bg-brand-primary text-white text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 font-bold shadow-sm">
+                                    -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                                </span>
+                            )}
                         </div>
+
+                        {/* Wishlist Heart */}
+                        <button
+                            onClick={() => toggleWishlist(product.slug)}
+                            aria-label={isInWishlist(product.slug) ? t('wishlist.remove') : t('wishlist.add')}
+                            className={`absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-full shadow-sm transition-all ${isInWishlist(product.slug)
+                                ? 'bg-brand-primary text-white'
+                                : 'bg-white/90 backdrop-blur text-slate-400 hover:text-brand-primary'
+                                }`}
+                        >
+                            <Heart className={`w-5 h-5 ${isInWishlist(product.slug) ? 'fill-current' : ''}`} />
+                        </button>
                     </div>
 
                     {/* Product Info */}
@@ -132,11 +164,15 @@ export default function ProductDetail() {
 
                         {renderRoastLevel()}
 
-                        <div className="my-8 flex items-baseline gap-4">
+                        <div className="my-8 flex items-baseline gap-4 flex-wrap">
                             <span className="text-5xl font-bold text-brand-primary">
                                 {product.price.toFixed(2)}
                             </span>
                             <span className="text-2xl font-serif text-slate-400">лв</span>
+                            <span className="text-lg text-slate-400">({formatEur(product.price)})</span>
+                            {product.onSale && (
+                                <s className="text-2xl text-slate-300 font-light">{formatBgn(product.originalPrice)}</s>
+                            )}
                         </div>
 
                         <p className="text-slate-600 leading-relaxed mb-8 text-lg">
@@ -178,7 +214,7 @@ export default function ProductDetail() {
                                         <div className="text-3xl">{grind.icon}</div>
                                         <div>
                                             <div className="text-sm font-bold text-slate-900">{grind.label}</div>
-                                            <div className="text-[10px] text-slate-400 uppercase tracking-tight">Изберете за {grind.label.toLowerCase()}</div>
+                                            <div className="text-[10px] text-slate-400 uppercase tracking-tight">{t('product.select_grind_hint').replace('{{grind}}', grind.label.toLowerCase())}</div>
                                         </div>
                                     </button>
                                 ))}
@@ -209,7 +245,7 @@ export default function ProductDetail() {
                                     </button>
                                 </div>
                                 <div className="text-sm text-slate-400 font-medium">
-                                    Общо: {(product.price * quantity).toFixed(2)} лв
+                                    {t('product.total_label')} {formatBgn(product.price * quantity)} ({formatEur(product.price * quantity)})
                                 </div>
                             </div>
                         </div>
@@ -242,6 +278,9 @@ export default function ProductDetail() {
                         )}
                     </div>
                 </div>
+
+                {/* Reviews */}
+                <ProductReviews productId={product.id} />
             </div>
         </div>
     );

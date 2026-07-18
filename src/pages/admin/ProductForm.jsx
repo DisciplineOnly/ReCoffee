@@ -18,8 +18,10 @@ export default function ProductForm() {
         description_bg: '',
         description_en: '',
         price: 0,
+        sale_price: '',
         in_stock: true,
         featured: false,
+        is_new: false,
         category: 'single-origin',
         roast_level: 3,
         origin: '',
@@ -94,6 +96,10 @@ export default function ProductForm() {
         try {
             // 1. Upsert Product
             const productData = { ...form };
+            // Empty sale price input means "no sale"
+            productData.sale_price = productData.sale_price === '' || productData.sale_price === null
+                ? null
+                : Number(productData.sale_price);
             // Auto-generate slug if empty (simple logic)
             if (!productData.slug) {
                 productData.slug = productData.name_en.toLowerCase().replace(/\s+/g, '-') || productData.name_bg.toLowerCase().replace(/\s+/g, '-');
@@ -251,7 +257,7 @@ export default function ProductForm() {
                     <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">Coffee Details</h3>
 
-                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Price (BGN)</label>
                                 <input
@@ -261,6 +267,19 @@ export default function ProductForm() {
                                     onChange={handleChange}
                                     step="0.01"
                                     required
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Sale Price (BGN)</label>
+                                <input
+                                    type="number"
+                                    name="sale_price"
+                                    value={form.sale_price ?? ''}
+                                    onChange={handleChange}
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="No sale"
                                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none"
                                 />
                             </div>
@@ -368,6 +387,16 @@ export default function ProductForm() {
                                         className="w-5 h-5 text-brand-primary rounded focus:ring-brand-primary"
                                     />
                                     <span className="text-slate-700">Featured</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        name="is_new"
+                                        checked={form.is_new || false}
+                                        onChange={handleChange}
+                                        className="w-5 h-5 text-brand-primary rounded focus:ring-brand-primary"
+                                    />
+                                    <span className="text-slate-700">"New" badge</span>
                                 </label>
                             </div>
                         </div>

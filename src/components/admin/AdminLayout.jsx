@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, Package, Calendar, LogOut, Coffee } from 'lucide-react';
+import { Package, Calendar, LogOut, Coffee, Inbox } from 'lucide-react';
 
 export default function AdminLayout() {
     const location = useLocation();
@@ -13,9 +13,10 @@ export default function AdminLayout() {
     };
 
     const navItems = [
-        // { path: '/admin', label: 'Dashboard', icon: LayoutDashboard }, // Overview optional per spec, focusing on CRUD 
+        { path: '/admin/orders', label: 'Orders', icon: Package },
         { path: '/admin/products', label: 'Products', icon: Coffee },
         { path: '/admin/services', label: 'Services', icon: Calendar },
+        { path: '/admin/inquiries', label: 'Inquiries', icon: Inbox },
     ];
 
     return (

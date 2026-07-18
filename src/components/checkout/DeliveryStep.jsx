@@ -13,13 +13,16 @@ export default function DeliveryStep() {
     const [deliveryType, setDeliveryType] = useState(checkoutData.delivery.type);
     const [address, setAddress] = useState(checkoutData.delivery.address);
     const [pickupLocation, setPickupLocation] = useState(checkoutData.delivery.pickupLocation);
+    const [courier, setCourier] = useState(checkoutData.delivery.courier || 'econt');
+    const [courierCity, setCourierCity] = useState(checkoutData.delivery.courierCity || '');
+    const [courierOffice, setCourierOffice] = useState(checkoutData.delivery.courierOffice || '');
 
     const deliveryFee = getCartTotal() >= 100 ? 0 : 5;
 
     const validate = () => {
         const newErrors = {};
 
-        if (deliveryType === 'home' || deliveryType === 'office') {
+        if (deliveryType === 'home') {
             if (!address.street.trim()) {
                 newErrors.street = t('checkout.required_field');
             }
@@ -28,6 +31,13 @@ export default function DeliveryStep() {
             }
             if (!address.postalCode.trim()) {
                 newErrors.postalCode = t('checkout.required_field');
+            }
+        } else if (deliveryType === 'office') {
+            if (!courierCity.trim()) {
+                newErrors.courierCity = t('checkout.required_field');
+            }
+            if (!courierOffice.trim()) {
+                newErrors.courierOffice = t('checkout.required_field');
             }
         } else if (deliveryType === 'pickup') {
             if (!pickupLocation) {
@@ -44,8 +54,11 @@ export default function DeliveryStep() {
         if (validate()) {
             updateDeliveryInfo({
                 type: deliveryType,
-                address: deliveryType !== 'pickup' ? address : {},
-                pickupLocation: deliveryType === 'pickup' ? pickupLocation : ''
+                address: deliveryType === 'home' ? address : {},
+                pickupLocation: deliveryType === 'pickup' ? pickupLocation : '',
+                courier: deliveryType === 'office' ? courier : '',
+                courierCity: deliveryType === 'office' ? courierCity.trim() : '',
+                courierOffice: deliveryType === 'office' ? courierOffice.trim() : ''
             });
             nextStep();
         }
@@ -134,8 +147,75 @@ export default function DeliveryStep() {
                         </div>
                     </div>
 
-                    {/* Address Fields (for home/office) */}
-                    {(deliveryType === 'home' || deliveryType === 'office') && (
+                    {/* Courier Office Fields */}
+                    {deliveryType === 'office' && (
+                        <div className="space-y-4 pt-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-3">
+                                    {t('checkout.courier')} *
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: 'econt', label: t('checkout.courier_econt') },
+                                        { id: 'speedy', label: t('checkout.courier_speedy') }
+                                    ].map((option) => (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => setCourier(option.id)}
+                                            className={`p-4 border-2 rounded-lg transition-all text-center text-sm font-bold ${courier === option.id
+                                                ? 'border-brand-primary bg-brand-primary/5 text-slate-900'
+                                                : 'border-slate-200 text-slate-500 hover:border-brand-primary/50'
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        {t('checkout.city')} *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={courierCity}
+                                        onChange={(e) => {
+                                            setCourierCity(e.target.value);
+                                            if (errors.courierCity) setErrors(prev => ({ ...prev, courierCity: '' }));
+                                        }}
+                                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary ${errors.courierCity ? 'border-red-500' : 'border-slate-300'}`}
+                                    />
+                                    {errors.courierCity && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.courierCity}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        {t('checkout.courier_office')} *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={courierOffice}
+                                        onChange={(e) => {
+                                            setCourierOffice(e.target.value);
+                                            if (errors.courierOffice) setErrors(prev => ({ ...prev, courierOffice: '' }));
+                                        }}
+                                        placeholder={t('checkout.courier_office_placeholder')}
+                                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary ${errors.courierOffice ? 'border-red-500' : 'border-slate-300'}`}
+                                    />
+                                    {errors.courierOffice && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.courierOffice}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Address Fields (home delivery) */}
+                    {deliveryType === 'home' && (
                         <div className="space-y-4 pt-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">

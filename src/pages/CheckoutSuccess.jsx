@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Package, Calendar, CreditCard, ArrowRight, Mail, Truck } from 'lucide-react';
+import { CheckCircle, Package, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
+import { siteConfig } from '../lib/siteConfig';
 
 export default function CheckoutSuccess() {
     const { t } = useTranslation();
@@ -23,7 +24,7 @@ export default function CheckoutSuccess() {
 
     // Estimate delivery date (3-5 business days)
     const getEstimatedDelivery = () => {
-        const date = new Date(order.date);
+        const date = order.date ? new Date(order.date) : new Date();
         date.setDate(date.getDate() + 3);
         const start = date.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long' });
         date.setDate(date.getDate() + 2);
@@ -71,7 +72,7 @@ export default function CheckoutSuccess() {
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
-                                        Електронна поща
+                                        {t('order.email_label')}
                                     </p>
                                     <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{order.client.email}</p>
                                 </div>
@@ -82,7 +83,7 @@ export default function CheckoutSuccess() {
                                 </div>
                                 <div>
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
-                                        Доставка
+                                        {t('order.delivery_label')}
                                     </p>
                                     <p className="text-sm font-bold text-slate-900">{getEstimatedDelivery()}</p>
                                 </div>
@@ -100,7 +101,20 @@ export default function CheckoutSuccess() {
                                         {order.client.firstName} {order.client.lastName}
                                     </p>
                                     <div className="text-slate-600 space-y-1.5 font-medium">
-                                        {order.delivery.type !== 'pickup' ? (
+                                        {order.delivery.type === 'pickup' ? (
+                                            <p className="flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
+                                                {t(`checkout.${order.delivery.pickupLocation}`)}
+                                            </p>
+                                        ) : order.delivery.type === 'office' ? (
+                                            <>
+                                                <p className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
+                                                    {t(`checkout.courier_${order.delivery.courier}`)}
+                                                </p>
+                                                <p className="pl-3.5">{order.delivery.courierOffice}, {order.delivery.courierCity}</p>
+                                            </>
+                                        ) : (
                                             <>
                                                 <p className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
@@ -108,11 +122,6 @@ export default function CheckoutSuccess() {
                                                 </p>
                                                 <p className="pl-3.5">{order.delivery.address.postalCode} {order.delivery.address.city}</p>
                                             </>
-                                        ) : (
-                                            <p className="flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
-                                                {t(`checkout.${order.delivery.pickupLocation}`)}
-                                            </p>
                                         )}
                                         <p className="pl-3.5 pt-2 text-sm">{order.client.phone}</p>
                                     </div>
@@ -121,7 +130,7 @@ export default function CheckoutSuccess() {
 
                             <div>
                                 <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-6">
-                                    Детайли на поръчката
+                                    {t('order.order_details')}
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
@@ -145,12 +154,12 @@ export default function CheckoutSuccess() {
 
                                     <div className="pt-6 border-t border-slate-100 space-y-2">
                                         <div className="flex justify-between text-sm text-slate-500 font-medium">
-                                            <span>Междинна сума</span>
+                                            <span>{t('cart.subtotal')}</span>
                                             <span>{order.subtotal.toFixed(2)} лв</span>
                                         </div>
                                         <div className="flex justify-between text-sm text-slate-500 font-medium">
-                                            <span>Доставка</span>
-                                            <span>{order.deliveryFee === 0 ? 'Безплатна' : `${order.deliveryFee.toFixed(2)} лв`}</span>
+                                            <span>{t('cart.delivery')}</span>
+                                            <span>{order.deliveryFee === 0 ? t('order.free_label') : `${order.deliveryFee.toFixed(2)} лв`}</span>
                                         </div>
                                         <div className="flex justify-between pt-4 font-bold text-xl text-slate-900">
                                             <span>{t('cart.total')}</span>
@@ -174,14 +183,14 @@ export default function CheckoutSuccess() {
                                 onClick={() => window.print()}
                                 className="w-full md:w-auto text-slate-400 hover:text-slate-900 font-bold text-xs uppercase tracking-widest py-4 px-8 transition-colors"
                             >
-                                Принтирай разписка
+                                {t('order.print_receipt')}
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <p className="text-center text-slate-400 text-sm mt-12 font-medium">
-                    Имате въпроси? Свържете се с нас на <a href="mailto:support@recafe.bg" className="text-brand-primary hover:underline">support@recafe.bg</a>
+                    {t('order.questions')} <a href={`mailto:${siteConfig.supportEmail}`} className="text-brand-primary hover:underline">{siteConfig.supportEmail}</a>
                 </p>
             </div>
         </div>

@@ -46,6 +46,14 @@ export function useProducts() {
                     // Prioritize DB image, fallback to local
                     const validImages = product.image_url ? [product.image_url] : localImages;
 
+                    // Merchandising: sale price becomes the effective selling price so
+                    // cart/checkout math stays correct; originalPrice is kept for display.
+                    const onSale = product.sale_price != null && Number(product.sale_price) < Number(product.price);
+                    const effectivePrice = onSale ? Number(product.sale_price) : Number(product.price);
+
+                    // "New" badge: explicit admin-controlled flag
+                    const isNew = product.is_new === true;
+
                     return {
                         id: product.id,
                         slug: product.slug,
@@ -53,7 +61,10 @@ export function useProducts() {
                         nameEn: product.name_en,
                         description: product.description_bg,
                         descriptionEn: product.description_en,
-                        price: product.price,
+                        price: effectivePrice,
+                        originalPrice: onSale ? Number(product.price) : null,
+                        onSale,
+                        isNew,
                         currency: 'BGN', // Hardcoded for now
                         images: validImages,
                         category: product.category,
