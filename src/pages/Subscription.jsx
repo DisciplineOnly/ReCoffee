@@ -88,7 +88,7 @@ export default function Subscription() {
         `p-4 border-2 rounded-xl transition-all text-left w-full ${selected ? 'border-brand-primary bg-brand-primary/5 shadow-inner' : 'border-slate-200 hover:border-brand-primary/40'}`;
 
     return (
-        <div className="min-h-screen bg-white py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-white pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-[1100px] mx-auto px-6 md:px-12">
                 <PageHeader
                     badge={t('subscriptionPage.badge')}

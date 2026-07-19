@@ -15,6 +15,8 @@ import Learn from './pages/Learn';
 import LearnArticle from './pages/LearnArticle';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Faq from './pages/Faq';
+import Delivery from './pages/Delivery';
 import Wishlist from './pages/Wishlist';
 import Account from './pages/Account';
 import Privacy from './pages/legal/Privacy';
@@ -72,6 +74,8 @@ function App() {
                 <Route path="/learn/:slug" element={<LearnArticle />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/faq" element={<Faq />} />
+                <Route path="/delivery" element={<Delivery />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/privacy" element={<Privacy />} />

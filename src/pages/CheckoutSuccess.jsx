@@ -33,7 +33,7 @@ export default function CheckoutSuccess() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-4xl mx-auto px-6">
                 <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 slide-in-up">
                     {/* Header */}

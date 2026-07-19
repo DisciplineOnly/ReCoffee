@@ -8,8 +8,22 @@
             "learn": "Learn",
             "account": "Account",
             "wishlist": "Wishlist",
+            "cart": "Cart",
             "menu": "Menu",
             "close": "Close"
+        },
+        "topbar": {
+            "free_shipping": "Free shipping on orders above 50€",
+            "faq": "FAQ",
+            "delivery": "Delivery",
+            "contacts": "Contacts"
+        },
+        "categories": {
+            "coffee": "Coffee",
+            "coffee_machines": "Coffee Machines",
+            "consumables": "Consumables",
+            "plates": "Plates",
+            "accessories": "Accessories"
         }
     },
     "search": {
@@ -21,11 +35,14 @@
         "hint": "Start typing to search the catalog"
     },
     "hero": {
-        "badge": "Freshly Roasted",
-        "title": "ReCoffee - Restart Your Senses!",
-        "description": "Experience the boldest flavors and artisanal roasting. Our signature beans deliver a bright, balanced cup every time.",
-        "cta_primary": "Shop Our Roast",
-        "cta_secondary": "View All Blends",
+        "badge": "Specialty Coffee Since 2021",
+        "title": "Specialty Coffee, Roasted with Care — for Home & Business",
+        "trust_1": "Freshly roasted in small batches at our own Sofia roastery",
+        "trust_2": "5+ years on the market and 10,000+ happy customers",
+        "trust_3": "Trusted partner to cafes, offices and hotels across Bulgaria",
+        "trust_4": "500+ positive customer reviews",
+        "cta_primary": "Shop Our Coffee",
+        "cta_secondary": "Subscribe & Save 15%",
         "roast_intensity": "Roast Intensity",
         "roast_level": "Bold & Smooth"
     },
@@ -153,6 +170,16 @@
         "title": "Our Story",
         "cta_shop": "Browse the coffees",
         "cta_contact": "Get in touch"
+    },
+    "faq": {
+        "badge": "FAQ",
+        "title": "Frequently asked questions",
+        "intro": "Answers to the questions we hear most often — about orders, delivery, subscriptions and our coffee."
+    },
+    "deliveryPage": {
+        "badge": "Delivery",
+        "title": "Delivery & pickup",
+        "intro": "Everything you need to know about how and when your order arrives."
     },
     "contact": {
         "badge": "Contact",

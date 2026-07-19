@@ -17,7 +17,7 @@ export default function Wishlist() {
     const wishlistProducts = products.filter(p => wishlist.includes(p.slug));
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 <div className="mb-12">
                     <h1 className="text-4xl md:text-5xl font-serif text-slate-900 mb-4 font-bold">

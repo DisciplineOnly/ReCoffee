@@ -64,7 +64,7 @@ export default function Contact() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-[1100px] mx-auto px-6 md:px-12">
                 <PageHeader badge={t('contact.badge')} title={t('contact.title')} intro={t('contact.intro')} />
 

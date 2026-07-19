@@ -14,7 +14,7 @@ export default function Cart() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F6F4F2] py-24">
+        <div className="min-h-screen bg-[#F6F4F2] pt-12 pb-24">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 {/* Header */}
                 <div className="mb-8">

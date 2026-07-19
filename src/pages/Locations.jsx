@@ -13,7 +13,7 @@ export default function Locations() {
     });
 
     return (
-        <div className="min-h-screen bg-white py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-white pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 <PageHeader
                     badge={t('locationsPage.badge')}

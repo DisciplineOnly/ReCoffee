@@ -1,13 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import heroImage from '../../assets/hero-coffee.jpg';
 
 export default function Hero() {
     const { t } = useTranslation();
 
+    const trustPoints = [
+        t('hero.trust_1'),
+        t('hero.trust_2'),
+        t('hero.trust_3'),
+        t('hero.trust_4'),
+    ];
+
     return (
-        <main className="md:pt-40 md:pb-32 overflow-hidden pt-32 pb-24 relative bg-brand-primary">
+        <main className="md:pt-16 md:pb-32 overflow-hidden pt-12 pb-24 relative bg-brand-primary">
             <div className="max-w-[1400px] mx-auto w-full px-6 md:px-12 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
 
                 {/* Text Content */}
@@ -16,19 +24,30 @@ export default function Hero() {
                         {t('hero.badge')}
                     </span>
 
-                    <h2 className="md:text-7xl leading-[1.1] text-5xl font-normal text-white tracking-tight font-serif mb-8">
+                    <h2 className="md:text-6xl leading-[1.15] text-4xl font-normal text-white tracking-tight font-serif mb-8">
                         {t('hero.title')}
                     </h2>
 
-                    <p className="md:text-xl leading-relaxed text-lg font-light text-white/80 max-w-md mb-10">
-                        {t('hero.description')}
-                    </p>
+                    <ul className="flex flex-col gap-3 mb-10">
+                        {trustPoints.map((point) => (
+                            <li key={point} className="flex items-start gap-3 text-white/90">
+                                <CheckCircle2 className="w-5 h-5 text-white/70 flex-shrink-0 mt-0.5" />
+                                <span className="text-sm md:text-base font-light leading-snug">{point}</span>
+                            </li>
+                        ))}
+                    </ul>
 
-                    <div className="flex items-center gap-6">
-                        <Link to="/shop" className="inline-block uppercase hover:text-white hover:border-white transition-all text-xs font-bold text-white tracking-[0.15em] border-white border-b-2 pb-1">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Link
+                            to="/shop"
+                            className="inline-block px-8 py-4 md:px-10 md:py-5 bg-white text-brand-primary text-sm font-bold uppercase tracking-widest rounded-full shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all"
+                        >
                             {t('hero.cta_primary')}
                         </Link>
-                        <Link to="/shop?category=blend" className="inline-block text-xs font-bold tracking-[0.15em] uppercase text-white/60 border-b border-transparent hover:text-white transition-all">
+                        <Link
+                            to="/subscription"
+                            className="inline-block px-8 py-4 md:px-10 md:py-5 border-2 border-white text-white text-sm font-bold uppercase tracking-widest rounded-full hover:bg-white hover:text-brand-primary transition-all"
+                        >
                             {t('hero.cta_secondary')}
                         </Link>
                     </div>

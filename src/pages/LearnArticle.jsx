@@ -31,7 +31,7 @@ export default function LearnArticle() {
     const related = articles.filter(a => a.slug !== slug).slice(0, 3);
 
     return (
-        <div className="min-h-screen bg-white py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-white pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-3xl mx-auto px-6 md:px-12">
                 <Link
                     to="/learn"

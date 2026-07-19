@@ -42,7 +42,7 @@ function CheckoutContent() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F6F4F2] py-24">
+        <div className="min-h-screen bg-[#F6F4F2] pt-12 pb-24">
             <div className="max-w-[1400px] mx-auto px-6 md:px-12">
                 <div className="mb-12 text-center">
                     <h1 className="text-4xl md:text-5xl font-serif text-slate-900 mb-4">

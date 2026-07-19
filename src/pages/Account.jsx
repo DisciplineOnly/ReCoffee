@@ -136,7 +136,7 @@ export default function Account() {
     // ============ LOGGED IN ============
     if (session) {
         return (
-            <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+            <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
                 <div className="max-w-4xl mx-auto px-6 md:px-12">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                         <div className="flex items-center gap-4">
@@ -224,7 +224,7 @@ export default function Account() {
 
     // ============ LOGGED OUT ============
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-24 animate-in fade-in duration-700">
+        <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
             <div className="max-w-5xl mx-auto px-6 md:px-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Benefits */}
