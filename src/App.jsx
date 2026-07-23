@@ -10,7 +10,6 @@ import Checkout from './pages/Checkout';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import Subscription from './pages/Subscription';
 import Wholesale from './pages/Wholesale';
-import Locations from './pages/Locations';
 import Learn from './pages/Learn';
 import LearnArticle from './pages/LearnArticle';
 import About from './pages/About';
@@ -69,7 +68,6 @@ function App() {
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
                 <Route path="/subscription" element={<Subscription />} />
                 <Route path="/wholesale" element={<Wholesale />} />
-                <Route path="/locations" element={<Locations />} />
                 <Route path="/learn" element={<Learn />} />
                 <Route path="/learn/:slug" element={<LearnArticle />} />
                 <Route path="/about" element={<About />} />

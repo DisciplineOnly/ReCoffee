@@ -26,8 +26,7 @@ export const CheckoutProvider = ({ children }) => {
                 city: '',
                 postalCode: '',
                 notes: ''
-            },
-            pickupLocation: ''
+            }
         },
         payment: {
             method: 'card',
@@ -80,8 +79,7 @@ export const CheckoutProvider = ({ children }) => {
             client: { firstName: '', lastName: '', email: '', phone: '' },
             delivery: {
                 type: 'home',
-                address: { street: '', city: '', postalCode: '', notes: '' },
-                pickupLocation: ''
+                address: { street: '', city: '', postalCode: '', notes: '' }
             },
             payment: { method: 'card', cardType: 'visa' }
         });

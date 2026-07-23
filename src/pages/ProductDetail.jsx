@@ -9,6 +9,8 @@ import { useWishlist } from '../contexts/WishlistContext';
 import { useSEO } from '../hooks/useSEO';
 import { formatBgn, formatEur } from '../lib/price';
 import ProductReviews from '../components/shop/ProductReviews';
+import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../lib/categories';
+import { PLACEHOLDER_IMAGE, onImageError } from '../lib/productImage';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -58,11 +60,15 @@ export default function ProductDetail() {
         { value: 'french-press', label: t('product.french_press'), icon: '🫗' }
     ];
 
+    const grindable = hasGrindOptions(product);
+    const machine = isMachine(product);
+    const badgeKey = categoryBadgeKey(product.category);
+
     const handleAddToCart = async () => {
         setIsAdding(true);
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 600));
-        addToCart(product, quantity, selectedGrind);
+        addToCart(product, quantity, grindable ? selectedGrind : NO_GRIND);
         setIsAdding(false);
         setAddedToCart(true);
         setTimeout(() => setAddedToCart(false), 2000);
@@ -109,16 +115,17 @@ export default function ProductDetail() {
                     <div className="relative group">
                         <div className="aspect-square bg-[#F4F1EE] rounded-2xl overflow-hidden">
                             <img
-                                src={product.images[0]}
+                                src={product.images?.[0] || PLACEHOLDER_IMAGE}
+                                onError={onImageError}
                                 alt={product.name}
-                                className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-700"
+                                className={`w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-700 ${machine ? 'object-contain p-10' : 'object-cover mix-blend-multiply'}`}
                             />
                         </div>
 
                         {/* Badges */}
                         <div className="absolute top-6 left-6 flex flex-col items-start gap-2">
                             <span className="bg-white/90 backdrop-blur text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 font-bold shadow-sm">
-                                {t(`shop.badge_${product.category.replace('-', '_')}`)}
+                                {badgeKey ? t(badgeKey) : product.category}
                             </span>
                             {product.isNew && (
                                 <span className="bg-brand-secondary text-white text-[10px] uppercase tracking-[0.2em] px-5 py-2.5 font-bold shadow-sm">
@@ -157,12 +164,14 @@ export default function ProductDetail() {
                         </h1>
 
                         <div className="flex items-center gap-3 text-slate-500 mb-6 text-sm font-medium">
-                            <span className="px-3 py-1 bg-slate-100 rounded-full">{product.process}</span>
-                            <span>•</span>
-                            <span>{product.weight}g</span>
+                            {product.process && (
+                                <span className="px-3 py-1 bg-slate-100 rounded-full">{product.process}</span>
+                            )}
+                            {product.process && product.weight ? <span>•</span> : null}
+                            {product.weight ? <span>{product.weight}g</span> : null}
                         </div>
 
-                        {renderRoastLevel()}
+                        {product.roastLevel ? renderRoastLevel() : null}
 
                         <div className="my-8 flex items-baseline gap-4 flex-wrap">
                             <span className="text-5xl font-bold text-brand-primary">
@@ -180,12 +189,12 @@ export default function ProductDetail() {
                         </p>
 
                         {/* Flavor Notes */}
-                        <div className="mb-8">
+                        <div className={`mb-8 ${product.flavorNotes?.length ? '' : 'hidden'}`}>
                             <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                                 {t('product.flavor_notes')}
                             </h3>
                             <div className="flex flex-wrap gap-3">
-                                {product.flavorNotes.map((note, index) => (
+                                {(product.flavorNotes || []).map((note, index) => (
                                     <span
                                         key={index}
                                         className="px-5 py-2 bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-full shadow-sm hover:border-brand-accent/30 transition-colors"
@@ -196,8 +205,8 @@ export default function ProductDetail() {
                             </div>
                         </div>
 
-                        {/* Grind Type Selector */}
-                        <div className="mb-8">
+                        {/* Grind Type Selector — beans only */}
+                        <div className={`mb-8 ${grindable ? '' : 'hidden'}`}>
                             <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                                 {t('product.grind_type')}
                             </h3>

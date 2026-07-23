@@ -4,7 +4,6 @@
             "shop": "Shop",
             "subscription": "Subscription",
             "wholesale": "Wholesale",
-            "locations": "Locations",
             "learn": "Learn",
             "account": "Account",
             "wishlist": "Wishlist",
@@ -61,6 +60,12 @@
         "badge_limited": "Limited",
         "badge_decaf": "Decaf",
         "badge_equipment": "Equipment",
+        "group_coffee": "Coffee",
+        "group_machines": "Machines",
+        "badge_capsules": "Capsules",
+        "badge_grains": "Whole Bean",
+        "badge_machines_personal": "Personal Use",
+        "badge_machines_professional": "Professional",
         "badge_new": "New",
         "badge_sale": "Sale"
     },
@@ -142,19 +147,10 @@
         "success_title": "Inquiry sent!",
         "success_message": "Thank you for your interest! We'll contact you within 2 business days with a personal offer."
     },
-    "visit": {
-        "badge": "Locations",
-        "title": "Visit Our Cafes",
-        "cta": "View All Locations"
-    },
-    "locationsPage": {
-        "badge": "Locations",
-        "title": "Our stores",
-        "intro": "Drop by for freshly brewed coffee, tastings and our full selections. Every location is also a pickup point for online orders.",
-        "hours": "Opening hours",
-        "phone": "Phone",
-        "directions": "View on map",
-        "pickup_note": "In-store pickup of online orders — free."
+    "testimonials": {
+        "badge": "Testimonials",
+        "title": "What Our Customers Say",
+        "subtitle": "Over 500 positive reviews from businesses and coffee lovers across Bulgaria."
     },
     "learn": {
         "badge": "Learn",
@@ -331,7 +327,6 @@
         "delivery_method": "Delivery method",
         "home_delivery": "To address",
         "office_delivery": "To courier office",
-        "pickup": "Store pickup",
         "courier": "Courier",
         "courier_econt": "Econt",
         "courier_speedy": "Speedy",
@@ -360,10 +355,6 @@
         "required_field": "This field is required",
         "invalid_email": "Invalid email address",
         "invalid_phone": "Invalid phone number",
-        "select_location": "Select location",
-        "sofia_center": "Sofia - Center",
-        "sofia_lozenets": "Sofia - Lozenets",
-        "plovdiv_center": "Plovdiv - Center",
         "note_label": "Note:"
     },
     "order": {

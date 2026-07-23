@@ -56,7 +56,6 @@ export default function AdminOrders() {
 
     const describeDelivery = (order) => {
         const info = order.delivery_info || {};
-        if (info.type === 'pickup') return `Pickup: ${info.pickupLocation || '—'}`;
         if (info.type === 'office') return `${(info.courier || '').toUpperCase()} office: ${info.courierOffice || ''}, ${info.courierCity || ''}`;
         const address = info.address || {};
         return `Address: ${address.street || ''}, ${address.postalCode || ''} ${address.city || ''}`;

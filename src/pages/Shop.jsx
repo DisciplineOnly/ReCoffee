@@ -6,8 +6,25 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useProducts } from '../hooks/useProducts';
 import { useSEO } from '../hooks/useSEO';
+import { CATEGORY_TREE, LEAF_CATEGORIES, normalizeCategory, getCategoryGroup } from '../lib/categories';
 
-const VALID_CATEGORIES = ['single-origin', 'blend', 'limited'];
+// Deep links accept either a leaf ('capsules') or a whole group ('machines').
+const GROUP_IDS = CATEGORY_TREE.map(g => g.id);
+
+function categoriesFromParam(param) {
+    if (!param) return [];
+    if (LEAF_CATEGORIES.includes(param)) return [param];
+    if (GROUP_IDS.includes(param)) {
+        return CATEGORY_TREE.find(g => g.id === param).children.map(c => c.id);
+    }
+    // Legacy links (?category=single-origin) still resolve to their new leaf.
+    const legacy = normalizeCategory(param);
+    return legacy ? [legacy] : [];
+}
+
+function sameSelection(a, b) {
+    return a.length === b.length && a.every(v => b.includes(v));
+}
 
 export default function Shop() {
     const { t } = useTranslation();
@@ -22,7 +39,7 @@ export default function Shop() {
     const categoryParam = searchParams.get('category');
 
     const [filters, setFilters] = useState({
-        category: VALID_CATEGORIES.includes(categoryParam) ? [categoryParam] : [],
+        category: categoriesFromParam(categoryParam),
         roastLevel: [],
         inStockOnly: false
     });
@@ -31,13 +48,9 @@ export default function Shop() {
 
     // Keep category filter in sync with URL deep-links (footer/nav)
     useEffect(() => {
-        if (VALID_CATEGORIES.includes(categoryParam)) {
-            setFilters(prev =>
-                prev.category.length === 1 && prev.category[0] === categoryParam
-                    ? prev
-                    : { ...prev, category: [categoryParam] }
-            );
-        }
+        const next = categoriesFromParam(categoryParam);
+        if (next.length === 0) return;
+        setFilters(prev => (sameSelection(prev.category, next) ? prev : { ...prev, category: next }));
     }, [categoryParam]);
 
     const clearSearch = () => {
@@ -67,9 +80,9 @@ export default function Shop() {
             });
         }
 
-        // Category filter
+        // Category filter (products may still carry a legacy category value)
         if (filters.category.length > 0) {
-            filtered = filtered.filter(p => filters.category.includes(p.category));
+            filtered = filtered.filter(p => filters.category.includes(normalizeCategory(p.category)));
         }
 
         // Roast level filter
@@ -114,6 +127,18 @@ export default function Shop() {
         }));
     };
 
+    // Ticking a group ticks all of its leaves, unticking clears them.
+    const toggleGroup = (group) => {
+        const leaves = group.children.map(c => c.id);
+        const allSelected = leaves.every(id => filters.category.includes(id));
+        setFilters(prev => ({
+            ...prev,
+            category: allSelected
+                ? prev.category.filter(c => !leaves.includes(c))
+                : [...new Set([...prev.category, ...leaves])]
+        }));
+    };
+
     const toggleRoastLevel = (level) => {
         setFilters(prev => ({
             ...prev,
@@ -130,6 +155,10 @@ export default function Shop() {
             inStockOnly: false
         });
     };
+
+    const showRoastFilter =
+        filters.category.length === 0 ||
+        filters.category.some(c => getCategoryGroup(c) === 'coffee');
 
     const FilterSidebar = () => (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -148,25 +177,48 @@ export default function Shop() {
                 <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                     {t('shopPage.category')}
                 </h4>
-                <div className="space-y-3">
-                    {['single-origin', 'blend', 'limited'].map(category => (
-                        <label key={category} className="flex items-center gap-3 cursor-pointer group">
-                            <input
-                                type="checkbox"
-                                checked={filters.category.includes(category)}
-                                onChange={() => toggleCategory(category)}
-                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
-                            />
-                            <span className={`text-sm font-medium transition-colors ${filters.category.includes(category) ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
-                                {t(`shop.badge_${category.replace('-', '_')}`)}
-                            </span>
-                        </label>
-                    ))}
+                <div className="space-y-5">
+                    {CATEGORY_TREE.map(group => {
+                        const leaves = group.children.map(c => c.id);
+                        const allSelected = leaves.every(id => filters.category.includes(id));
+                        const someSelected = !allSelected && leaves.some(id => filters.category.includes(id));
+                        return (
+                            <div key={group.id}>
+                                <label className="flex items-center gap-3 cursor-pointer group mb-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        ref={el => { if (el) el.indeterminate = someSelected; }}
+                                        onChange={() => toggleGroup(group)}
+                                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                                    />
+                                    <span className={`text-sm font-bold uppercase tracking-wider transition-colors ${allSelected || someSelected ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                        {t(group.labelKey)}
+                                    </span>
+                                </label>
+                                <div className="space-y-3 pl-8 border-l border-slate-100">
+                                    {group.children.map(child => (
+                                        <label key={child.id} className="flex items-center gap-3 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.category.includes(child.id)}
+                                                onChange={() => toggleCategory(child.id)}
+                                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                                            />
+                                            <span className={`text-sm font-medium transition-colors ${filters.category.includes(child.id) ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                                                {t(child.labelKey)}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Roast Level Filter */}
-            <div className="mb-8">
+            {/* Roast Level Filter — meaningless once the view is machines-only */}
+            <div className={`mb-8 ${showRoastFilter ? '' : 'hidden'}`}>
                 <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
                     {t('shopPage.roast_level')}
                 </h4>

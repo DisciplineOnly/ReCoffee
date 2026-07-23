@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { siteConfig } from '../lib/siteConfig';
+import { onImageError, productImage } from '../lib/productImage';
 
 export default function CheckoutSuccess() {
     const { t } = useTranslation();
@@ -101,12 +102,7 @@ export default function CheckoutSuccess() {
                                         {order.client.firstName} {order.client.lastName}
                                     </p>
                                     <div className="text-slate-600 space-y-1.5 font-medium">
-                                        {order.delivery.type === 'pickup' ? (
-                                            <p className="flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
-                                                {t(`checkout.${order.delivery.pickupLocation}`)}
-                                            </p>
-                                        ) : order.delivery.type === 'office' ? (
+                                        {order.delivery.type === 'office' ? (
                                             <>
                                                 <p className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
@@ -138,7 +134,7 @@ export default function CheckoutSuccess() {
                                             <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
-                                                        <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
+                                                        <img src={productImage(item.product)} onError={onImageError} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-bold text-slate-900">{item.product.name}</p>

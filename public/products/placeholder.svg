@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500" role="img" aria-label="Product image coming soon">
+  <rect width="400" height="500" fill="#F4F1EE"/>
+  <g fill="none" stroke="#C9BFB4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M132 210h108v70a54 54 0 0 1-54 54h0a54 54 0 0 1-54-54z"/>
+    <path d="M240 226h22a26 26 0 0 1 0 52h-22"/>
+    <path d="M120 358h140"/>
+    <path d="M166 170c0-14 12-18 12-32M200 170c0-14 12-18 12-32"/>
+  </g>
+  <text x="200" y="418" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="18" fill="#A2988C">ReCoffee</text>
+</svg>

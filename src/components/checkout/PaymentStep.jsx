@@ -10,9 +10,6 @@ export default function PaymentStep() {
     const [paymentMethod, setPaymentMethod] = useState(checkoutData.payment.method);
     const [cardType, setCardType] = useState(checkoutData.payment.cardType);
 
-    const isPickup = checkoutData.delivery.type === 'pickup';
-    const cashAvailable = !isPickup;
-
     const handleSubmit = (e) => {
         e.preventDefault();
         updatePaymentInfo({ method: paymentMethod, cardType });
@@ -83,25 +80,20 @@ export default function PaymentStep() {
                         {/* Cash on Delivery */}
                         <button
                             type="button"
-                            onClick={() => cashAvailable && setPaymentMethod('cash')}
-                            disabled={!cashAvailable}
-                            className={`w-full p-6 border-2 rounded-lg transition-all text-left ${!cashAvailable
-                                ? 'opacity-50 cursor-not-allowed bg-slate-50'
-                                : paymentMethod === 'cash'
-                                    ? 'border-brand-primary bg-brand-primary/5'
-                                    : 'border-slate-200 hover:border-brand-primary/50'
+                            onClick={() => setPaymentMethod('cash')}
+                            className={`w-full p-6 border-2 rounded-lg transition-all text-left ${paymentMethod === 'cash'
+                                ? 'border-brand-primary bg-brand-primary/5'
+                                : 'border-slate-200 hover:border-brand-primary/50'
                                 }`}
                         >
                             <div className="flex items-start gap-4">
-                                <Banknote className={`w-6 h-6 mt-1 ${paymentMethod === 'cash' && cashAvailable ? 'text-brand-primary' : 'text-slate-400'}`} />
+                                <Banknote className={`w-6 h-6 mt-1 ${paymentMethod === 'cash' ? 'text-brand-primary' : 'text-slate-400'}`} />
                                 <div className="flex-1">
                                     <div className="text-base font-medium text-slate-900">
                                         {t('checkout.cash_on_delivery')}
                                     </div>
                                     <div className="text-sm text-slate-500 mt-1">
-                                        {cashAvailable
-                                            ? 'Плащане при доставка'
-                                            : 'Не е налично за вземане от магазин'}
+                                        Плащане при доставка
                                     </div>
                                 </div>
                             </div>

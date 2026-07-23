@@ -7,6 +7,8 @@ import { useWishlist } from '../../contexts/WishlistContext';
 import { formatBgn, formatEur } from '../../lib/price';
 import GrindTypeModal from '../ui/GrindTypeModal';
 import QuickViewModal from '../ui/QuickViewModal';
+import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../../lib/categories';
+import { PLACEHOLDER_IMAGE, onImageError } from '../../lib/productImage';
 
 export default function ProductCard({ product }) {
     const { t } = useTranslation();
@@ -15,8 +17,16 @@ export default function ProductCard({ product }) {
     const [showGrindModal, setShowGrindModal] = useState(false);
     const [showQuickView, setShowQuickView] = useState(false);
 
+    const machine = isMachine(product);
+    const grindable = hasGrindOptions(product);
+
     const handleAddToCart = (e) => {
         e.preventDefault();
+        // Capsules and machines have nothing to grind — straight into the cart.
+        if (!grindable) {
+            addToCart(product, 1, NO_GRIND);
+            return;
+        }
         setShowGrindModal(true);
     };
 
@@ -36,14 +46,8 @@ export default function ProductCard({ product }) {
     };
 
     const getCategoryBadge = () => {
-        const badges = {
-            'single-origin': t('shop.badge_single'),
-            'blend': t('shop.badge_blend'),
-            'limited': t('shop.badge_limited'),
-            'decaf': t('shop.badge_decaf'),
-            'equipment': t('shop.badge_equipment')
-        };
-        return badges[product.category] || product.category;
+        const key = categoryBadgeKey(product.category);
+        return key ? t(key) : product.category;
     };
 
     const discountPercent = product.onSale
@@ -75,9 +79,10 @@ export default function ProductCard({ product }) {
                 {/* Product Image */}
                 <div className="relative bg-[#F4F1EE] aspect-[4/5] overflow-hidden">
                     <img
-                        src={product.images[0]}
+                        src={product.images?.[0] || PLACEHOLDER_IMAGE}
+                        onError={onImageError}
                         alt={product.name}
-                        className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500"
+                        className={`w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-500 ${machine ? 'object-contain p-6' : 'object-cover mix-blend-multiply'}`}
                     />
 
                     {/* Badges */}
@@ -146,12 +151,16 @@ export default function ProductCard({ product }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 mb-3">
-                        {renderRoastLevel()}
-                        <span className="text-xs text-slate-400 uppercase tracking-wider">
-                            {t('hero.roast_intensity')}
-                        </span>
-                    </div>
+                    {product.roastLevel ? (
+                        <div className="flex items-center gap-2 mb-3">
+                            {renderRoastLevel()}
+                            <span className="text-xs text-slate-400 uppercase tracking-wider">
+                                {t('hero.roast_intensity')}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="mb-3" />
+                    )}
 
                     <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="text-2xl font-bold text-brand-accent">

@@ -5,6 +5,8 @@ import { useTranslation } from '../../lib/translations';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { formatBgn, formatEur } from '../../lib/price';
+import { hasGrindOptions, isMachine, NO_GRIND } from '../../lib/categories';
+import { PLACEHOLDER_IMAGE, onImageError } from '../../lib/productImage';
 
 export default function QuickViewModal({ product, onClose }) {
     const { t } = useTranslation();
@@ -32,8 +34,11 @@ export default function QuickViewModal({ product, onClose }) {
         { value: 'french-press', label: t('product.french_press') }
     ];
 
+    const grindable = hasGrindOptions(product);
+    const machine = isMachine(product);
+
     const handleAddToCart = () => {
-        addToCart(product, 1, selectedGrind);
+        addToCart(product, 1, grindable ? selectedGrind : NO_GRIND);
         setAdded(true);
         setTimeout(() => {
             setAdded(false);
@@ -61,9 +66,10 @@ export default function QuickViewModal({ product, onClose }) {
                     {/* Image */}
                     <div className="relative bg-[#F4F1EE] aspect-square md:aspect-auto">
                         <img
-                            src={product.images[0]}
+                            src={product.images?.[0] || PLACEHOLDER_IMAGE}
+                            onError={onImageError}
                             alt={product.name}
-                            className="w-full h-full object-cover mix-blend-multiply opacity-90"
+                            className={`w-full h-full opacity-90 ${machine ? 'object-contain p-8' : 'object-cover mix-blend-multiply'}`}
                         />
                         <div className="absolute top-4 left-4 flex flex-col gap-2">
                             {product.isNew && (
@@ -108,24 +114,28 @@ export default function QuickViewModal({ product, onClose }) {
                             </div>
                         )}
 
-                        {/* Grind Select */}
-                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">
-                            {t('product.grind_type')}
-                        </h4>
-                        <div className="grid grid-cols-2 gap-2 mb-6">
-                            {grindTypes.map((grind) => (
-                                <button
-                                    key={grind.value}
-                                    onClick={() => setSelectedGrind(grind.value)}
-                                    className={`px-3 py-2.5 border-2 rounded-lg transition-all text-xs font-bold ${selectedGrind === grind.value
-                                        ? 'border-brand-primary bg-brand-primary/5 text-slate-900'
-                                        : 'border-slate-100 text-slate-500 hover:border-brand-primary/30'
-                                        }`}
-                                >
-                                    {grind.label}
-                                </button>
-                            ))}
-                        </div>
+                        {/* Grind Select — beans only */}
+                        {grindable && (
+                            <>
+                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3">
+                                    {t('product.grind_type')}
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2 mb-6">
+                                    {grindTypes.map((grind) => (
+                                        <button
+                                            key={grind.value}
+                                            onClick={() => setSelectedGrind(grind.value)}
+                                            className={`px-3 py-2.5 border-2 rounded-lg transition-all text-xs font-bold ${selectedGrind === grind.value
+                                                ? 'border-brand-primary bg-brand-primary/5 text-slate-900'
+                                                : 'border-slate-100 text-slate-500 hover:border-brand-primary/30'
+                                                }`}
+                                        >
+                                            {grind.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <div className="mt-auto space-y-3">
                             <div className="flex gap-3">

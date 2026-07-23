@@ -91,8 +91,10 @@ export default function Footer() {
                         <h4 className="text-xs font-bold uppercase tracking-widest text-brand-secondary mb-6">{t('header.nav.shop')}</h4>
                         <ul className="space-y-4">
                             <li><Link to="/shop" className={footerLinkClass}>{t('footer.links.all_coffee')}</Link></li>
-                            <li><Link to="/shop?category=single-origin" className={footerLinkClass}>{t('footer.links.single_origin')}</Link></li>
-                            <li><Link to="/shop?category=blend" className={footerLinkClass}>{t('footer.links.blends')}</Link></li>
+                            <li><Link to="/shop?category=grains" className={footerLinkClass}>{t('shop.badge_grains')}</Link></li>
+                            <li><Link to="/shop?category=capsules" className={footerLinkClass}>{t('shop.badge_capsules')}</Link></li>
+                            <li><Link to="/shop?category=machines-personal" className={footerLinkClass}>{t('shop.badge_machines_personal')}</Link></li>
+                            <li><Link to="/shop?category=machines-professional" className={footerLinkClass}>{t('shop.badge_machines_professional')}</Link></li>
                             <li><Link to="/subscription" className={footerLinkClass}>{t('footer.links.subscriptions')}</Link></li>
                             <li><Link to="/wishlist" className={footerLinkClass}>{t('footer.links.wishlist')}</Link></li>
                         </ul>
@@ -103,7 +105,6 @@ export default function Footer() {
                         <h4 className="text-xs font-bold uppercase tracking-widest text-brand-secondary mb-6">{t('footer.company_group')}</h4>
                         <ul className="space-y-4">
                             <li><Link to="/about" className={footerLinkClass}>{t('footer.links.our_story')}</Link></li>
-                            <li><Link to="/locations" className={footerLinkClass}>{t('header.nav.locations')}</Link></li>
                             <li><Link to="/learn" className={footerLinkClass}>{t('footer.links.learn')}</Link></li>
                             <li><Link to="/contact" className={footerLinkClass}>{t('footer.links.contact')}</Link></li>
                         </ul>

@@ -219,10 +219,20 @@ export default function ProductForm() {
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none bg-white"
                             >
-                                <option value="single-origin">Single Origin</option>
-                                <option value="blend">Blend</option>
-                                <option value="decaf">Decaf</option>
-                                <option value="equipment">Equipment</option>
+                                <optgroup label="Coffee">
+                                    <option value="capsules">Capsules</option>
+                                    <option value="grains">Whole Bean</option>
+                                </optgroup>
+                                <optgroup label="Machines">
+                                    <option value="machines-personal">Personal Use</option>
+                                    <option value="machines-professional">Professional</option>
+                                </optgroup>
+                                <optgroup label="Legacy">
+                                    <option value="single-origin">Single Origin</option>
+                                    <option value="blend">Blend</option>
+                                    <option value="limited">Limited</option>
+                                    <option value="decaf">Decaf</option>
+                                </optgroup>
                             </select>
                         </div>
                     </div>

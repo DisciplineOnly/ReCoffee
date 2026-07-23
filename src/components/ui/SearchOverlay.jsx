@@ -4,6 +4,7 @@ import { Search, X, ArrowRight } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useProducts } from '../../hooks/useProducts';
 import { formatPrice } from '../../lib/price';
+import { onImageError, productImage } from '../../lib/productImage';
 
 export default function SearchOverlay({ onClose }) {
     const { t } = useTranslation();
@@ -100,7 +101,7 @@ export default function SearchOverlay({ onClose }) {
                                             className="w-full flex items-center gap-4 py-4 text-left hover:bg-slate-50 transition-colors px-2 rounded-lg group"
                                         >
                                             <div className="w-14 h-14 bg-[#F4F1EE] rounded-lg overflow-hidden flex-shrink-0">
-                                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover mix-blend-multiply" />
+                                                <img src={productImage(product)} onError={onImageError} alt={product.name} className="w-full h-full object-cover mix-blend-multiply" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-serif text-lg text-slate-900 group-hover:text-brand-primary transition-colors truncate">

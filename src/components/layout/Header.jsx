@@ -52,17 +52,16 @@ export default function Header() {
         { to: '/shop', label: t('header.nav.shop') },
         { to: '/subscription', label: t('header.nav.subscription') },
         { to: '/wholesale', label: t('header.nav.wholesale') },
-        { to: '/locations', label: t('header.nav.locations') },
         { to: '/learn', label: t('header.nav.learn') },
         { to: '/account', label: t('header.nav.account') },
     ];
 
     const categoryNav = [
-        { to: '/shop', label: t('header.categories.coffee') },
-        { to: '/shop?category=equipment', label: t('header.categories.coffee_machines') },
-        { to: '/shop?category=consumables', label: t('header.categories.consumables') },
-        { to: '/shop?category=plates', label: t('header.categories.plates') },
-        { to: '/shop?category=accessories', label: t('header.categories.accessories') },
+        { to: '/shop?category=coffee', label: t('shop.group_coffee') },
+        { to: '/shop?category=capsules', label: t('shop.badge_capsules') },
+        { to: '/shop?category=grains', label: t('shop.badge_grains') },
+        { to: '/shop?category=machines-personal', label: t('shop.badge_machines_personal') },
+        { to: '/shop?category=machines-professional', label: t('shop.badge_machines_professional') },
     ];
 
     return (
@@ -74,95 +73,101 @@ export default function Header() {
                     className={`hidden md:block overflow-hidden border-b border-slate-200/60 transition-[max-height,opacity] duration-300 ${scrolled ? 'max-h-0 opacity-0 border-transparent' : 'max-h-12 opacity-100'
                         }`}
                 >
-                    <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-2 flex items-center justify-between gap-6">
-                        <a href={siteConfig.phoneHref} className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-brand-primary transition-colors flex-shrink-0">
-                            <Phone className="w-3.5 h-3.5" />
-                            {siteConfig.phone}
-                        </a>
-                        <p className="text-xs font-medium tracking-wide text-slate-500 text-center flex-1">
-                            {t('header.topbar.free_shipping')}
-                        </p>
-                        <nav className="flex items-center gap-6 flex-shrink-0">
-                            <Link to="/faq" className={topLinkClass}>{t('header.topbar.faq')}</Link>
-                            <Link to="/delivery" className={topLinkClass}>{t('header.topbar.delivery')}</Link>
-                            <Link to="/contact" className={topLinkClass}>{t('header.topbar.contacts')}</Link>
-                        </nav>
+                    <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-12 md:gap-12">
+                        <div className="md:col-start-2 md:col-span-11 py-2 flex items-center justify-between gap-6">
+                            <a href={siteConfig.phoneHref} className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-brand-primary transition-colors flex-shrink-0">
+                                <Phone className="w-3.5 h-3.5" />
+                                {siteConfig.phone}
+                            </a>
+                            <p className="text-xs font-medium tracking-wide text-slate-500 text-center flex-1">
+                                {t('header.topbar.free_shipping')}
+                            </p>
+                            <nav className="flex items-center gap-6 flex-shrink-0">
+                                <Link to="/faq" className={topLinkClass}>{t('header.topbar.faq')}</Link>
+                                <Link to="/delivery" className={topLinkClass}>{t('header.topbar.delivery')}</Link>
+                                <Link to="/contact" className={topLinkClass}>{t('header.topbar.contacts')}</Link>
+                            </nav>
+                        </div>
                     </div>
                 </div>
 
                 {/* Main row: logo, search, icons */}
-                <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-4 flex items-center justify-between gap-4 md:gap-8">
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                        {/* Mobile Menu Icon */}
-                        <button
-                            onClick={() => setShowMobileMenu(true)}
-                            aria-label={t('header.nav.menu')}
-                            className="md:hidden text-slate-800 hover:text-brand-primary transition-colors"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </button>
+                <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-12 md:gap-12">
+                    <div className="md:col-start-2 md:col-span-11 py-4 flex items-center justify-between gap-4 md:gap-8">
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                            {/* Mobile Menu Icon */}
+                            <button
+                                onClick={() => setShowMobileMenu(true)}
+                                aria-label={t('header.nav.menu')}
+                                className="md:hidden text-slate-800 hover:text-brand-primary transition-colors"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
 
-                        <Link to="/" className="group flex-shrink-0">
-                            <img src={logo} alt="ReCaffe Logo" className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105" />
-                        </Link>
-                    </div>
+                            <Link to="/" className="group flex-shrink-0">
+                                <img src={logo} alt="ReCaffe Logo" className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105" />
+                            </Link>
+                        </div>
 
-                    {/* Search bar */}
-                    <button
-                        onClick={() => setShowSearch(true)}
-                        className="hidden md:flex flex-1 max-w-2xl items-center gap-3 bg-white border border-slate-200 rounded-full px-5 py-3 text-left hover:border-brand-primary/40 transition-colors"
-                    >
-                        <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <span className="text-sm text-slate-400 truncate">{t('search.placeholder')}</span>
-                    </button>
-
-                    {/* Icons */}
-                    <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
+                        {/* Search bar */}
                         <button
                             onClick={() => setShowSearch(true)}
-                            aria-label={t('search.title')}
-                            className="md:hidden text-slate-800 hover:text-brand-primary transition-colors"
+                            className="hidden md:flex flex-1 max-w-2xl items-center gap-3 bg-white border border-slate-200 rounded-full px-5 py-3 text-left hover:border-brand-primary/40 transition-colors"
                         >
-                            <Search className="w-5 h-5" />
+                            <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                            <span className="text-sm text-slate-400 truncate">{t('search.placeholder')}</span>
                         </button>
-                        <Link
-                            to="/account"
-                            aria-label={t('header.nav.account')}
-                            className="text-slate-800 hover:text-brand-primary transition-colors group hidden sm:block"
-                        >
-                            <User className="w-5 h-5 transition-transform group-hover:scale-110" />
-                        </Link>
-                        <Link
-                            to="/wishlist"
-                            aria-label={t('header.nav.wishlist')}
-                            className="relative text-slate-800 hover:text-brand-primary transition-colors group hidden sm:block"
-                        >
-                            <Heart className="w-5 h-5 transition-transform group-hover:scale-110" />
-                            {wishlistCount > 0 && (
-                                <span className="absolute -top-1 -right-2 bg-brand-secondary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                                    {wishlistCount}
-                                </span>
-                            )}
-                        </Link>
-                        <Link to="/cart" aria-label={t('header.nav.cart')} className="relative text-slate-800 hover:text-brand-primary transition-colors group">
-                            <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110" />
-                            {cartCount > 0 && (
-                                <span className={`absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold transition-transform ${animateBadge ? 'scale-125' : 'scale-100'}`}>
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
+
+                        {/* Icons */}
+                        <div className="flex items-center gap-4 md:gap-6 flex-shrink-0">
+                            <button
+                                onClick={() => setShowSearch(true)}
+                                aria-label={t('search.title')}
+                                className="md:hidden text-slate-800 hover:text-brand-primary transition-colors"
+                            >
+                                <Search className="w-5 h-5" />
+                            </button>
+                            <Link
+                                to="/account"
+                                aria-label={t('header.nav.account')}
+                                className="text-slate-800 hover:text-brand-primary transition-colors group hidden sm:block"
+                            >
+                                <User className="w-5 h-5 transition-transform group-hover:scale-110" />
+                            </Link>
+                            <Link
+                                to="/wishlist"
+                                aria-label={t('header.nav.wishlist')}
+                                className="relative text-slate-800 hover:text-brand-primary transition-colors group hidden sm:block"
+                            >
+                                <Heart className="w-5 h-5 transition-transform group-hover:scale-110" />
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-2 bg-brand-secondary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                                        {wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
+                            <Link to="/cart" aria-label={t('header.nav.cart')} className="relative text-slate-800 hover:text-brand-primary transition-colors group">
+                                <ShoppingBag className="w-5 h-5 transition-transform group-hover:scale-110" />
+                                {cartCount > 0 && (
+                                    <span className={`absolute -top-1 -right-2 bg-brand-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold transition-transform ${animateBadge ? 'scale-125' : 'scale-100'}`}>
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
                 {/* Category bar */}
                 <div className="border-t border-slate-200/60">
-                    <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-3 flex items-center gap-6 md:gap-10 overflow-x-auto no-scrollbar">
-                        {categoryNav.map(item => (
-                            <Link key={item.label} to={item.to} className={categoryLinkClass}>
-                                {item.label}
-                            </Link>
-                        ))}
+                    <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-12 md:gap-12">
+                        <div className="md:col-start-2 md:col-span-11 py-3 flex items-center gap-6 md:gap-10 overflow-x-auto no-scrollbar">
+                            {categoryNav.map(item => (
+                                <Link key={item.label} to={item.to} className={categoryLinkClass}>
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </header>

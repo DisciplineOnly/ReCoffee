@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, MapPin, Clock, Banknote } from 'lucide-react';
+import { Truck, PackageCheck, Clock, Banknote } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { siteConfig } from '../lib/siteConfig';
@@ -10,7 +10,7 @@ export default function Delivery() {
     const { t } = useTranslation();
     useSEO({
         title: t('deliveryPage.title'),
-        description: 'Условия за доставка на ReCoffee — куриери, цени, срокове и пунктове за получаване.',
+        description: 'Условия за доставка на ReCoffee — куриери, цени и срокове в цялата страна.',
     });
 
     const cards = [
@@ -30,9 +30,9 @@ export default function Delivery() {
             text: `${siteConfig.orderCutoff} Обичайно доставката отнема 1–2 работни дни в зависимост от дестинацията.`,
         },
         {
-            icon: MapPin,
-            title: 'Получаване от кафене',
-            text: 'Всяка наша локация е и пункт за безплатно получаване на онлайн поръчки — избери я при плащане.',
+            icon: PackageCheck,
+            title: 'Проследяване на пратката',
+            text: 'Получаваш номер за проследяване веднага след изпращане, за да следиш пратката си в реално време.',
         },
     ];
 
@@ -41,7 +41,7 @@ export default function Delivery() {
             <div className="max-w-[1100px] mx-auto px-6 md:px-12">
                 <PageHeader badge={t('deliveryPage.badge')} title={t('deliveryPage.title')} intro={t('deliveryPage.intro')} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {cards.map((card) => {
                         const Icon = card.icon;
                         return (
@@ -54,21 +54,6 @@ export default function Delivery() {
                             </div>
                         );
                     })}
-                </div>
-
-                <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-slate-100">
-                    <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900 mb-8">
-                        {t('locationsPage.title')}
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {siteConfig.locations.map((loc) => (
-                            <div key={loc.id} className="border border-slate-100 rounded-xl p-5">
-                                <p className="font-medium text-slate-900 mb-1">{loc.name}</p>
-                                <p className="text-sm text-slate-500 mb-1">{loc.address}</p>
-                                <p className="text-xs text-slate-400">{loc.hours}</p>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
         </div>

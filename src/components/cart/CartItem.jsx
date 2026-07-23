@@ -2,6 +2,8 @@ import React from 'react';
 import { Trash2, Minus, Plus } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCart } from '../../contexts/CartContext';
+import { NO_GRIND } from '../../lib/categories';
+import { onImageError, productImage } from '../../lib/productImage';
 
 export default function CartItem({ item }) {
     const { t } = useTranslation();
@@ -37,7 +39,8 @@ export default function CartItem({ item }) {
             {/* Product Image */}
             <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 bg-[#F4F1EE] rounded-lg overflow-hidden">
                 <img
-                    src={item.product.images[0]}
+                    src={productImage(item.product)}
+                    onError={onImageError}
                     alt={item.product.name}
                     className="w-full h-full object-cover mix-blend-multiply opacity-90"
                 />
@@ -51,8 +54,12 @@ export default function CartItem({ item }) {
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
                         <span>{item.product.origin}</span>
-                        <span>•</span>
-                        <span>{getGrindTypeLabel()}</span>
+                        {item.grindType !== NO_GRIND && (
+                            <>
+                                <span>•</span>
+                                <span>{getGrindTypeLabel()}</span>
+                            </>
+                        )}
                     </div>
                 </div>
 

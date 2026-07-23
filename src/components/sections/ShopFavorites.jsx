@@ -6,6 +6,8 @@ import { useProducts } from '../../hooks/useProducts';
 import { useCart } from '../../contexts/CartContext';
 import { formatBgn } from '../../lib/price';
 import GrindTypeModal from '../ui/GrindTypeModal';
+import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../../lib/categories';
+import { PLACEHOLDER_IMAGE, onImageError } from '../../lib/productImage';
 
 const CARD_BACKGROUNDS = ['bg-[#F4F1EE]', 'bg-[#EAEAEA]', 'bg-[#F0EBE5]'];
 
@@ -19,19 +21,22 @@ export default function ShopFavorites() {
     const favorites = featured.length >= 3 ? featured : products.filter(p => p.inStock).slice(0, 3);
 
     const getCategoryBadge = (category) => {
-        const badges = {
-            'single-origin': t('shop.badge_single'),
-            'blend': t('shop.badge_blend'),
-            'limited': t('shop.badge_limited'),
-            'decaf': t('shop.badge_decaf'),
-            'equipment': t('shop.badge_equipment')
-        };
-        return badges[category] || category;
+        const key = categoryBadgeKey(category);
+        return key ? t(key) : category;
     };
 
     const handleGrindSelect = (grindType) => {
         addToCart(grindProduct, 1, grindType);
         setGrindProduct(null);
+    };
+
+    // Only beans open the grind picker; everything else goes straight to the cart.
+    const handleQuickAdd = (product) => {
+        if (hasGrindOptions(product)) {
+            setGrindProduct(product);
+            return;
+        }
+        addToCart(product, 1, NO_GRIND);
     };
 
     return (
@@ -63,8 +68,9 @@ export default function ShopFavorites() {
                             <Link key={product.id} to={`/shop/${product.slug}`} className="group cursor-pointer block">
                                 <div className={`relative ${CARD_BACKGROUNDS[index % CARD_BACKGROUNDS.length]} aspect-[4/5] mb-6 overflow-hidden`}>
                                     <img
-                                        src={product.images[0]}
-                                        className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500"
+                                        src={product.images?.[0] || PLACEHOLDER_IMAGE}
+                                        onError={onImageError}
+                                        className={`w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-500 ${isMachine(product) ? 'object-contain p-8' : 'object-cover mix-blend-multiply'}`}
                                         alt={product.name}
                                     />
                                     <div className="absolute top-4 left-4 flex flex-col items-start gap-2">
@@ -107,7 +113,7 @@ export default function ShopFavorites() {
                                             )}
                                         </span>
                                         <button
-                                            onClick={(e) => { e.preventDefault(); setGrindProduct(product); }}
+                                            onClick={(e) => { e.preventDefault(); handleQuickAdd(product); }}
                                             aria-label={t('product.add_to_cart')}
                                             className="text-slate-400 hover:text-brand-primary transition-colors"
                                         >

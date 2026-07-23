@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Home, Building, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Building } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import { useCart } from '../../contexts/CartContext';
@@ -12,7 +12,6 @@ export default function DeliveryStep() {
 
     const [deliveryType, setDeliveryType] = useState(checkoutData.delivery.type);
     const [address, setAddress] = useState(checkoutData.delivery.address);
-    const [pickupLocation, setPickupLocation] = useState(checkoutData.delivery.pickupLocation);
     const [courier, setCourier] = useState(checkoutData.delivery.courier || 'econt');
     const [courierCity, setCourierCity] = useState(checkoutData.delivery.courierCity || '');
     const [courierOffice, setCourierOffice] = useState(checkoutData.delivery.courierOffice || '');
@@ -39,10 +38,6 @@ export default function DeliveryStep() {
             if (!courierOffice.trim()) {
                 newErrors.courierOffice = t('checkout.required_field');
             }
-        } else if (deliveryType === 'pickup') {
-            if (!pickupLocation) {
-                newErrors.pickupLocation = t('checkout.required_field');
-            }
         }
 
         setErrors(newErrors);
@@ -55,7 +50,6 @@ export default function DeliveryStep() {
             updateDeliveryInfo({
                 type: deliveryType,
                 address: deliveryType === 'home' ? address : {},
-                pickupLocation: deliveryType === 'pickup' ? pickupLocation : '',
                 courier: deliveryType === 'office' ? courier : '',
                 courierCity: deliveryType === 'office' ? courierCity.trim() : '',
                 courierOffice: deliveryType === 'office' ? courierOffice.trim() : ''
@@ -90,7 +84,7 @@ export default function DeliveryStep() {
                         <label className="block text-sm font-medium text-slate-700 mb-3">
                             {t('checkout.delivery_method')} *
                         </label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {/* Home Delivery */}
                             <button
                                 type="button"
@@ -124,24 +118,6 @@ export default function DeliveryStep() {
                                 </div>
                                 <div className="text-xs text-slate-500 mt-1">
                                     {deliveryFee === 0 ? t('cart.free_delivery') : `${deliveryFee} лв`}
-                                </div>
-                            </button>
-
-                            {/* Pickup */}
-                            <button
-                                type="button"
-                                onClick={() => handleDeliveryTypeChange('pickup')}
-                                className={`p-4 border-2 rounded-lg transition-all text-left ${deliveryType === 'pickup'
-                                        ? 'border-brand-primary bg-brand-primary/5'
-                                        : 'border-slate-200 hover:border-brand-primary/50'
-                                    }`}
-                            >
-                                <MapPin className={`w-6 h-6 mb-2 ${deliveryType === 'pickup' ? 'text-brand-primary' : 'text-slate-400'}`} />
-                                <div className="text-sm font-medium text-slate-900">
-                                    {t('checkout.pickup')}
-                                </div>
-                                <div className="text-xs text-slate-500 mt-1">
-                                    {t('cart.free_delivery')}
                                 </div>
                             </button>
                         </div>
@@ -283,46 +259,6 @@ export default function DeliveryStep() {
                                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                 />
                             </div>
-                        </div>
-                    )}
-
-                    {/* Pickup Location Selection */}
-                    {deliveryType === 'pickup' && (
-                        <div className="pt-4">
-                            <label className="block text-sm font-medium text-slate-700 mb-3">
-                                {t('checkout.select_location')} *
-                            </label>
-                            <div className="space-y-2">
-                                {['sofia_center', 'sofia_lozenets', 'plovdiv_center'].map((location) => (
-                                    <label
-                                        key={location}
-                                        className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${pickupLocation === location
-                                                ? 'border-brand-primary bg-brand-primary/5'
-                                                : 'border-slate-200 hover:border-brand-primary/50'
-                                            }`}
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="pickupLocation"
-                                            value={location}
-                                            checked={pickupLocation === location}
-                                            onChange={(e) => {
-                                                setPickupLocation(e.target.value);
-                                                if (errors.pickupLocation) {
-                                                    setErrors(prev => ({ ...prev, pickupLocation: '' }));
-                                                }
-                                            }}
-                                            className="w-4 h-4 text-brand-primary border-slate-300 focus:ring-brand-primary"
-                                        />
-                                        <span className="ml-3 text-sm font-medium text-slate-900">
-                                            {t(`checkout.${location}`)}
-                                        </span>
-                                    </label>
-                                ))}
-                            </div>
-                            {errors.pickupLocation && (
-                                <p className="mt-2 text-sm text-red-600">{errors.pickupLocation}</p>
-                            )}
                         </div>
                     )}
 

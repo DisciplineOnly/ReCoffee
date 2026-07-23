@@ -5,6 +5,7 @@ import { useTranslation } from '../../lib/translations';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import { useCart } from '../../contexts/CartContext';
 import { supabase } from '../../lib/supabase';
+import { NO_GRIND } from '../../lib/categories';
 
 export default function ReviewStep() {
     const { t } = useTranslation();
@@ -31,8 +32,7 @@ export default function ReviewStep() {
     const getDeliveryTypeLabel = (type) => {
         const types = {
             'home': t('checkout.home_delivery'),
-            'office': t('checkout.office_delivery'),
-            'pickup': t('checkout.pickup')
+            'office': t('checkout.office_delivery')
         };
         return types[type] || type;
     };
@@ -207,12 +207,7 @@ export default function ReviewStep() {
                             <Check className="w-4 h-4 text-green-600" />
                             {getDeliveryTypeLabel(checkoutData.delivery.type)}
                         </p>
-                        {checkoutData.delivery.type === 'pickup' ? (
-                            <p className="flex items-center gap-2">
-                                <Check className="w-4 h-4 text-green-600" />
-                                {t(`checkout.${checkoutData.delivery.pickupLocation}`)}
-                            </p>
-                        ) : checkoutData.delivery.type === 'office' ? (
+                        {checkoutData.delivery.type === 'office' ? (
                             <p className="flex items-center gap-2">
                                 <Check className="w-4 h-4 text-green-600" />
                                 {getCourierLabel(checkoutData.delivery.courier)} — {checkoutData.delivery.courierOffice}, {checkoutData.delivery.courierCity}
@@ -267,7 +262,7 @@ export default function ReviewStep() {
                                 <div>
                                     <span className="text-slate-900 font-medium">{item.product.name}</span>
                                     <span className="text-slate-500 text-xs ml-2">
-                                        ({getGrindTypeLabel(item.grindType)}) x{item.quantity}
+                                        {item.grindType !== NO_GRIND && `(${getGrindTypeLabel(item.grindType)}) `}x{item.quantity}
                                     </span>
                                 </div>
                                 <span className="text-slate-900 font-medium">
