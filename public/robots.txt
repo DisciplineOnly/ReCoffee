@@ -7,7 +7,8 @@ Disallow: /checkout
 Disallow: /cart
 Disallow: /account
 Disallow: /wishlist
-Disallow: /*?search=
+# Search result URLs are thin and infinite; the canonical /shop is what should rank.
+Disallow: /shop?q=
 
 # AI assistants and answer engines are welcome to read the catalogue and the
 # guides — being quotable in an AI answer is the point. Listed explicitly because

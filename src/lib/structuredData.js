@@ -62,9 +62,11 @@ export function webSiteSchema() {
         publisher: { '@id': ORGANIZATION_ID },
         potentialAction: {
             '@type': 'SearchAction',
+            // `q` is the parameter Shop.jsx actually reads — see SearchOverlay,
+            // which navigates to /shop?q=…
             target: {
                 '@type': 'EntryPoint',
-                urlTemplate: `${SITE}/shop?search={search_term_string}`,
+                urlTemplate: `${SITE}/shop?q={search_term_string}`,
             },
             'query-input': 'required name=search_term_string',
         },

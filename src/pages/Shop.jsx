@@ -26,6 +26,129 @@ function sameSelection(a, b) {
     return a.length === b.length && a.every(v => b.includes(v));
 }
 
+/**
+ * Filter sidebar.
+ *
+ * Declared at module scope on purpose. It used to live inside Shop, which made
+ * it a fresh component type on every render — React then unmounted and remounted
+ * the whole subtree whenever a filter changed, so ticking a checkbox blurred it
+ * and dropped focus back to <body>. Keep it out here.
+ */
+function FilterSidebar({
+    t,
+    filters,
+    setFilters,
+    toggleGroup,
+    toggleCategory,
+    toggleRoastLevel,
+    clearFilters,
+    showRoastFilter,
+}) {
+    return (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900">{t('shopPage.filters')}</h3>
+                <button
+                    onClick={clearFilters}
+                    className="text-xs font-bold text-brand-primary hover:text-slate-900 transition-colors uppercase tracking-widest"
+                >
+                    {t('shopPage.clear_filters')}
+                </button>
+            </div>
+
+            {/* Category Filter */}
+            <div className="mb-8">
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
+                    {t('shopPage.category')}
+                </h4>
+                <div className="space-y-5">
+                    {CATEGORY_TREE.map(group => {
+                        const leaves = group.children.map(c => c.id);
+                        const allSelected = leaves.every(id => filters.category.includes(id));
+                        const someSelected = !allSelected && leaves.some(id => filters.category.includes(id));
+                        return (
+                            <div key={group.id}>
+                                <label className="flex items-center gap-3 cursor-pointer group mb-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        ref={el => { if (el) el.indeterminate = someSelected; }}
+                                        onChange={() => toggleGroup(group)}
+                                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                                    />
+                                    <span className={`text-sm font-bold uppercase tracking-wider transition-colors ${allSelected || someSelected ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                        {t(group.labelKey)}
+                                    </span>
+                                </label>
+                                <div className="space-y-3 pl-8 border-l border-slate-100">
+                                    {group.children.map(child => (
+                                        <label key={child.id} className="flex items-center gap-3 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.category.includes(child.id)}
+                                                onChange={() => toggleCategory(child.id)}
+                                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                                            />
+                                            <span className={`text-sm font-medium transition-colors ${filters.category.includes(child.id) ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                                                {t(child.labelKey)}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Roast Level Filter — meaningless once the view is machines-only */}
+            <div className={`mb-8 ${showRoastFilter ? '' : 'hidden'}`}>
+                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
+                    {t('shopPage.roast_level')}
+                </h4>
+                <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map(level => (
+                        <label key={level} className="flex items-center gap-3 cursor-pointer group">
+                            <input
+                                type="checkbox"
+                                checked={filters.roastLevel.includes(level)}
+                                onChange={() => toggleRoastLevel(level)}
+                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                            />
+                            <div className="flex items-center gap-2">
+                                {[...Array(5)].map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className={`w-2 h-2 rounded-full transition-colors ${i < level
+                                            ? (filters.roastLevel.includes(level) ? 'bg-brand-accent' : 'bg-brand-accent/40 group-hover:bg-brand-accent/60')
+                                            : 'bg-slate-200'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            {/* In Stock Filter */}
+            <div className="mb-6">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                        type="checkbox"
+                        checked={filters.inStockOnly}
+                        onChange={(e) => setFilters(prev => ({ ...prev, inStockOnly: e.target.checked }))}
+                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
+                    />
+                    <span className={`text-sm font-medium transition-colors ${filters.inStockOnly ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
+                        {t('shopPage.in_stock')}
+                    </span>
+                </label>
+            </div>
+        </div>
+    );
+}
+
 export default function Shop() {
     const { t } = useTranslation();
     const { products, loading: isLoading } = useProducts();
@@ -160,109 +283,18 @@ export default function Shop() {
         filters.category.length === 0 ||
         filters.category.some(c => getCategoryGroup(c) === 'coffee');
 
-    const FilterSidebar = () => (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
-                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-900">{t('shopPage.filters')}</h3>
-                <button
-                    onClick={clearFilters}
-                    className="text-xs font-bold text-brand-primary hover:text-slate-900 transition-colors uppercase tracking-widest"
-                >
-                    {t('shopPage.clear_filters')}
-                </button>
-            </div>
+    // Everything the hoisted FilterSidebar used to close over.
+    const filterProps = {
+        t,
+        filters,
+        setFilters,
+        toggleGroup,
+        toggleCategory,
+        toggleRoastLevel,
+        clearFilters,
+        showRoastFilter,
+    };
 
-            {/* Category Filter */}
-            <div className="mb-8">
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
-                    {t('shopPage.category')}
-                </h4>
-                <div className="space-y-5">
-                    {CATEGORY_TREE.map(group => {
-                        const leaves = group.children.map(c => c.id);
-                        const allSelected = leaves.every(id => filters.category.includes(id));
-                        const someSelected = !allSelected && leaves.some(id => filters.category.includes(id));
-                        return (
-                            <div key={group.id}>
-                                <label className="flex items-center gap-3 cursor-pointer group mb-3">
-                                    <input
-                                        type="checkbox"
-                                        checked={allSelected}
-                                        ref={el => { if (el) el.indeterminate = someSelected; }}
-                                        onChange={() => toggleGroup(group)}
-                                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
-                                    />
-                                    <span className={`text-sm font-bold uppercase tracking-wider transition-colors ${allSelected || someSelected ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                                        {t(group.labelKey)}
-                                    </span>
-                                </label>
-                                <div className="space-y-3 pl-8 border-l border-slate-100">
-                                    {group.children.map(child => (
-                                        <label key={child.id} className="flex items-center gap-3 cursor-pointer group">
-                                            <input
-                                                type="checkbox"
-                                                checked={filters.category.includes(child.id)}
-                                                onChange={() => toggleCategory(child.id)}
-                                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
-                                            />
-                                            <span className={`text-sm font-medium transition-colors ${filters.category.includes(child.id) ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
-                                                {t(child.labelKey)}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Roast Level Filter — meaningless once the view is machines-only */}
-            <div className={`mb-8 ${showRoastFilter ? '' : 'hidden'}`}>
-                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">
-                    {t('shopPage.roast_level')}
-                </h4>
-                <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map(level => (
-                        <label key={level} className="flex items-center gap-3 cursor-pointer group">
-                            <input
-                                type="checkbox"
-                                checked={filters.roastLevel.includes(level)}
-                                onChange={() => toggleRoastLevel(level)}
-                                className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
-                            />
-                            <div className="flex items-center gap-2">
-                                {[...Array(5)].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`w-2 h-2 rounded-full transition-colors ${i < level
-                                            ? (filters.roastLevel.includes(level) ? 'bg-brand-accent' : 'bg-brand-accent/40 group-hover:bg-brand-accent/60')
-                                            : 'bg-slate-200'
-                                            }`}
-                                    />
-                                ))}
-                            </div>
-                        </label>
-                    ))}
-                </div>
-            </div>
-
-            {/* In Stock Filter */}
-            <div className="mb-6">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                        type="checkbox"
-                        checked={filters.inStockOnly}
-                        onChange={(e) => setFilters(prev => ({ ...prev, inStockOnly: e.target.checked }))}
-                        className="w-5 h-5 text-brand-primary border-slate-200 rounded-lg focus:ring-brand-primary transition-all group-hover:border-brand-primary/50"
-                    />
-                    <span className={`text-sm font-medium transition-colors ${filters.inStockOnly ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-700'}`}>
-                        {t('shopPage.in_stock')}
-                    </span>
-                </label>
-            </div>
-        </div>
-    );
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] pt-12 pb-24 animate-in fade-in duration-700">
@@ -315,7 +347,7 @@ export default function Shop() {
                 <div className="flex gap-12">
                     {/* Desktop Filters Sidebar */}
                     <div className="hidden lg:block w-72 flex-shrink-0">
-                        <FilterSidebar />
+                        <FilterSidebar {...filterProps} />
                     </div>
 
                     {/* Products Grid */}
@@ -386,7 +418,7 @@ export default function Shop() {
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
-                            <FilterSidebar />
+                            <FilterSidebar {...filterProps} />
                         </div>
                     </div>
                 )}

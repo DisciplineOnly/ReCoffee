@@ -36,9 +36,14 @@ export const CartProvider = ({ children }) => {
             );
 
             if (existingIndex > -1) {
-                const newCart = [...prevCart];
-                newCart[existingIndex].quantity += quantity;
-                return newCart;
+                // Replace the entry rather than mutating it: [...prevCart] is a
+                // shallow copy, so `prevCart[existingIndex].quantity += …` would
+                // write straight into current state.
+                return prevCart.map((item, index) =>
+                    index === existingIndex
+                        ? { ...item, quantity: item.quantity + quantity }
+                        : item
+                );
             }
 
             return [...prevCart, { product, quantity, grindType }];
