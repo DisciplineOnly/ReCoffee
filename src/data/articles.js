@@ -1,5 +1,7 @@
 // Educational articles for the Learn section (BG content).
-// Each article: slug, title, excerpt, category, readMinutes, date, image, sections[].
+// Each article: slug, title, excerpt, category, readMinutes, date, sections[].
+// `image` is optional — add a path under public/ once real photography exists.
+// Until then the cards render a branded panel instead of a photo.
 
 export const articles = [
     {
@@ -9,7 +11,6 @@ export const articles = [
         category: 'Основи',
         readMinutes: 6,
         date: '2026-06-10',
-        image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2940&auto=format&fit=crop',
         sections: [
             {
                 heading: '1. Прясно изпечено, прясно смляно',
@@ -50,7 +51,6 @@ export const articles = [
         category: 'Методи',
         readMinutes: 8,
         date: '2026-05-22',
-        image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?q=80&w=2942&auto=format&fit=crop',
         sections: [
             {
                 heading: 'Какво ви трябва',
@@ -91,7 +91,6 @@ export const articles = [
         category: 'Методи',
         readMinutes: 7,
         date: '2026-04-15',
-        image: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?q=80&w=2940&auto=format&fit=crop',
         sections: [
             {
                 heading: 'Рецептата като отправна точка',
@@ -126,7 +125,6 @@ export const articles = [
         category: 'Основи',
         readMinutes: 4,
         date: '2026-03-02',
-        image: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2874&auto=format&fit=crop',
         sections: [
             {
                 heading: 'Четиримата врагове',
@@ -161,7 +159,6 @@ export const articles = [
         category: 'Знание',
         readMinutes: 5,
         date: '2026-02-18',
-        image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=2861&auto=format&fit=crop',
         sections: [
             {
                 heading: 'Какво се случва при печенето',
@@ -196,7 +193,6 @@ export const articles = [
         category: 'Оборудване',
         readMinutes: 5,
         date: '2026-01-20',
-        image: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?q=80&w=2940&auto=format&fit=crop',
         sections: [
             {
                 heading: 'Всеки ден: изплакване',

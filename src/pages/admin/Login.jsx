@@ -34,7 +34,6 @@ export default function AdminLogin() {
         <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50">
             {/* Left Side - Brand */}
             <div className="hidden md:flex flex-col justify-center items-center bg-brand-primary text-white p-12 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80')] bg-cover bg-center"></div>
                 <div className="relative z-10 text-center">
                     <Coffee size={64} className="mx-auto mb-6" />
                     <h1 className="text-4xl font-serif font-bold mb-4">ReCaffe</h1>

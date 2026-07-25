@@ -4,6 +4,7 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { getArticleBySlug, articles } from '../data/articles';
+import ArticleImage from '../components/ui/ArticleImage';
 
 export default function LearnArticle() {
     const { slug } = useParams();
@@ -54,7 +55,7 @@ export default function LearnArticle() {
                 </h1>
 
                 <div className="relative h-[400px] overflow-hidden rounded-2xl mb-12">
-                    <img src={article.image} alt={article.title} className="absolute inset-0 w-full h-full object-cover" />
+                    <ArticleImage src={article.image} alt={article.title} className="absolute inset-0 w-full h-full object-cover" />
                 </div>
 
                 <div className="space-y-10 mb-20">
@@ -79,7 +80,7 @@ export default function LearnArticle() {
                         {related.map((rel) => (
                             <Link key={rel.slug} to={`/learn/${rel.slug}`} className="group">
                                 <div className="relative h-36 overflow-hidden rounded-xl mb-3">
-                                    <img
+                                    <ArticleImage
                                         src={rel.image}
                                         alt={rel.title}
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

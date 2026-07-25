@@ -1,212 +1,12 @@
 [
     {
-        "id": "prod_001",
-        "slug": "mass-appeal",
-        "name": "Mass Appeal",
-        "nameEn": "Mass Appeal",
-        "description": "Млечен шоколад, карамел, червена ябълка. Балансирано кафе с гладък вкус, идеално за всеки ден.",
-        "descriptionEn": "Milk chocolate, caramel, red apple. Balanced coffee with smooth taste, perfect for everyday.",
-        "price": 45.0,
-        "currency": "BGN",
-        "images": [
-            "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/917d6f93-fb36-439a-8c48-884b67b35381_1600w.jpg"
-        ],
-        "category": "single-origin",
-        "origin": "Colombia",
-        "process": "Washed",
-        "roastLevel": 2,
-        "flavorNotes": [
-            "Млечен шоколад",
-            "Карамел",
-            "Червена ябълка"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": true
-    },
-    {
-        "id": "prod_002",
-        "slug": "thesis",
-        "name": "Thesis",
-        "nameEn": "Thesis",
-        "description": "Тъмен шоколад, печени ядки, меласа. Нашата фирмена смес със сезонни зърна.",
-        "descriptionEn": "Dark chocolate, roasted nuts, molasses. Our signature blend with seasonal beans.",
-        "price": 38.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=2940&auto=format&fit=crop"
-        ],
-        "category": "blend",
-        "origin": "Signature Blend",
-        "process": "Seasonal",
-        "roastLevel": 3,
-        "flavorNotes": [
-            "Тъмен шоколад",
-            "Печени ядки",
-            "Меласа"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": true
-    },
-    {
-        "id": "prod_003",
-        "slug": "gedeb-yirgacheffe",
-        "name": "Gedeb Yirgacheffe",
-        "nameEn": "Gedeb Yirgacheffe",
-        "description": "Боровинково конфитюр, лавандула, пчелен мед. Ограничено издание от Етиопия.",
-        "descriptionEn": "Blueberry jam, lavender, honeycomb. Limited edition from Ethiopia.",
-        "price": 52.0,
-        "currency": "BGN",
-        "images": [
-            "https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/4734259a-bad7-422f-981e-ce01e79184f2_1600w.jpg"
-        ],
-        "category": "limited",
-        "origin": "Ethiopia",
-        "process": "Natural",
-        "roastLevel": 1,
-        "flavorNotes": [
-            "Боровинково конфитюр",
-            "Лавандула",
-            "Пчелен мед"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": true
-    },
-    {
-        "id": "prod_004",
-        "slug": "brazil-santos",
-        "name": "Brazil Santos",
-        "nameEn": "Brazil Santos",
-        "description": "Лешник, какао, карамелизирана захар. Класическо бразилско кафе с богат вкус.",
-        "descriptionEn": "Hazelnut, cocoa, caramelized sugar. Classic Brazilian coffee with rich flavor.",
-        "price": 42.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=2961&auto=format&fit=crop"
-        ],
-        "category": "single-origin",
-        "origin": "Brazil",
-        "process": "Pulped Natural",
-        "roastLevel": 3,
-        "flavorNotes": [
-            "Лешник",
-            "Какао",
-            "Карамелизирана захар"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": false
-    },
-    {
-        "id": "prod_005",
-        "slug": "espresso-blend",
-        "name": "Espresso Blend",
-        "nameEn": "Espresso Blend",
-        "description": "Тъмна череша, тъмен шоколад, бадем. Перфектна смес за еспресо.",
-        "descriptionEn": "Dark cherry, dark chocolate, almond. Perfect blend for espresso.",
-        "price": 40.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=2787&auto=format&fit=crop"
-        ],
-        "category": "blend",
-        "origin": "Multi-Origin",
-        "process": "Various",
-        "roastLevel": 4,
-        "flavorNotes": [
-            "Тъмна череша",
-            "Тъмен шоколад",
-            "Бадем"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": false
-    },
-    {
-        "id": "prod_006",
-        "slug": "kenya-aa",
-        "name": "Kenya AA",
-        "nameEn": "Kenya AA",
-        "description": "Черна боровинка, грейпфрут, захарна тръстика. Ярко и живо кенийско кафе.",
-        "descriptionEn": "Blackcurrant, grapefruit, sugarcane. Bright and vibrant Kenyan coffee.",
-        "price": 48.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1511920170033-f8396924c348?q=80&w=2787&auto=format&fit=crop"
-        ],
-        "category": "single-origin",
-        "origin": "Kenya",
-        "process": "Washed",
-        "roastLevel": 2,
-        "flavorNotes": [
-            "Черна боровинка",
-            "Грейпфрут",
-            "Захарна тръстика"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": false
-    },
-    {
-        "id": "prod_007",
-        "slug": "decaf-colombia",
-        "name": "Decaf Colombia",
-        "nameEn": "Decaf Colombia",
-        "description": "Млечен шоколад, орех, мед. Безкофеиново кафе без компромис във вкуса.",
-        "descriptionEn": "Milk chocolate, walnut, honey. Decaf coffee without compromising taste.",
-        "price": 46.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=2787&auto=format&fit=crop"
-        ],
-        "category": "single-origin",
-        "origin": "Colombia",
-        "process": "Swiss Water",
-        "roastLevel": 2,
-        "flavorNotes": [
-            "Млечен шоколад",
-            "Орех",
-            "Мед"
-        ],
-        "weight": 250,
-        "inStock": true,
-        "featured": false
-    },
-    {
-        "id": "prod_008",
-        "slug": "seasonal-microlot",
-        "name": "Seasonal Microlot",
-        "nameEn": "Seasonal Microlot",
-        "description": "Променящи се вкусови ноти. Ограничена серия от малки партиди.",
-        "descriptionEn": "Changing flavor notes. Limited series from small batches.",
-        "price": 58.0,
-        "currency": "BGN",
-        "images": [
-            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2940&auto=format&fit=crop"
-        ],
-        "category": "limited",
-        "origin": "Rotating",
-        "process": "Various",
-        "roastLevel": 2,
-        "flavorNotes": [
-            "Сезонни",
-            "Уникални",
-            "Изненадващи"
-        ],
-        "weight": 250,
-        "inStock": false,
-        "featured": false
-    },
-    {
         "id": "prod_009",
         "slug": "illy-iperespresso-classico-espresso",
         "name": "illy iperEspresso Classico — Еспресо",
         "nameEn": "illy iperEspresso Classico — Espresso",
         "description": "Класическото печене на illy в капсула iperEspresso. 100% арабика от девет произхода, кадифена крема и балансиран вкус на карамел и цветя. Кутия от 100 капсули за приготвяне на еспресо.",
         "descriptionEn": "illy's classic roast in an iperEspresso capsule. 100% Arabica from nine origins, velvety crema and a balanced caramel-and-floral cup. Box of 100 espresso capsules.",
-        "price": 79.0,
+        "price": 79,
         "currency": "BGN",
         "images": [
             "/products/illy-iperespresso-classico-espresso.jpg"
@@ -231,7 +31,7 @@
         "nameEn": "illy iperEspresso Classico — Lungo",
         "description": "Същата класическа смес, дозирана за дълга напитка. По-лек и ароматен профил, който запазва сладостта на арабиката при по-голям обем. Кутия от 100 капсули за лунго.",
         "descriptionEn": "The same classic blend, dosed for a longer drink. A lighter, aromatic profile that keeps the Arabica sweetness at a bigger volume. Box of 100 lungo capsules.",
-        "price": 79.0,
+        "price": 79,
         "currency": "BGN",
         "images": [
             "/products/illy-iperespresso-classico-lungo.jpg"
@@ -256,7 +56,7 @@
         "nameEn": "illy iperEspresso Decaffeinato",
         "description": "Безкофеиново без компромис. Същата смес от 100% арабика, декофеинирана по щадящ метод — пълно тяло и сладост, подходящо за следобед и вечер. Кутия от 100 капсули.",
         "descriptionEn": "Decaf without the compromise. The same 100% Arabica blend, gently decaffeinated — full body and sweetness, made for afternoons and evenings. Box of 100 capsules.",
-        "price": 84.0,
+        "price": 84,
         "currency": "BGN",
         "images": [
             "/products/illy-iperespresso-decaffeinato.jpg"
@@ -281,7 +81,7 @@
         "nameEn": "illy iperEspresso Intenso",
         "description": "Тъмно печене за тези, които обичат по-плътно еспресо. Наситени ноти на какао и препечен хляб, дълъг финал и гъста крема. Кутия от 100 капсули.",
         "descriptionEn": "A bold roast for anyone who likes their espresso dense. Deep cocoa and toasted-bread notes, a long finish and thick crema. Box of 100 capsules.",
-        "price": 79.0,
+        "price": 79,
         "currency": "BGN",
         "images": [
             "/products/illy-iperespresso-intenso.jpg"
@@ -306,7 +106,7 @@
         "nameEn": "illy Easy — Red",
         "description": "Компактна капсулна машина за iperEspresso, широка колкото чаша. Две програмируеми дози (еспресо и лунго), загряване за под минута и автоматично изключване. Червено матово покритие.",
         "descriptionEn": "A compact iperEspresso capsule machine barely wider than a cup. Two programmable doses (espresso and lungo), under a minute to heat up and auto standby. Matte red finish.",
-        "price": 249.0,
+        "price": 249,
         "currency": "BGN",
         "images": [
             "/products/illy-easy-red.jpg"
@@ -327,7 +127,7 @@
         "nameEn": "illy Easy — Black",
         "description": "Същата компактна капсулна машина в матово черно. Двубутонно управление, резервоар от 0.75 л и автоматично изхвърляне на капсулата в контейнера.",
         "descriptionEn": "The same compact capsule machine in matte black. Two-button control, a 0.75 L tank and automatic capsule ejection into the collector.",
-        "price": 249.0,
+        "price": 249,
         "currency": "BGN",
         "images": [
             "/products/illy-easy-black.jpg"
@@ -348,7 +148,7 @@
         "nameEn": "Saeco Royal Professional",
         "description": "Автоматична машина зърна-в-чаша за дома и малкия офис. Керамична мелачка, вградена система за пара и гореща вода, програмируеми рецепти и две чаши едновременно. Реновирана и тествана.",
         "descriptionEn": "A bean-to-cup automatic for the home and small office. Ceramic burrs, built-in steam and hot-water wand, programmable recipes and two cups at once. Refurbished and tested.",
-        "price": 1890.0,
+        "price": 1890,
         "currency": "BGN",
         "images": [
             "/products/saeco-royal-professional.jpg"
@@ -369,7 +169,7 @@
         "nameEn": "Fiorenzato F64 — Grinder",
         "description": "Мелачка на дозиране с плоски ножове 64 мм и дигитален таймер. Микрометрична регулация за прецизна настройка на еспресото и стъклен бункер за 1.5 кг зърна.",
         "descriptionEn": "An on-demand grinder with 64 mm flat burrs and a digital timer. Micrometric adjustment for dialling espresso in precisely, plus a 1.5 kg bean hopper.",
-        "price": 1450.0,
+        "price": 1450,
         "currency": "BGN",
         "images": [
             "/products/fiorenzato-f64-grinder.jpg"
@@ -390,7 +190,7 @@
         "nameEn": "La Piccola Sara",
         "description": "Малка италианска машина за хартиени дози ESE. Помпа от 15 бара, термоблок и тяло от неръждаема стомана — професионално еспресо на плота в кухнята, без мелачка и без почистване.",
         "descriptionEn": "A small Italian machine for ESE paper pods. A 15-bar pump, thermoblock and stainless body — proper espresso on a kitchen counter, with no grinder and no cleanup.",
-        "price": 590.0,
+        "price": 590,
         "currency": "BGN",
         "images": [
             "/products/la-piccola-sara.jpg"
@@ -411,7 +211,7 @@
         "nameEn": "La Spaziale S2 — 2 Group",
         "description": "Двугрупова професионална еспресо машина за заведения с постоянен оборот. Топлообменен бойлер 11 л, електронно дозиране на четири програми за група и две парни струи. Гръб от неръждаема стомана.",
         "descriptionEn": "A two-group commercial espresso machine for venues with steady throughput. An 11 L heat-exchange boiler, electronic dosing with four programs per group and two steam wands. Stainless steel body.",
-        "price": 6900.0,
+        "price": 6900,
         "currency": "BGN",
         "images": [
             "/products/la-spaziale-s2-2gr.png"
@@ -432,7 +232,7 @@
         "nameEn": "Professional ESE Pod Machine — 2 Group",
         "description": "Двугрупова машина, работеща с хартиени дози ESE — без мелачка, без темпериране и без утайка. Идеална за хотели, офиси и обекти, където всяко еспресо трябва да е еднакво, независимо кой го прави.",
         "descriptionEn": "A two-group machine built around ESE paper pods — no grinder, no tamping, no puck to knock out. Made for hotels, offices and sites where every espresso has to taste the same no matter who pulls it.",
-        "price": 4200.0,
+        "price": 4200,
         "currency": "BGN",
         "images": [
             "/products/pro-2gr-ese-pod-machine.jpg"

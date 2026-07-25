@@ -44,15 +44,8 @@ export default function About() {
                     intro="ReCoffee започна през 2021 г. с една малка печатна машина, десет килограма зелено кафе и убеждението, че София заслужава кафе, изпечено с внимание."
                 />
 
-                {/* Story */}
-                <div className="relative h-[420px] overflow-hidden rounded-2xl mb-16">
-                    <img
-                        src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?q=80&w=2940&auto=format&fit=crop"
-                        alt="Печене на кафе в ReCoffee"
-                        className="absolute inset-0 w-full h-full object-cover"
-                    />
-                </div>
-
+                {/* Story. The stock hero photo that used to sit here was removed;
+                    drop a real roastery shot back in when one exists. */}
                 <div className="prose-recoffee max-w-3xl mx-auto text-slate-600 font-light leading-relaxed space-y-6 text-lg mb-20">
                     <p>
                         Всичко започна от едно пътуване до Адис Абеба и първата глътка прясно изпечен Yirgacheffe —

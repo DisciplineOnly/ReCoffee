@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Flame } from 'lucide-react';
+import { Globe, Flame, Coffee } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
 export default function Philosophy() {
     const { t } = useTranslation();
     return (
         <section className="grid grid-cols-1 md:grid-cols-2">
-            <div className="relative h-[600px] md:h-auto overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2942&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover" alt="Pour over coffee" />
+            {/* Awaiting real photography — a brand panel until then, so the
+                two-column composition still holds. */}
+            <div className="relative h-[600px] md:h-auto overflow-hidden bg-brand-primary/5 flex items-center justify-center">
+                <Coffee className="w-20 h-20 text-brand-primary/20" />
             </div>
             <div className="bg-[#F6F4F2] px-8 py-20 md:p-24 flex flex-col justify-center">
                 <span className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-4">

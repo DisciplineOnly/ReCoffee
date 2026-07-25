@@ -5,6 +5,7 @@ import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { articles } from '../data/articles';
 import PageHeader from '../components/ui/PageHeader';
+import ArticleImage from '../components/ui/ArticleImage';
 
 export default function Learn() {
     const { t } = useTranslation();
@@ -26,7 +27,7 @@ export default function Learn() {
                     className="group grid grid-cols-1 lg:grid-cols-2 bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 mb-12"
                 >
                     <div className="relative h-72 lg:h-auto overflow-hidden">
-                        <img
+                        <ArticleImage
                             src={featured.image}
                             alt={featured.title}
                             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -60,7 +61,7 @@ export default function Learn() {
                             className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-300 flex flex-col"
                         >
                             <div className="relative h-52 overflow-hidden">
-                                <img
+                                <ArticleImage
                                     src={article.image}
                                     alt={article.title}
                                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
