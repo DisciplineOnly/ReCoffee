@@ -1,7 +1,72 @@
+# ReCoffee — https://recoffee.bg
+
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart
+Disallow: /account
+Disallow: /wishlist
+Disallow: /*?search=
+
+# AI assistants and answer engines are welcome to read the catalogue and the
+# guides — being quotable in an AI answer is the point. Listed explicitly because
+# several of these crawlers ignore the wildcard group above, and because an
+# explicit Allow makes the intent auditable rather than accidental.
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /account
 
 Sitemap: https://recoffee.bg/sitemap.xml

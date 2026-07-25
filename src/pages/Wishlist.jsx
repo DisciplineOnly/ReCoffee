@@ -12,7 +12,7 @@ export default function Wishlist() {
     const { t } = useTranslation();
     const { wishlist } = useWishlist();
     const { products, loading } = useProducts();
-    useSEO({ title: t('wishlist.title') });
+    useSEO({ title: t('wishlist.title'), noindex: true });
 
     const wishlistProducts = products.filter(p => wishlist.includes(p.slug));
 

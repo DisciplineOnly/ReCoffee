@@ -11,6 +11,7 @@ import { formatBgn, formatEur } from '../lib/price';
 import ProductReviews from '../components/shop/ProductReviews';
 import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../lib/categories';
 import { PLACEHOLDER_IMAGE, onImageError } from '../lib/productImage';
+import { productSchema, breadcrumbSchema } from '../lib/structuredData';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -30,6 +31,18 @@ export default function ProductDetail() {
     useSEO({
         title: product ? product.name : undefined,
         description: product ? `${product.name} — ${product.origin || ''}. ${(product.description || '').slice(0, 150)}` : undefined,
+        image: product?.images?.[0],
+        type: 'product',
+        jsonLd: product
+            ? [
+                productSchema(product),
+                breadcrumbSchema([
+                    { name: t('common.home'), path: '/' },
+                    { name: t('shopPage.title'), path: '/shop' },
+                    { name: product.name, path: `/shop/${product.slug}` },
+                ]),
+            ]
+            : undefined,
     });
 
     if (!product && !productsLoading) {

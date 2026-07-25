@@ -3,6 +3,9 @@
 
 export const siteConfig = {
     brandName: 'ReCoffee',
+    // Canonical origin, no trailing slash. Used for canonical URLs, Open Graph,
+    // JSON-LD and the sitemap generator.
+    url: 'https://recoffee.bg',
     legalName: '„РеКофи" ЕООД',
     vatNumber: 'BG206123456',
     email: 'hello@recoffee.bg',

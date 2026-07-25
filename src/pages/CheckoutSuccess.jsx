@@ -4,11 +4,14 @@ import { CheckCircle, Package, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { siteConfig } from '../lib/siteConfig';
 import { onImageError, productImage } from '../lib/productImage';
+import { useSEO } from '../hooks/useSEO';
 
 export default function CheckoutSuccess() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [order, setOrder] = useState(null);
+
+    useSEO({ title: t('order.confirmed'), noindex: true });
 
     useEffect(() => {
         // Try to get the last order from localStorage

@@ -4,10 +4,14 @@ import { useCart } from '../contexts/CartContext';
 import CartItem from '../components/cart/CartItem';
 import CartSummary from '../components/cart/CartSummary';
 import EmptyCart from '../components/cart/EmptyCart';
+import { useSEO } from '../hooks/useSEO';
 
 export default function Cart() {
     const { t } = useTranslation();
     const { cart } = useCart();
+
+    // Kept out of search results: a cart URL is personal and has nothing to rank.
+    useSEO({ title: t('cart.title'), noindex: true });
 
     if (cart.length === 0) {
         return <EmptyCart />;

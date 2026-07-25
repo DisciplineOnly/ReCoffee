@@ -8,11 +8,14 @@ import ClientInfoStep from '../components/checkout/ClientInfoStep';
 import DeliveryStep from '../components/checkout/DeliveryStep';
 import PaymentStep from '../components/checkout/PaymentStep';
 import ReviewStep from '../components/checkout/ReviewStep';
+import { useSEO } from '../hooks/useSEO';
 
 function CheckoutContent() {
     const { t } = useTranslation();
     const { cart } = useCart();
     const { currentStep } = useCheckout();
+
+    useSEO({ title: t('checkout.title'), noindex: true });
 
     // Redirect to cart if empty
     if (cart.length === 0) {

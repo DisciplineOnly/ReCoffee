@@ -8,10 +8,79 @@
   <title>ReCoffee | Прясно изпечено специално кафе</title>
   <meta name="description"
     content="ReCoffee — специално кафе, изпечено в София. Единични произходи, смеси и абонамент с безплатна доставка над 100 лв." />
+  <link rel="canonical" href="https://recoffee.bg/" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#BF2645" />
+
   <meta property="og:title" content="ReCoffee | Прясно изпечено специално кафе" />
   <meta property="og:description"
     content="Специално кафе, изпечено в София. Единични произходи, смеси и абонамент с безплатна доставка над 100 лв." />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://recoffee.bg/" />
+  <meta property="og:site_name" content="ReCoffee" />
+  <meta property="og:locale" content="bg_BG" />
+  <meta property="og:image" content="https://recoffee.bg/og-image.jpg" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ReCoffee | Прясно изпечено специално кафе" />
+  <meta name="twitter:description"
+    content="Специално кафе, изпечено в София. Единични произходи, смеси и абонамент с безплатна доставка над 100 лв." />
+  <meta name="twitter:image" content="https://recoffee.bg/og-image.jpg" />
+
+  <!-- Identity graph, kept static on purpose. The app is client-rendered, so
+       crawlers that do not execute JavaScript (most social scrapers, several AI
+       crawlers) never see the JSON-LD that useSEO injects. This is the copy they
+       read. Route-specific schema is added at runtime from lib/structuredData.js;
+       if you change identity here, change it there too. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Store",
+        "@id": "https://recoffee.bg/#organization",
+        "name": "ReCoffee",
+        "legalName": "„РеКофи\" ЕООД",
+        "vatID": "BG206123456",
+        "url": "https://recoffee.bg",
+        "logo": "https://recoffee.bg/og-image.jpg",
+        "image": "https://recoffee.bg/og-image.jpg",
+        "email": "hello@recoffee.bg",
+        "telephone": "+359 2 987 65 43",
+        "priceRange": "$$",
+        "currenciesAccepted": "BGN",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "бул. „Витоша\" 45",
+          "addressLocality": "София",
+          "postalCode": "1000",
+          "addressCountry": "BG"
+        },
+        "sameAs": [
+          "https://www.instagram.com/recoffee.bg",
+          "https://www.facebook.com/recoffee.bg"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://recoffee.bg/#website",
+        "url": "https://recoffee.bg",
+        "name": "ReCoffee",
+        "inLanguage": "bg-BG",
+        "publisher": { "@id": "https://recoffee.bg/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://recoffee.bg/shop?search={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link

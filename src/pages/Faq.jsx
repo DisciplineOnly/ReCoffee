@@ -5,13 +5,10 @@ import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { siteConfig } from '../lib/siteConfig';
 import PageHeader from '../components/ui/PageHeader';
+import { faqSchema, breadcrumbSchema } from '../lib/structuredData';
 
 export default function Faq() {
     const { t } = useTranslation();
-    useSEO({
-        title: t('faq.title'),
-        description: 'Отговори на често задаваните въпроси за поръчки, доставка, абонамент и кафето на ReCoffee.',
-    });
 
     const items = [
         {
@@ -46,8 +43,24 @@ export default function Faq() {
                     <Link to="/wholesale" className="text-brand-primary font-medium hover:underline">Wholesale</Link>.
                 </>
             ),
+            // Plain-text twin for the FAQPage schema, which cannot take JSX.
+            plain: 'Да, работим с кафенета, офиси, хотели и вендинг оператори. Виж повече на страницата за B2B партньорство.',
         },
     ];
+
+    // Declared after `items` so the questions can feed the schema. Answer engines
+    // lean on FAQPage more than on anything else here.
+    useSEO({
+        title: t('faq.title'),
+        description: 'Отговори на често задаваните въпроси за поръчки, доставка, абонамент и кафето на ReCoffee.',
+        jsonLd: [
+            faqSchema(items),
+            breadcrumbSchema([
+                { name: t('common.home'), path: '/' },
+                { name: t('faq.title'), path: '/faq' },
+            ]),
+        ],
+    });
 
     return (
         <div className="min-h-screen bg-white pt-12 pb-24 animate-in fade-in duration-700">

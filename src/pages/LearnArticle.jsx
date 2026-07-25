@@ -5,6 +5,7 @@ import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { getArticleBySlug, articles } from '../data/articles';
 import ArticleImage from '../components/ui/ArticleImage';
+import { articleSchema, breadcrumbSchema } from '../lib/structuredData';
 
 export default function LearnArticle() {
     const { slug } = useParams();
@@ -14,6 +15,18 @@ export default function LearnArticle() {
     useSEO({
         title: article ? article.title : t('learn.not_found'),
         description: article ? article.excerpt : undefined,
+        type: article ? 'article' : 'website',
+        noindex: !article,
+        jsonLd: article
+            ? [
+                articleSchema(article),
+                breadcrumbSchema([
+                    { name: t('common.home'), path: '/' },
+                    { name: t('learn.title'), path: '/learn' },
+                    { name: article.title, path: `/learn/${article.slug}` },
+                ]),
+            ]
+            : undefined,
     });
 
     if (!article) {

@@ -4,17 +4,29 @@
   <url><loc>https://recoffee.bg/shop</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://recoffee.bg/subscription</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://recoffee.bg/wholesale</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://recoffee.bg/locations</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://recoffee.bg/learn</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://recoffee.bg/learn/kak-da-pravim-po-dobro-kafe-u-doma</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://recoffee.bg/learn/v60-rukovodstvo-za-nachinaeshti</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://recoffee.bg/learn/espresso-u-doma-osnovite</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://recoffee.bg/learn/kak-da-suhranyavame-kafe</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://recoffee.bg/learn/svetlo-sredno-tumno-pechene</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://recoffee.bg/learn/pochistvane-na-kafemashina</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://recoffee.bg/delivery</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://recoffee.bg/about</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
   <url><loc>https://recoffee.bg/contact</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
   <url><loc>https://recoffee.bg/privacy</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
   <url><loc>https://recoffee.bg/terms</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
   <url><loc>https://recoffee.bg/cookies</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-iperespresso-classico-espresso</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-iperespresso-classico-lungo</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-iperespresso-decaffeinato</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-iperespresso-intenso</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-easy-red</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/illy-easy-black</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/saeco-royal-professional</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/fiorenzato-f64-grinder</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/la-piccola-sara</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/la-spaziale-s2-2gr</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/shop/pro-2gr-ese-pod-machine</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://recoffee.bg/learn/kak-da-pravim-po-dobro-kafe-u-doma</loc><lastmod>2026-06-10</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/learn/v60-rukovodstvo-za-nachinaeshti</loc><lastmod>2026-05-22</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/learn/espresso-u-doma-osnovite</loc><lastmod>2026-04-15</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/learn/kak-da-suhranyavame-kafe</loc><lastmod>2026-03-02</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/learn/svetlo-sredno-tumno-pechene</loc><lastmod>2026-02-18</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://recoffee.bg/learn/pochistvane-na-kafemashina</loc><lastmod>2026-01-20</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
 </urlset>

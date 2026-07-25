@@ -17,7 +17,7 @@ const STATUS_STYLES = {
 
 export default function Account() {
     const { t } = useTranslation();
-    useSEO({ title: t('account.title') });
+    useSEO({ title: t('account.title'), noindex: true });
 
     const [session, setSession] = useState(null);
     const [sessionLoading, setSessionLoading] = useState(true);
