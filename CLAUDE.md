@@ -1,0 +1,88 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+ReCoffee (repo name "ReCaffe") is a Bulgarian coffee e-commerce storefront: a React 18 + Vite SPA
+with a Supabase backend (Postgres + Auth + Storage). It has a public shop with cart/checkout and a
+password-protected admin dashboard. Everything works except a real payment gateway — checkout's
+`PaymentStep` and the `orders.payment_info` jsonb column are the intended integration points.
+
+## Commands
+
+```bash
+npm run dev      # Vite dev server
+npm run build    # production build to dist/
+npm run preview  # serve the built dist/
+npm run lint     # eslint over the whole tree (no test suite exists)
+```
+
+There is no test runner configured. `lint` is the only automated check.
+
+### Database (Supabase CLI, not the MCP connector)
+
+The whole DB is created by exactly two idempotent migrations in `supabase/migrations/`:
+`20260723000000_init_schema.sql` (9 tables, `is_admin()`, indexes, RLS, the public `products`
+storage bucket) and `20260723000001_seed_catalog.sql`. Apply with `npx supabase db push`.
+
+- Use `gen_random_uuid()`, never `uuid_generate_v4()` (uuid-ossp is off the migration search_path).
+- Never write migration files with PowerShell `Set-Content -Encoding UTF8` — it emits a BOM that
+  Postgres rejects. Use the Write tool or a BOM-free encoding.
+- `supabase/migrations/_archive/` holds the retired original chain. It **cannot** bootstrap a fresh
+  project (it references objects that were made by hand in the dashboard). Do not move it back into
+  the migrations root.
+- The seed is generated from `src/data/products.json`, so the local fallback catalog and the DB stay
+  in sync. Regenerate the seed rather than hand-editing the SQL when products change.
+- The claude.ai Supabase MCP connector is a **different, read-only account** that cannot see this
+  project. Use the local `supabase` CLI for anything touching the live DB.
+
+## Architecture
+
+**Data flow.** Product data lives in Supabase but ships with a local mirror in
+`src/data/products.json`. `src/hooks/useProducts.jsx` fetches from Supabase, maps snake_case DB
+columns to the camelCase frontend shape (and derives `onSale`/`effectivePrice`/`isNew` merchandising
+flags), and **falls back to the local JSON if the DB call fails**. When you change the product shape,
+update both the DB mapping in this hook and `products.json`.
+
+**Routing.** `src/App.jsx` is the single source of routes. Two trees inside shared providers:
+public routes under `PublicLayout`, admin routes under `/admin` gated by `ProtectedRoute` →
+`AdminLayout`. Unknown paths redirect to `/`.
+
+**Auth & admin.** Supabase Auth backs both customers and admins. A valid session is *not* enough for
+admin — `ProtectedRoute` (`src/components/admin/ProtectedRoute.jsx`) additionally checks membership in
+the `admin_users` table; the real enforcement is RLS via the `is_admin()` SQL function. Customer
+signups are ordinary users and get routed to `/account`. Note the deliberate constraint in that file:
+no awaited Supabase queries inside the `onAuthStateChange` callback (the client holds an auth lock and
+awaiting deadlocks).
+
+**State via Context.** Cart and Wishlist are React Contexts persisted to `localStorage`
+(`recoffee_cart`, etc.); checkout is its own `CheckoutContext`. Cart totals, delivery-fee logic
+(free over 100 BGN, else 5 BGN), and grand total all live in `CartContext`.
+
+**Product taxonomy.** `src/lib/categories.js` defines a two-level tree (coffee → capsules/grains;
+machines → personal/professional). Legacy beans-only category values still exist in the DB, so
+**always** route stored category strings through `normalizeCategory` / the helpers
+(`isMachine`, `isCoffee`, `hasGrindOptions`) before comparing or filtering — never compare
+`product.category` directly.
+
+## Conventions (follow these, don't hardcode)
+
+- **Company / contact / legal data** → `src/lib/siteConfig.js`. Footer, contact, legal pages, and
+  checkout all read from it. Change it in one place.
+- **Prices** always render through `src/lib/price.js`. Bulgaria is mid BGN→EUR changeover, so prices
+  show dual currency (`formatPrice` → "12.90 лв (6.60 €)") at the fixed peg `1.95583`. Never format
+  money inline.
+- **UI strings** → `src/lib/translations/{bg,en}.json`, accessed via `useTranslation()`'s `t('a.b.c')`.
+  **BG is the default locale**; EN is the fallback. New user-facing strings go into *both* files.
+- **Long-form BG content** (legal text, Learn articles) → `src/data/` (`legalContent.js`,
+  `articles.js`), not inline JSX.
+- **Styling** is Tailwind. Brand colors are theme tokens: `brand-primary` (#BF2645),
+  `brand-secondary` (#017DC7), `brand-accent` (#9B5440); fonts `font-sans` (Inter) / `font-serif`
+  (Playfair Display). Use the tokens, not raw hex.
+
+## Environment
+
+`.env` provides `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Vite exposes only `VITE_`-prefixed
+vars to the client). Missing values log an error but don't crash — the app degrades to the local JSON
+fallback.
