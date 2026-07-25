@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { useTranslation } from '../../lib/translations';
 
+// DB enum values — only their labels are translated, never the stored value.
 const STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
 const STATUS_STYLES = {
@@ -18,6 +20,7 @@ export default function AdminOrders() {
     const [error, setError] = useState(null);
     const [expandedId, setExpandedId] = useState(null);
     const [statusFilter, setStatusFilter] = useState('all');
+    const { t } = useTranslation();
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -28,7 +31,9 @@ export default function AdminOrders() {
             .order('created_at', { ascending: false });
         if (error) {
             console.error('Failed to load orders:', error);
-            setError('Could not load orders. Make sure the latest DB migration is applied (admin read access on orders).');
+            // Stored as a key, not a message: `t` is a fresh function each
+            // render, so depending on it here would re-run the fetch forever.
+            setError('admin.orders.load_error');
         } else {
             setOrders(data || []);
         }
@@ -45,7 +50,7 @@ export default function AdminOrders() {
         const { error } = await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', orderId);
         if (error) {
             console.error('Failed to update order status:', error);
-            alert('Status update failed: ' + error.message);
+            alert(t('admin.orders.status_error') + error.message);
             setOrders(previous);
         }
     };
@@ -56,19 +61,27 @@ export default function AdminOrders() {
 
     const describeDelivery = (order) => {
         const info = order.delivery_info || {};
-        if (info.type === 'office') return `${(info.courier || '').toUpperCase()} office: ${info.courierOffice || ''}, ${info.courierCity || ''}`;
+        if (info.type === 'office') {
+            return t('admin.orders.delivery_office')
+                .replace('{{courier}}', (info.courier || '').toUpperCase())
+                .replace('{{office}}', info.courierOffice || '')
+                .replace('{{city}}', info.courierCity || '');
+        }
         const address = info.address || {};
-        return `Address: ${address.street || ''}, ${address.postalCode || ''} ${address.city || ''}`;
+        return t('admin.orders.delivery_address')
+            .replace('{{street}}', address.street || '')
+            .replace('{{postalCode}}', address.postalCode || '')
+            .replace('{{city}}', address.city || '');
     };
 
-    if (loading) return <div className="p-12 text-center text-slate-400">Loading orders...</div>;
+    if (loading) return <div className="p-12 text-center text-slate-400">{t('admin.orders.loading')}</div>;
 
     return (
         <div>
             <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold font-serif text-slate-900">Orders</h1>
-                    <p className="text-slate-500">{orders.length} total</p>
+                    <h1 className="text-2xl font-bold font-serif text-slate-900">{t('admin.orders.title')}</h1>
+                    <p className="text-slate-500">{t('admin.orders.total_count').replace('{{count}}', orders.length)}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <select
@@ -76,9 +89,9 @@ export default function AdminOrders() {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="px-4 py-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-brand-primary/20 outline-none"
                     >
-                        <option value="all">All statuses</option>
+                        <option value="all">{t('admin.orders.all_statuses')}</option>
                         {STATUSES.map(status => (
-                            <option key={status} value={status}>{status}</option>
+                            <option key={status} value={status}>{t(`admin.orders.status.${status}`)}</option>
                         ))}
                     </select>
                     <button
@@ -86,31 +99,31 @@ export default function AdminOrders() {
                         className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-white text-sm text-slate-600 hover:text-slate-900 transition"
                     >
                         <RefreshCw size={16} />
-                        Refresh
+                        {t('admin.refresh')}
                     </button>
                 </div>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{t(error)}</div>
             )}
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wider text-slate-400">
-                            <th className="px-6 py-4">Order</th>
-                            <th className="px-6 py-4">Date</th>
-                            <th className="px-6 py-4">Client</th>
-                            <th className="px-6 py-4">Total</th>
-                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">{t('admin.orders.col_order')}</th>
+                            <th className="px-6 py-4">{t('admin.orders.col_date')}</th>
+                            <th className="px-6 py-4">{t('admin.orders.col_client')}</th>
+                            <th className="px-6 py-4">{t('admin.orders.col_total')}</th>
+                            <th className="px-6 py-4">{t('admin.orders.col_status')}</th>
                             <th className="px-6 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {visibleOrders.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">No orders found.</td>
+                                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">{t('admin.orders.empty')}</td>
                             </tr>
                         )}
                         {visibleOrders.map((order) => {
@@ -135,7 +148,7 @@ export default function AdminOrders() {
                                                 className={`px-3 py-1.5 rounded-full border text-xs font-bold outline-none cursor-pointer ${STATUS_STYLES[order.status] || ''}`}
                                             >
                                                 {STATUSES.map(status => (
-                                                    <option key={status} value={status}>{status}</option>
+                                                    <option key={status} value={status}>{t(`admin.orders.status.${status}`)}</option>
                                                 ))}
                                             </select>
                                         </td>
@@ -143,7 +156,7 @@ export default function AdminOrders() {
                                             <button
                                                 onClick={() => setExpandedId(isExpanded ? null : order.id)}
                                                 className="text-slate-400 hover:text-slate-900 transition"
-                                                aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                                                aria-label={isExpanded ? t('admin.collapse') : t('admin.expand')}
                                             >
                                                 {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                             </button>
@@ -154,12 +167,12 @@ export default function AdminOrders() {
                                             <td colSpan={6} className="px-6 py-5">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                                                     <div>
-                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Items</h4>
+                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">{t('admin.orders.items')}</h4>
                                                         <ul className="space-y-1.5">
                                                             {(order.order_items || []).map(item => (
                                                                 <li key={item.id} className="flex justify-between gap-4">
                                                                     <span className="text-slate-700">
-                                                                        {item.quantity} × {item.products?.name_bg || 'Product'}
+                                                                        {item.quantity} × {item.products?.name_bg || t('admin.orders.product_fallback')}
                                                                         <span className="text-slate-400"> ({item.grind_type})</span>
                                                                     </span>
                                                                     <span className="font-medium text-slate-900">
@@ -169,22 +182,24 @@ export default function AdminOrders() {
                                                             ))}
                                                         </ul>
                                                         <div className="mt-3 pt-3 border-t border-slate-200 text-xs text-slate-500">
-                                                            Subtotal: {Number(order.subtotal).toFixed(2)} лв · Delivery: {Number(order.delivery_fee).toFixed(2)} лв
+                                                            {t('admin.orders.totals')
+                                                                .replace('{{subtotal}}', Number(order.subtotal).toFixed(2))
+                                                                .replace('{{delivery}}', Number(order.delivery_fee).toFixed(2))}
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Delivery</h4>
+                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">{t('admin.orders.delivery')}</h4>
                                                         <p className="text-slate-700">{describeDelivery(order)}</p>
                                                         {order.delivery_info?.address?.notes && (
-                                                            <p className="text-xs text-slate-500 mt-1">Note: {order.delivery_info.address.notes}</p>
+                                                            <p className="text-xs text-slate-500 mt-1">{t('admin.orders.note')}{order.delivery_info.address.notes}</p>
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">Contact & Payment</h4>
+                                                        <h4 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2">{t('admin.orders.contact_payment')}</h4>
                                                         <p className="text-slate-700">{client.phone}</p>
                                                         <p className="text-slate-700">{client.email}</p>
                                                         {order.payment_info?.method && (
-                                                            <p className="text-xs text-slate-500 mt-1">Payment: {order.payment_info.method}</p>
+                                                            <p className="text-xs text-slate-500 mt-1">{t('admin.orders.payment')}{order.payment_info.method}</p>
                                                         )}
                                                     </div>
                                                 </div>

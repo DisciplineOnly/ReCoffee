@@ -4,28 +4,29 @@ import en from './en.json';
 const translations = { bg, en };
 const defaultLang = 'bg';
 
-export const useTranslation = () => {
-    const lang = defaultLang;
+// Defined at module scope so the reference is stable across renders. Callers
+// list `t` in useEffect/useCallback dependency arrays; a per-render closure
+// would make those effects re-run forever.
+const t = (key) => {
+    const keys = key.split('.');
+    let value = translations[defaultLang];
 
-    const t = (key) => {
-        const keys = key.split('.');
-        let value = translations[lang];
+    for (const k of keys) {
+        value = value?.[k];
+    }
 
+    // Fallback to English if key not found in Bulgarian
+    if (!value && defaultLang !== 'en') {
+        let fallback = translations['en'];
         for (const k of keys) {
-            value = value?.[k];
+            fallback = fallback?.[k];
         }
+        return fallback || key;
+    }
 
-        // Fallback to English if key not found in Bulgarian
-        if (!value && lang !== 'en') {
-            let fallback = translations['en'];
-            for (const k of keys) {
-                fallback = fallback?.[k];
-            }
-            return fallback || key;
-        }
+    return value || key;
+};
 
-        return value || key;
-    };
-
-    return { t, lang };
+export const useTranslation = () => {
+    return { t, lang: defaultLang };
 };

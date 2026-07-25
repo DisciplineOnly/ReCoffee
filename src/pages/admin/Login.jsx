@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Coffee, ArrowRight } from 'lucide-react';
+import { useTranslation } from '../../lib/translations';
 
 export default function AdminLogin() {
     const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export default function AdminLogin() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -36,7 +38,7 @@ export default function AdminLogin() {
                 <div className="relative z-10 text-center">
                     <Coffee size={64} className="mx-auto mb-6" />
                     <h1 className="text-4xl font-serif font-bold mb-4">ReCaffe</h1>
-                    <p className="text-white/80 text-lg max-w-md">Administrative Dashboard</p>
+                    <p className="text-white/80 text-lg max-w-md">{t('admin.login.subtitle')}</p>
                 </div>
             </div>
 
@@ -45,15 +47,15 @@ export default function AdminLogin() {
                 <div className="max-w-md w-full mx-auto">
                     <div className="md:hidden text-center mb-8">
                         <Coffee size={40} className="mx-auto text-brand-primary mb-3" />
-                        <h1 className="text-2xl font-serif font-bold text-slate-800">ReCaffe Admin</h1>
+                        <h1 className="text-2xl font-serif font-bold text-slate-800">{t('admin.brand')}</h1>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h2>
-                    <p className="text-slate-500 mb-8">Please sign in to your account</p>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('admin.login.welcome')}</h2>
+                    <p className="text-slate-500 mb-8">{t('admin.login.prompt')}</p>
 
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.login.email')}</label>
                             <input
                                 type="email"
                                 required
@@ -65,7 +67,7 @@ export default function AdminLogin() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.login.password')}</label>
                             <input
                                 type="password"
                                 required
@@ -87,7 +89,7 @@ export default function AdminLogin() {
                             disabled={loading}
                             className="w-full bg-brand-primary text-white py-3 rounded-lg font-bold tracking-wide hover:bg-brand-primary/90 transition flex items-center justify-center gap-2 disabled:opacity-70"
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
+                            {loading ? t('admin.login.signing_in') : t('admin.login.sign_in')}
                             {!loading && <ArrowRight size={18} />}
                         </button>
                     </form>

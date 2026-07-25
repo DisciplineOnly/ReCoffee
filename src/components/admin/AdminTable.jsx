@@ -1,8 +1,11 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../../lib/translations';
 
 export default function AdminTable({ columns, data, onEdit, onDelete, editPath }) {
+    const { t } = useTranslation();
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
@@ -15,7 +18,7 @@ export default function AdminTable({ columns, data, onEdit, onDelete, editPath }
                                 </th>
                             ))}
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
-                                Actions
+                                {t('admin.actions')}
                             </th>
                         </tr>
                     </thead>
@@ -58,7 +61,7 @@ export default function AdminTable({ columns, data, onEdit, onDelete, editPath }
                         {data.length === 0 && (
                             <tr>
                                 <td colSpan={columns.length + 1} className="px-6 py-12 text-center text-slate-400">
-                                    No records found.
+                                    {t('admin.no_records')}
                                 </td>
                             </tr>
                         )}

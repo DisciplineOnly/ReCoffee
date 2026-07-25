@@ -2,10 +2,12 @@ import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Package, Calendar, LogOut, Coffee, Inbox } from 'lucide-react';
+import { useTranslation } from '../../lib/translations';
 
 export default function AdminLayout() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -13,10 +15,10 @@ export default function AdminLayout() {
     };
 
     const navItems = [
-        { path: '/admin/orders', label: 'Orders', icon: Package },
-        { path: '/admin/products', label: 'Products', icon: Coffee },
-        { path: '/admin/services', label: 'Services', icon: Calendar },
-        { path: '/admin/inquiries', label: 'Inquiries', icon: Inbox },
+        { path: '/admin/orders', label: t('admin.nav.orders'), icon: Package },
+        { path: '/admin/products', label: t('admin.nav.products'), icon: Coffee },
+        { path: '/admin/services', label: t('admin.nav.services'), icon: Calendar },
+        { path: '/admin/inquiries', label: t('admin.nav.inquiries'), icon: Inbox },
     ];
 
     return (
@@ -24,7 +26,7 @@ export default function AdminLayout() {
             {/* Sidebar */}
             <aside className="w-64 bg-slate-900 text-white fixed h-full shadow-lg z-10">
                 <div className="p-6 border-b border-slate-800">
-                    <h1 className="text-xl font-bold font-serif tracking-wide text-brand-primary">ReCaffe Admin</h1>
+                    <h1 className="text-xl font-bold font-serif tracking-wide text-brand-primary">{t('admin.brand')}</h1>
                 </div>
                 <nav className="mt-6 px-4 space-y-2">
                     {navItems.map((item) => {
@@ -51,7 +53,7 @@ export default function AdminLayout() {
                         className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-slate-800 hover:text-red-300 rounded-lg transition-colors"
                     >
                         <LogOut size={20} />
-                        <span className="font-medium">Sign Out</span>
+                        <span className="font-medium">{t('admin.sign_out')}</span>
                     </button>
                 </div>
             </aside>

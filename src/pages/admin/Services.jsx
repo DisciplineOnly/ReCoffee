@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import AdminTable from '../../components/admin/AdminTable';
+import { useTranslation } from '../../lib/translations';
 
 export default function ServiceList() {
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useTranslation();
 
     const fetchServices = async () => {
         setLoading(true);
@@ -21,11 +23,11 @@ export default function ServiceList() {
     };
 
     const handleDelete = async (row) => {
-        if (!window.confirm(`Are you sure you want to delete "${row.name_bg}"?`)) return;
+        if (!window.confirm(t('admin.services.confirm_delete').replace('{{name}}', row.name_bg))) return;
 
         const { error } = await supabase.from('services').delete().eq('id', row.id);
         if (error) {
-            alert('Error deleting service: ' + error.message);
+            alert(t('admin.services.delete_error') + error.message);
         } else {
             fetchServices();
         }
@@ -37,7 +39,7 @@ export default function ServiceList() {
 
     const columns = [
         {
-            label: 'Service',
+            label: t('admin.services.col_service'),
             accessor: 'name_bg',
             render: (row) => (
                 <div className="flex items-center gap-4">
@@ -45,22 +47,26 @@ export default function ServiceList() {
                         {row.image_url ? (
                             <img src={row.image_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">No Img</div>
+                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">{t('admin.no_image')}</div>
                         )}
                     </div>
                     <div>
                         <div className="font-medium text-slate-900">{row.name_bg}</div>
-                        <div className="text-slate-400 text-xs">{row.duration_minutes ? `${row.duration_minutes} mins` : 'Flexible duration'}</div>
+                        <div className="text-slate-400 text-xs">
+                            {row.duration_minutes
+                                ? t('admin.services.duration_minutes').replace('{{count}}', row.duration_minutes)
+                                : t('admin.services.duration_flexible')}
+                        </div>
                     </div>
                 </div>
             ),
         },
-        { label: 'Price', padding: true, render: (row) => <span className="font-mono font-medium">{row.price ? `${row.price.toFixed(2)} BGN` : 'Custom'}</span> },
+        { label: t('admin.services.col_price'), padding: true, render: (row) => <span className="font-mono font-medium">{row.price ? `${row.price.toFixed(2)} лв` : t('admin.services.price_custom')}</span> },
         {
-            label: 'Status',
+            label: t('admin.services.col_status'),
             render: (row) => (
                 <span className={`px-2 py-1 rounded-full text-xs font-bold ${row.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                    {row.active ? 'Active' : 'Inactive'}
+                    {row.active ? t('admin.services.active') : t('admin.services.inactive')}
                 </span>
             )
         },
@@ -70,15 +76,15 @@ export default function ServiceList() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 font-serif">Services</h1>
-                    <p className="text-slate-500">Manage your offered services</p>
+                    <h1 className="text-2xl font-bold text-slate-900 font-serif">{t('admin.services.title')}</h1>
+                    <p className="text-slate-500">{t('admin.services.subtitle')}</p>
                 </div>
                 <Link
                     to="/admin/services/new"
                     className="inline-flex items-center justify-center gap-2 bg-brand-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-brand-primary/90 transition shadow-sm"
                 >
                     <Plus size={20} />
-                    <span>Add Service</span>
+                    <span>{t('admin.services.add')}</span>
                 </Link>
             </div>
 

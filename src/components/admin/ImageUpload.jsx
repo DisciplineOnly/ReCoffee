@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useTranslation } from '../../lib/translations';
 
 export default function ImageUpload({ value, onChange, bucket = 'products' }) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
+    const { t } = useTranslation();
 
     const uploadImage = async (event) => {
         try {
@@ -46,7 +48,7 @@ export default function ImageUpload({ value, onChange, bucket = 'products' }) {
         <div className="space-y-4">
             {value ? (
                 <div className="relative w-full max-w-xs aspect-square rounded-lg overflow-hidden border border-slate-200">
-                    <img src={value} alt="Uploaded preview" className="w-full h-full object-cover" />
+                    <img src={value} alt={t('admin.upload.preview_alt')} className="w-full h-full object-cover" />
                     <button
                         type="button"
                         onClick={removeImage}
@@ -64,8 +66,8 @@ export default function ImageUpload({ value, onChange, bucket = 'products' }) {
                             ) : (
                                 <Upload className="w-8 h-8 text-slate-400 mb-2" />
                             )}
-                            <p className="text-sm text-slate-500 font-medium">Click to upload</p>
-                            <p className="text-xs text-slate-400 mt-1">SVG, PNG, JPG (MAX. 2MB)</p>
+                            <p className="text-sm text-slate-500 font-medium">{t('admin.upload.click_to_upload')}</p>
+                            <p className="text-xs text-slate-400 mt-1">{t('admin.upload.hint')}</p>
                         </div>
                         <input
                             type="file"

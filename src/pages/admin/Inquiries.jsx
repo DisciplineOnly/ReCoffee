@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from '../../lib/translations';
 
+// DB enum values — only their labels are translated, never the stored value.
 const TYPES = ['contact', 'b2b', 'subscription'];
 const STATUSES = ['new', 'in_progress', 'closed'];
 
@@ -23,6 +25,7 @@ export default function AdminInquiries() {
     const [error, setError] = useState(null);
     const [typeFilter, setTypeFilter] = useState('all');
     const [expandedId, setExpandedId] = useState(null);
+    const { t } = useTranslation();
 
     const fetchInquiries = useCallback(async () => {
         setLoading(true);
@@ -33,7 +36,9 @@ export default function AdminInquiries() {
             .order('created_at', { ascending: false });
         if (error) {
             console.error('Failed to load inquiries:', error);
-            setError('Could not load inquiries. Make sure the latest DB migration is applied.');
+            // Stored as a key, not a message: `t` is a fresh function each
+            // render, so depending on it here would re-run the fetch forever.
+            setError('admin.inquiries.load_error');
         } else {
             setInquiries(data || []);
         }
@@ -50,7 +55,7 @@ export default function AdminInquiries() {
         const { error } = await supabase.from('inquiries').update({ status }).eq('id', id);
         if (error) {
             console.error('Failed to update inquiry status:', error);
-            alert('Status update failed: ' + error.message);
+            alert(t('admin.inquiries.status_error') + error.message);
             setInquiries(previous);
         }
     };
@@ -59,14 +64,14 @@ export default function AdminInquiries() {
         ? inquiries
         : inquiries.filter(inquiry => inquiry.type === typeFilter);
 
-    if (loading) return <div className="p-12 text-center text-slate-400">Loading inquiries...</div>;
+    if (loading) return <div className="p-12 text-center text-slate-400">{t('admin.inquiries.loading')}</div>;
 
     return (
         <div>
             <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold font-serif text-slate-900">Inquiries</h1>
-                    <p className="text-slate-500">Contact messages, B2B leads & subscription requests</p>
+                    <h1 className="text-2xl font-bold font-serif text-slate-900">{t('admin.inquiries.title')}</h1>
+                    <p className="text-slate-500">{t('admin.inquiries.subtitle')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <select
@@ -74,9 +79,9 @@ export default function AdminInquiries() {
                         onChange={(e) => setTypeFilter(e.target.value)}
                         className="px-4 py-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-brand-primary/20 outline-none"
                     >
-                        <option value="all">All types</option>
+                        <option value="all">{t('admin.inquiries.all_types')}</option>
                         {TYPES.map(type => (
-                            <option key={type} value={type}>{type}</option>
+                            <option key={type} value={type}>{t(`admin.inquiries.type.${type}`)}</option>
                         ))}
                     </select>
                     <button
@@ -84,30 +89,30 @@ export default function AdminInquiries() {
                         className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-white text-sm text-slate-600 hover:text-slate-900 transition"
                     >
                         <RefreshCw size={16} />
-                        Refresh
+                        {t('admin.refresh')}
                     </button>
                 </div>
             </div>
 
             {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{t(error)}</div>
             )}
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wider text-slate-400">
-                            <th className="px-6 py-4">Date</th>
-                            <th className="px-6 py-4">Type</th>
-                            <th className="px-6 py-4">From</th>
-                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">{t('admin.inquiries.col_date')}</th>
+                            <th className="px-6 py-4">{t('admin.inquiries.col_type')}</th>
+                            <th className="px-6 py-4">{t('admin.inquiries.col_from')}</th>
+                            <th className="px-6 py-4">{t('admin.inquiries.col_status')}</th>
                             <th className="px-6 py-4"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {visible.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">No inquiries found.</td>
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">{t('admin.inquiries.empty')}</td>
                             </tr>
                         )}
                         {visible.map((inquiry) => {
@@ -120,7 +125,7 @@ export default function AdminInquiries() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${TYPE_STYLES[inquiry.type] || TYPE_STYLES.contact}`}>
-                                                {inquiry.type}
+                                                {t(`admin.inquiries.type.${inquiry.type}`)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -137,7 +142,7 @@ export default function AdminInquiries() {
                                                 className={`px-3 py-1.5 rounded-full border text-xs font-bold outline-none cursor-pointer ${STATUS_STYLES[inquiry.status] || ''}`}
                                             >
                                                 {STATUSES.map(status => (
-                                                    <option key={status} value={status}>{status.replace('_', ' ')}</option>
+                                                    <option key={status} value={status}>{t(`admin.inquiries.status.${status}`)}</option>
                                                 ))}
                                             </select>
                                         </td>
@@ -145,7 +150,7 @@ export default function AdminInquiries() {
                                             <button
                                                 onClick={() => setExpandedId(isExpanded ? null : inquiry.id)}
                                                 className="text-slate-400 hover:text-slate-900 transition"
-                                                aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                                                aria-label={isExpanded ? t('admin.collapse') : t('admin.expand')}
                                             >
                                                 {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                             </button>

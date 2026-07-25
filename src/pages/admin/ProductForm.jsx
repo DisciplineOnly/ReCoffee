@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Save, ArrowLeft, X } from 'lucide-react';
 import ImageUpload from '../../components/admin/ImageUpload';
+import { useTranslation } from '../../lib/translations';
 
 export default function ProductForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const isEdit = !!id;
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(isEdit);
@@ -44,7 +46,7 @@ export default function ProductForm() {
                     .single();
 
                 if (error) {
-                    alert('Error loading product');
+                    alert(t('admin.productForm.load_error'));
                     navigate('/admin/products');
                     return;
                 }
@@ -65,7 +67,7 @@ export default function ProductForm() {
             }
             fetchProduct();
         }
-    }, [id, isEdit, navigate]);
+    }, [id, isEdit, navigate, t]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -143,23 +145,25 @@ export default function ProductForm() {
             navigate('/admin/products');
         } catch (error) {
             console.error(error);
-            alert('Error saving product: ' + error.message);
+            alert(t('admin.productForm.save_error') + error.message);
         } finally {
             setLoading(false);
         }
     };
 
-    if (fetching) return <div className="p-12 text-center">Loading...</div>;
+    if (fetching) return <div className="p-12 text-center">{t('admin.loading')}</div>;
 
     return (
         <div className="max-w-4xl mx-auto">
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold font-serif text-slate-900">
-                        {isEdit ? 'Edit Product' : 'New Product'}
+                        {isEdit ? t('admin.productForm.title_edit') : t('admin.productForm.title_new')}
                     </h1>
                     <p className="text-slate-500">
-                        {isEdit ? `Updating ${form.name_bg}` : 'Add a new coffee to your inventory'}
+                        {isEdit
+                            ? t('admin.productForm.subtitle_edit').replace('{{name}}', form.name_bg)
+                            : t('admin.productForm.subtitle_new')}
                     </p>
                 </div>
                 <button
@@ -167,7 +171,7 @@ export default function ProductForm() {
                     className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition px-4 py-2"
                 >
                     <ArrowLeft size={18} />
-                    <span>Cancel</span>
+                    <span>{t('admin.cancel')}</span>
                 </button>
             </div>
 
@@ -175,12 +179,12 @@ export default function ProductForm() {
                 {/* Main Info */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-2">
-                        <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">Basic Information</h3>
+                        <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">{t('admin.productForm.section_basic')}</h3>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Name (BG)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.name_bg')}</label>
                             <input
                                 name="name_bg"
                                 value={form.name_bg}
@@ -190,7 +194,7 @@ export default function ProductForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Name (EN)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.name_en')}</label>
                             <input
                                 name="name_en"
                                 value={form.name_en}
@@ -202,36 +206,36 @@ export default function ProductForm() {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Slug (URL)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.slug')}</label>
                             <input
                                 name="slug"
                                 value={form.slug}
                                 onChange={handleChange}
-                                placeholder="Auto-generated if empty"
+                                placeholder={t('admin.productForm.slug_placeholder')}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none font-mono text-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.category')}</label>
                             <select
                                 name="category"
                                 value={form.category}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none bg-white"
                             >
-                                <optgroup label="Coffee">
-                                    <option value="capsules">Capsules</option>
-                                    <option value="grains">Whole Bean</option>
+                                <optgroup label={t('shop.group_coffee')}>
+                                    <option value="capsules">{t('shop.badge_capsules')}</option>
+                                    <option value="grains">{t('shop.badge_grains')}</option>
                                 </optgroup>
-                                <optgroup label="Machines">
-                                    <option value="machines-personal">Personal Use</option>
-                                    <option value="machines-professional">Professional</option>
+                                <optgroup label={t('shop.group_machines')}>
+                                    <option value="machines-personal">{t('shop.badge_machines_personal')}</option>
+                                    <option value="machines-professional">{t('shop.badge_machines_professional')}</option>
                                 </optgroup>
-                                <optgroup label="Legacy">
-                                    <option value="single-origin">Single Origin</option>
-                                    <option value="blend">Blend</option>
-                                    <option value="limited">Limited</option>
-                                    <option value="decaf">Decaf</option>
+                                <optgroup label={t('admin.productForm.legacy_group')}>
+                                    <option value="single-origin">{t('shop.badge_single_origin')}</option>
+                                    <option value="blend">{t('shop.badge_blend')}</option>
+                                    <option value="limited">{t('shop.badge_limited')}</option>
+                                    <option value="decaf">{t('shop.badge_decaf')}</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -239,7 +243,7 @@ export default function ProductForm() {
 
                     <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Description (BG)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.description_bg')}</label>
                             <textarea
                                 name="description_bg"
                                 value={form.description_bg || ''}
@@ -249,7 +253,7 @@ export default function ProductForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Description (EN)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.description_en')}</label>
                             <textarea
                                 name="description_en"
                                 value={form.description_en || ''}
@@ -265,11 +269,11 @@ export default function ProductForm() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Specifics */}
                     <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">Coffee Details</h3>
+                        <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">{t('admin.productForm.section_details')}</h3>
 
                         <div className="grid grid-cols-3 gap-4 mb-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Price (BGN)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.price')}</label>
                                 <input
                                     type="number"
                                     name="price"
@@ -281,7 +285,7 @@ export default function ProductForm() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Sale Price (BGN)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.sale_price')}</label>
                                 <input
                                     type="number"
                                     name="sale_price"
@@ -289,12 +293,12 @@ export default function ProductForm() {
                                     onChange={handleChange}
                                     step="0.01"
                                     min="0"
-                                    placeholder="No sale"
+                                    placeholder={t('admin.productForm.sale_price_placeholder')}
                                     className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Weight (g)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.weight')}</label>
                                 <input
                                     type="number"
                                     name="weight_grams"
@@ -307,7 +311,7 @@ export default function ProductForm() {
 
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Origin</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.origin')}</label>
                                 <input
                                     name="origin"
                                     value={form.origin || ''}
@@ -316,7 +320,7 @@ export default function ProductForm() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Process</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.process')}</label>
                                 <input
                                     name="process"
                                     value={form.process || ''}
@@ -327,7 +331,7 @@ export default function ProductForm() {
                         </div>
 
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Roast Level (1-5)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t('admin.productForm.roast_level')}</label>
                             <input
                                 type="range"
                                 name="roast_level"
@@ -338,19 +342,19 @@ export default function ProductForm() {
                                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                             />
                             <div className="flex justify-between text-xs text-slate-400 mt-1">
-                                <span>Light</span>
-                                <span>Medium</span>
-                                <span>Dark</span>
+                                <span>{t('admin.productForm.roast_light')}</span>
+                                <span>{t('admin.productForm.roast_medium')}</span>
+                                <span>{t('admin.productForm.roast_dark')}</span>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Flavor Notes (Press Enter to add)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('admin.productForm.flavors')}</label>
                             <input
                                 value={flavorInput}
                                 onChange={(e) => setFlavorInput(e.target.value)}
                                 onKeyDown={handleFlavorAdd}
-                                placeholder="Chocolate, Berries..."
+                                placeholder={t('admin.productForm.flavors_placeholder')}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary/20 outline-none mb-2"
                             />
                             <div className="flex flex-wrap gap-2">
@@ -367,8 +371,8 @@ export default function ProductForm() {
                     {/* Media & Status */}
                     <div className="space-y-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">Media</h3>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Product Image</label>
+                            <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">{t('admin.productForm.section_media')}</h3>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">{t('admin.productForm.image')}</label>
                             <ImageUpload
                                 value={form.image_url}
                                 onChange={(url) => setForm(prev => ({ ...prev, image_url: url }))}
@@ -376,7 +380,7 @@ export default function ProductForm() {
                         </div>
 
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">Status</h3>
+                            <h3 className="font-bold text-slate-900 mb-4 border-b pb-2">{t('admin.productForm.section_status')}</h3>
                             <div className="space-y-3">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
@@ -386,7 +390,7 @@ export default function ProductForm() {
                                         onChange={handleChange}
                                         className="w-5 h-5 text-brand-primary rounded focus:ring-brand-primary"
                                     />
-                                    <span className="text-slate-700">In Stock</span>
+                                    <span className="text-slate-700">{t('admin.productForm.in_stock')}</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
@@ -396,7 +400,7 @@ export default function ProductForm() {
                                         onChange={handleChange}
                                         className="w-5 h-5 text-brand-primary rounded focus:ring-brand-primary"
                                     />
-                                    <span className="text-slate-700">Featured</span>
+                                    <span className="text-slate-700">{t('admin.productForm.featured')}</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <input
@@ -406,7 +410,7 @@ export default function ProductForm() {
                                         onChange={handleChange}
                                         className="w-5 h-5 text-brand-primary rounded focus:ring-brand-primary"
                                     />
-                                    <span className="text-slate-700">"New" badge</span>
+                                    <span className="text-slate-700">{t('admin.productForm.is_new')}</span>
                                 </label>
                             </div>
                         </div>
@@ -420,7 +424,7 @@ export default function ProductForm() {
                         className="bg-brand-primary text-white px-8 py-3 rounded-lg font-bold tracking-wide hover:bg-brand-primary/90 transition shadow-lg flex items-center gap-2 disabled:opacity-70"
                     >
                         <Save size={20} />
-                        <span>{loading ? 'Saving...' : 'Save Product'}</span>
+                        <span>{loading ? t('admin.saving') : t('admin.productForm.save')}</span>
                     </button>
                 </div>
             </form>
