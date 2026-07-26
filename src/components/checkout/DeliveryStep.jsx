@@ -3,11 +3,12 @@ import { ArrowLeft, ArrowRight, Home, Building } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCheckout } from '../../contexts/CheckoutContext';
 import { useCart } from '../../contexts/CartContext';
+import { formatPrice } from '../../lib/price';
 
 export default function DeliveryStep() {
     const { t } = useTranslation();
     const { checkoutData, updateDeliveryInfo, nextStep, prevStep } = useCheckout();
-    const { getCartTotal } = useCart();
+    const { getDeliveryFee } = useCart();
     const [errors, setErrors] = useState({});
 
     const [deliveryType, setDeliveryType] = useState(checkoutData.delivery.type);
@@ -16,7 +17,9 @@ export default function DeliveryStep() {
     const [courierCity, setCourierCity] = useState(checkoutData.delivery.courierCity || '');
     const [courierOffice, setCourierOffice] = useState(checkoutData.delivery.courierOffice || '');
 
-    const deliveryFee = getCartTotal() >= 100 ? 0 : 5;
+    // Comes from the cart so the threshold lives in exactly one place
+    // (siteConfig.delivery, via CartContext.getDeliveryFee).
+    const deliveryFee = getDeliveryFee();
 
     const validate = () => {
         const newErrors = {};
@@ -99,7 +102,7 @@ export default function DeliveryStep() {
                                     {t('checkout.home_delivery')}
                                 </div>
                                 <div className="text-xs text-slate-500 mt-1">
-                                    {deliveryFee === 0 ? t('cart.free_delivery') : `${deliveryFee} лв`}
+                                    {deliveryFee === 0 ? t('cart.free_delivery') : formatPrice(deliveryFee)}
                                 </div>
                             </button>
 
@@ -117,7 +120,7 @@ export default function DeliveryStep() {
                                     {t('checkout.office_delivery')}
                                 </div>
                                 <div className="text-xs text-slate-500 mt-1">
-                                    {deliveryFee === 0 ? t('cart.free_delivery') : `${deliveryFee} лв`}
+                                    {deliveryFee === 0 ? t('cart.free_delivery') : formatPrice(deliveryFee)}
                                 </div>
                             </button>
                         </div>

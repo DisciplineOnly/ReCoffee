@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { siteConfig } from '../lib/siteConfig';
+import { formatBgn, formatEur, formatPrice } from '../lib/price';
 import { onImageError, productImage } from '../lib/productImage';
 import { useSEO } from '../hooks/useSEO';
 
@@ -141,11 +142,16 @@ export default function CheckoutSuccess() {
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-bold text-slate-900">{item.product.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {item.product.price.toFixed(2)} лв</p>
+                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {formatPrice(item.product.price)}</p>
                                                     </div>
                                                 </div>
-                                                <span className="text-sm font-bold text-slate-900">
-                                                    {(item.product.price * item.quantity).toFixed(2)} лв
+                                                <span className="text-right whitespace-nowrap">
+                                                    <span className="block text-sm font-bold text-slate-900">
+                                                        {formatBgn(item.product.price * item.quantity)}
+                                                    </span>
+                                                    <span className="block text-[10px] font-medium text-slate-400">
+                                                        {formatEur(item.product.price * item.quantity)}
+                                                    </span>
                                                 </span>
                                             </div>
                                         ))}
@@ -154,15 +160,22 @@ export default function CheckoutSuccess() {
                                     <div className="pt-6 border-t border-slate-100 space-y-2">
                                         <div className="flex justify-between text-sm text-slate-500 font-medium">
                                             <span>{t('cart.subtotal')}</span>
-                                            <span>{order.subtotal.toFixed(2)} лв</span>
+                                            <span>{formatPrice(order.subtotal)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm text-slate-500 font-medium">
                                             <span>{t('cart.delivery')}</span>
-                                            <span>{order.deliveryFee === 0 ? t('order.free_label') : `${order.deliveryFee.toFixed(2)} лв`}</span>
+                                            <span>{order.deliveryFee === 0 ? t('order.free_label') : formatPrice(order.deliveryFee)}</span>
                                         </div>
-                                        <div className="flex justify-between pt-4 font-bold text-xl text-slate-900">
-                                            <span>{t('cart.total')}</span>
-                                            <span className="text-brand-primary">{order.total.toFixed(2)} лв</span>
+                                        <div className="flex justify-between items-start gap-3 pt-4">
+                                            <span className="font-bold text-xl text-slate-900">{t('cart.total')}</span>
+                                            <span className="text-right">
+                                                <span className="block font-bold text-xl text-brand-primary">
+                                                    {formatBgn(order.total)}
+                                                </span>
+                                                <span className="block text-xs font-medium text-slate-400">
+                                                    {formatEur(order.total)}
+                                                </span>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

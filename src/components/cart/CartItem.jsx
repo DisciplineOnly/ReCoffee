@@ -3,6 +3,7 @@ import { Trash2, Minus, Plus } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCart } from '../../contexts/CartContext';
 import { NO_GRIND } from '../../lib/categories';
+import { formatBgn, formatEur } from '../../lib/price';
 import { onImageError, productImage } from '../../lib/productImage';
 
 export default function CartItem({ item }) {
@@ -84,8 +85,13 @@ export default function CartItem({ item }) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <span className="text-xl md:text-2xl font-bold text-brand-accent">
-                            {itemTotal.toFixed(2)} лв
+                        <span className="text-right">
+                            <span className="block text-xl md:text-2xl font-bold text-brand-accent">
+                                {formatBgn(itemTotal)}
+                            </span>
+                            <span className="block text-xs text-slate-400">
+                                {formatEur(itemTotal)}
+                            </span>
                         </span>
                         <button
                             onClick={handleRemove}

@@ -12,6 +12,12 @@ export const useCheckout = () => {
 
 export const CheckoutProvider = ({ children }) => {
     const [currentStep, setCurrentStep] = useState(1);
+    // One-way latch, deliberately *not* cleared by resetCheckout(): placing an
+    // order empties the cart, and Checkout's "empty cart -> /cart" guard has to
+    // stand down from that moment on or it hijacks the trip to the confirmation
+    // page. This provider is scoped to the /checkout route, so it unmounts on
+    // the way out and a later checkout starts from false again.
+    const [orderPlaced, setOrderPlaced] = useState(false);
     const [checkoutData, setCheckoutData] = useState({
         client: {
             firstName: '',
@@ -73,6 +79,10 @@ export const CheckoutProvider = ({ children }) => {
         }
     };
 
+    const markOrderPlaced = () => {
+        setOrderPlaced(true);
+    };
+
     const resetCheckout = () => {
         setCurrentStep(1);
         setCheckoutData({
@@ -88,12 +98,14 @@ export const CheckoutProvider = ({ children }) => {
     const value = {
         currentStep,
         checkoutData,
+        orderPlaced,
         updateClientInfo,
         updateDeliveryInfo,
         updatePaymentInfo,
         nextStep,
         prevStep,
         goToStep,
+        markOrderPlaced,
         resetCheckout
     };
 

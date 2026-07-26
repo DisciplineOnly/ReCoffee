@@ -1,12 +1,19 @@
 import React from 'react';
 import { useTranslation } from '../../lib/translations';
+import { siteConfig } from '../../lib/siteConfig';
+import { formatBgn } from '../../lib/price';
 
 export default function Marquee() {
     const { t } = useTranslation();
 
+    // The threshold is interpolated rather than baked into the string, so
+    // changing siteConfig.delivery actually changes what the banner promises.
+    const freeShipping = t('marquee.free_shipping')
+        .replace('{{amount}}', formatBgn(siteConfig.delivery.freeOverBgn));
+
     const content = (
         <>
-            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{t('marquee.free_shipping')}</span>
+            <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{freeShipping}</span>
             <span className="text-white/30">•</span>
             <span className="text-white/80 text-xs font-medium tracking-[0.2em] uppercase mx-4">{t('marquee.fresh_roasted')}</span>
             <span className="text-white/30">•</span>

@@ -6,11 +6,62 @@ import { useCheckout } from '../../contexts/CheckoutContext';
 import { useCart } from '../../contexts/CartContext';
 import { supabase } from '../../lib/supabase';
 import { NO_GRIND } from '../../lib/categories';
+import { formatBgn, formatEur, formatPrice } from '../../lib/price';
+
+// Crockford-style base32 — I, L, O and U are left out so an order number read
+// out over the phone can't be mistyped. 256 % 32 === 0, so indexing a random
+// byte into it is unbiased.
+const ORDER_NUMBER_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const ORDER_NUMBER_LENGTH = 6;
+const ORDER_NUMBER_ATTEMPTS = 5;
+// Postgres unique_violation, surfaced by PostgREST as error.code.
+const UNIQUE_VIOLATION = '23505';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (value) => typeof value === 'string' && UUID_RE.test(value);
+
+// "RC-2026-4KJ8QW". Six base32 characters is ~1.07 billion codes rather than the
+// 10^6 six random digits gave: at a few thousand orders a year the birthday
+// problem made a collision likely, and orders.order_number is `unique not null`,
+// so it failed the insert *after* the customer had confirmed. The space is still
+// finite, hence the retry loop in handlePlaceOrder.
+const generateOrderNumber = () => {
+    const bytes = new Uint8Array(ORDER_NUMBER_LENGTH);
+    crypto.getRandomValues(bytes);
+    const code = Array.from(bytes, (byte) => ORDER_NUMBER_ALPHABET[byte % 32]).join('');
+    return `RC-${new Date().getFullYear()}-${code}`;
+};
+
+// Cart entries added while useProducts was on its local-JSON fallback carry ids
+// like "prod_009", but order_items.product_id is a uuid — the insert would fail
+// on invalid syntax. Such a cart also outlives the fallback session in
+// localStorage. The slug is stable across both sources, so resolve through it.
+const resolveFallbackProductIds = async (items) => {
+    const slugs = [...new Set(
+        items
+            .filter((item) => !isUuid(item.product.id) && item.product.slug)
+            .map((item) => item.product.slug)
+    )];
+
+    if (slugs.length === 0) return new Map();
+
+    const { data, error } = await supabase
+        .from('products')
+        .select('id, slug')
+        .in('slug', slugs);
+
+    if (error) {
+        console.warn('Could not resolve fallback product ids by slug:', error);
+        return new Map();
+    }
+
+    return new Map(data.map((row) => [row.slug, row.id]));
+};
 
 export default function ReviewStep() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { checkoutData, goToStep, resetCheckout } = useCheckout();
+    const { checkoutData, goToStep, resetCheckout, markOrderPlaced } = useCheckout();
     const { cart, getCartTotal, getDeliveryFee, getGrandTotal, clearCart } = useCart();
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,10 +105,38 @@ export default function ReviewStep() {
         return methods[method] || method;
     };
 
-    const generateOrderNumber = () => {
-        const year = new Date().getFullYear();
-        const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-        return `RC-${year}-${random}`;
+    const insertOrder = async (orderNumber, session) => {
+        const orderPayload = {
+            order_number: orderNumber,
+            status: 'pending',
+            subtotal,
+            delivery_fee: delivery,
+            total,
+            client_info: checkoutData.client,
+            delivery_info: checkoutData.delivery,
+            payment_info: checkoutData.payment,
+            user_id: session?.user?.id || null
+        };
+
+        let { data, error } = await supabase
+            .from('orders')
+            .insert(orderPayload)
+            .select()
+            .single();
+
+        // Pre-migration fallback: retry without the new columns if they don't exist yet
+        if (error && error.code === 'PGRST204') {
+            const legacyPayload = { ...orderPayload };
+            delete legacyPayload.payment_info;
+            delete legacyPayload.user_id;
+            ({ data, error } = await supabase
+                .from('orders')
+                .insert(legacyPayload)
+                .select()
+                .single());
+        }
+
+        return { data, error };
     };
 
     const handlePlaceOrder = async () => {
@@ -69,41 +148,21 @@ export default function ReviewStep() {
         setIsSubmitting(true);
 
         try {
-            // Generate order number
-            const orderNumber = generateOrderNumber();
-
             // Attach the order to the customer account, if logged in
             const { data: { session } } = await supabase.auth.getSession();
 
-            const orderPayload = {
-                order_number: orderNumber,
-                status: 'pending',
-                subtotal,
-                delivery_fee: delivery,
-                total,
-                client_info: checkoutData.client,
-                delivery_info: checkoutData.delivery,
-                payment_info: checkoutData.payment,
-                user_id: session?.user?.id || null
-            };
+            const productIdBySlug = await resolveFallbackProductIds(cart);
 
-            // 1. Create Order
-            let { data: orderData, error: orderError } = await supabase
-                .from('orders')
-                .insert(orderPayload)
-                .select()
-                .single();
+            // 1. Create Order. A taken order number is recoverable — draw
+            // another one rather than failing a confirmed order.
+            let orderNumber;
+            let orderData;
+            let orderError;
 
-            // Pre-migration fallback: retry without the new columns if they don't exist yet
-            if (orderError && orderError.code === 'PGRST204') {
-                const legacyPayload = { ...orderPayload };
-                delete legacyPayload.payment_info;
-                delete legacyPayload.user_id;
-                ({ data: orderData, error: orderError } = await supabase
-                    .from('orders')
-                    .insert(legacyPayload)
-                    .select()
-                    .single());
+            for (let attempt = 0; attempt < ORDER_NUMBER_ATTEMPTS; attempt++) {
+                orderNumber = generateOrderNumber();
+                ({ data: orderData, error: orderError } = await insertOrder(orderNumber, session));
+                if (!orderError || orderError.code !== UNIQUE_VIOLATION) break;
             }
 
             if (orderError) throw orderError;
@@ -111,7 +170,12 @@ export default function ReviewStep() {
             // 2. Create Order Items
             const orderItems = cart.map(item => ({
                 order_id: orderData.id,
-                product_id: item.product.id,
+                // Null beats an invalid uuid: the line still records what was
+                // bought and at what price, and the admin order table already
+                // falls back to a generic label when the product join misses.
+                product_id: isUuid(item.product.id)
+                    ? item.product.id
+                    : productIdBySlug.get(item.product.slug) ?? null,
                 quantity: item.quantity,
                 unit_price: item.product.price,
                 grind_type: item.grindType
@@ -139,6 +203,9 @@ export default function ReviewStep() {
             // We use localStorage just to pass data to the success page securely/temporarily
             localStorage.setItem('recoffee_last_order', JSON.stringify(successOrder));
 
+            // Must precede clearCart(): it tells the /checkout guard to stop
+            // redirecting to /cart now that emptying the cart is expected.
+            markOrderPlaced();
             clearCart();
             resetCheckout();
             navigate('/checkout/success');
@@ -265,8 +332,8 @@ export default function ReviewStep() {
                                         {item.grindType !== NO_GRIND && `(${getGrindTypeLabel(item.grindType)}) `}x{item.quantity}
                                     </span>
                                 </div>
-                                <span className="text-slate-900 font-medium">
-                                    {(item.product.price * item.quantity).toFixed(2)} лв
+                                <span className="text-slate-900 font-medium whitespace-nowrap">
+                                    {formatPrice(item.product.price * item.quantity)}
                                 </span>
                             </div>
                         ))}
@@ -275,17 +342,24 @@ export default function ReviewStep() {
                     <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-slate-600">{t('cart.subtotal')}</span>
-                            <span className="text-slate-900 font-medium">{subtotal.toFixed(2)} лв</span>
+                            <span className="text-slate-900 font-medium">{formatPrice(subtotal)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-slate-600">{t('cart.delivery')}</span>
                             <span className={`font-medium ${delivery === 0 ? 'text-green-600' : 'text-slate-900'}`}>
-                                {delivery === 0 ? t('cart.free_delivery') : `${delivery.toFixed(2)} лв`}
+                                {delivery === 0 ? t('cart.free_delivery') : formatPrice(delivery)}
                             </span>
                         </div>
-                        <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-200">
-                            <span className="text-slate-900">{t('cart.total')}</span>
-                            <span className="text-brand-accent">{total.toFixed(2)} лв</span>
+                        <div className="flex justify-between items-start gap-3 pt-2 border-t border-slate-200">
+                            <span className="text-lg font-bold text-slate-900">{t('cart.total')}</span>
+                            <span className="text-right">
+                                <span className="block text-lg font-bold text-brand-accent">
+                                    {formatBgn(total)}
+                                </span>
+                                <span className="block text-xs font-medium text-slate-400">
+                                    {formatEur(total)}
+                                </span>
+                            </span>
                         </div>
                     </div>
                 </div>

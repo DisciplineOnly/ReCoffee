@@ -46,7 +46,7 @@
         "roast_level": "Bold & Smooth"
     },
     "marquee": {
-        "free_shipping": "Free shipping on orders over 100 BGN",
+        "free_shipping": "Free shipping on orders over {{amount}}",
         "fresh_roasted": "Roasted fresh in Sofia",
         "sustainable": "Sustainably Sourced"
     },

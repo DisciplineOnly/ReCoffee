@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useCart } from '../../contexts/CartContext';
+import { siteConfig } from '../../lib/siteConfig';
+import { formatBgn, formatEur, formatPrice } from '../../lib/price';
+
+const FREE_DELIVERY_OVER = siteConfig.delivery.freeOverBgn;
 
 export default function CartSummary() {
     const { t } = useTranslation();
@@ -20,31 +24,43 @@ export default function CartSummary() {
             </h3>
 
             {/* Subtotal */}
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-start gap-3 mb-3">
                 <span className="text-slate-600">{t('cart.subtotal')}</span>
-                <span className="text-lg font-bold text-slate-900">
-                    {subtotal.toFixed(2)} лв
+                <span className="text-right">
+                    <span className="block text-lg font-bold text-slate-900">
+                        {formatBgn(subtotal)}
+                    </span>
+                    <span className="block text-xs text-slate-400">{formatEur(subtotal)}</span>
                 </span>
             </div>
 
             {/* Delivery */}
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-start gap-3 mb-3">
                 <span className="text-slate-600">{t('cart.delivery')}</span>
-                <span className={`text-lg font-bold ${isFreeDelivery ? 'text-green-600' : 'text-slate-900'}`}>
-                    {isFreeDelivery ? t('cart.free_delivery') : `${delivery.toFixed(2)} лв`}
-                </span>
+                {isFreeDelivery ? (
+                    <span className="text-lg font-bold text-green-600">
+                        {t('cart.free_delivery')}
+                    </span>
+                ) : (
+                    <span className="text-right">
+                        <span className="block text-lg font-bold text-slate-900">
+                            {formatBgn(delivery)}
+                        </span>
+                        <span className="block text-xs text-slate-400">{formatEur(delivery)}</span>
+                    </span>
+                )}
             </div>
 
             {/* Free Delivery Progress */}
-            {!isFreeDelivery && subtotal > 0 && subtotal < 100 && (
+            {!isFreeDelivery && subtotal > 0 && subtotal < FREE_DELIVERY_OVER && (
                 <div className="mb-4 p-3 bg-brand-secondary/10 rounded-lg">
                     <p className="text-xs text-brand-secondary">
-                        Добави още {(100 - subtotal).toFixed(2)} лв за безплатна доставка!
+                        Добави още {formatPrice(FREE_DELIVERY_OVER - subtotal)} за безплатна доставка!
                     </p>
                     <div className="mt-2 h-2 bg-white rounded-full overflow-hidden">
                         <div
                             className="h-full bg-brand-secondary transition-all duration-300"
-                            style={{ width: `${(subtotal / 100) * 100}%` }}
+                            style={{ width: `${(subtotal / FREE_DELIVERY_OVER) * 100}%` }}
                         />
                     </div>
                 </div>
@@ -52,10 +68,13 @@ export default function CartSummary() {
 
             {/* Total */}
             <div className="border-t border-slate-200 pt-4 mb-6">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-start gap-3">
                     <span className="text-lg font-bold text-slate-900">{t('cart.total')}</span>
-                    <span className="text-2xl font-bold text-brand-accent">
-                        {total.toFixed(2)} лв
+                    <span className="text-right">
+                        <span className="block text-2xl font-bold text-brand-accent">
+                            {formatBgn(total)}
+                        </span>
+                        <span className="block text-xs text-slate-400">{formatEur(total)}</span>
                     </span>
                 </div>
             </div>

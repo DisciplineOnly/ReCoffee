@@ -13,9 +13,20 @@ import { useSEO } from '../hooks/useSEO';
 function CheckoutContent() {
     const { t } = useTranslation();
     const { cart } = useCart();
-    const { currentStep } = useCheckout();
+    const { currentStep, orderPlaced } = useCheckout();
 
     useSEO({ title: t('checkout.title'), noindex: true });
+
+    // The order went through and the navigation to the confirmation page is in
+    // flight. React Router applies navigate() inside a transition while
+    // clearCart() is a normal-priority update, so this component still renders
+    // once with an empty cart while the route is /checkout — without this the
+    // guard below fired and replaced the pending navigation, dumping the
+    // customer on /cart instead of the confirmation. Render nothing rather than
+    // flashing an empty checkout for that frame.
+    if (orderPlaced) {
+        return null;
+    }
 
     // Redirect to cart if empty
     if (cart.length === 0) {

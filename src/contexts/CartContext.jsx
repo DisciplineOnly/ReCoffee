@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { siteConfig } from '../lib/siteConfig';
 
 const CartContext = createContext();
 
@@ -85,9 +86,12 @@ export const CartProvider = ({ children }) => {
         return cart.reduce((count, item) => count + item.quantity, 0);
     };
 
+    // Single source of truth for the fee: siteConfig.delivery holds both numbers,
+    // so anything showing a threshold must read them from here rather than
+    // repeating the literals.
     const getDeliveryFee = () => {
-        const total = getCartTotal();
-        return total >= 100 ? 0 : 5;
+        const { freeOverBgn, standardFeeBgn } = siteConfig.delivery;
+        return getCartTotal() >= freeOverBgn ? 0 : standardFeeBgn;
     };
 
     const getGrandTotal = () => {
