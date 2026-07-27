@@ -1,4 +1,4 @@
-import { fromStotinki, toStotinki } from './price';
+import { fromCents, toCents } from './price';
 
 /**
  * Subscription plan data, in one place because two screens need it and they
@@ -18,14 +18,14 @@ export const SUBSCRIPTION_DISCOUNT = 0.15;
 export const SUBSCRIPTION_FREQUENCIES = ['weekly', 'biweekly', 'monthly'];
 
 export const SUBSCRIPTION_QUANTITIES = [
-    { id: '250', regularPrice: 17.90 },
-    { id: '500', regularPrice: 35.80 },
-    { id: '1000', regularPrice: 71.60 },
+    { id: '250', regularPrice: 9.15 },
+    { id: '500', regularPrice: 18.30 },
+    { id: '1000', regularPrice: 36.61 },
 ];
 
-/** Integer stotinki throughout, for the reason documented in price.js. */
-export const subscriptionPrice = (regularBgn) =>
-    fromStotinki(Math.round(toStotinki(regularBgn) * (1 - SUBSCRIPTION_DISCOUNT)));
+/** Integer cents throughout, for the reason documented in price.js. */
+export const subscriptionPrice = (regularEur) =>
+    fromCents(Math.round(toCents(regularEur) * (1 - SUBSCRIPTION_DISCOUNT)));
 
 /** Price per delivery for a stored quantity id, or null if it is not a known plan. */
 export const subscriptionPriceForQuantity = (quantityId) => {

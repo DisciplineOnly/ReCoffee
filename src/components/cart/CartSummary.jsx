@@ -6,7 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 import { siteConfig } from '../../lib/siteConfig';
 import { formatBgn, formatEur, formatPrice } from '../../lib/price';
 
-const FREE_DELIVERY_OVER = siteConfig.delivery.freeOverBgn;
+const FREE_DELIVERY_OVER = siteConfig.delivery.freeOverEur;
 
 export default function CartSummary() {
     const { t } = useTranslation();

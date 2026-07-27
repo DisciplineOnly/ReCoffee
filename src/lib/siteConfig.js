@@ -24,11 +24,12 @@ export const siteConfig = {
     // actually charged: place_order() computes the delivery fee from the
     // `store_settings` row, ignoring anything the browser sends. These two
     // numbers only drive what the cart, checkout and marketing copy *show*, so
-    // keep them in step with `store_settings` or the quoted fee will not match
-    // the charged one.
+    // keep them in step with `store_settings.free_delivery_over_eur` /
+    // `standard_delivery_fee_eur` or the quoted fee will not match the charged
+    // one. **Euro, like every other amount in this codebase.**
     delivery: {
-        freeOverBgn: 100,
-        standardFeeBgn: 5,
+        freeOverEur: 50,
+        standardFeeEur: 2.56,
         couriers: ['Econt', 'Speedy'],
     },
 };

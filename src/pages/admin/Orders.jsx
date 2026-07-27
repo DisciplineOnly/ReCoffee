@@ -175,7 +175,7 @@ export default function AdminOrders() {
                                                 </>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 font-bold text-slate-900">{Number(order.total).toFixed(2)} лв</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900">{Number(order.total).toFixed(2)} €</td>
                                         <td className="px-6 py-4">
                                             <select
                                                 value={order.status}
@@ -211,7 +211,7 @@ export default function AdminOrders() {
                                                                         <span className="text-slate-400"> ({item.grind_type})</span>
                                                                     </span>
                                                                     <span className="font-medium text-slate-900">
-                                                                        {(item.quantity * Number(item.unit_price)).toFixed(2)} лв
+                                                                        {(item.quantity * Number(item.unit_price)).toFixed(2)} €
                                                                     </span>
                                                                 </li>
                                                             ))}

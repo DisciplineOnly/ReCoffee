@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { siteConfig } from '../lib/siteConfig';
 import { useProducts } from '../hooks/useProducts';
-import { fromStotinki, toStotinki } from '../lib/price';
+import { fromCents, toCents } from '../lib/price';
 
 const CART_KEY = 'recoffee_cart';
 
@@ -235,10 +235,10 @@ export const CartProvider = ({ children }) => {
     // The one place cart money is actually added up. Everything below is a
     // projection of this, so the float sum that used to live in getCartTotal()
     // can no longer reach a threshold comparison.
-    const getCartTotalStotinki = () =>
-        cart.reduce((total, item) => total + toStotinki(item.product.price) * item.quantity, 0);
+    const getCartTotalCents = () =>
+        cart.reduce((total, item) => total + toCents(item.product.price) * item.quantity, 0);
 
-    const getCartTotal = () => fromStotinki(getCartTotalStotinki());
+    const getCartTotal = () => fromCents(getCartTotalCents());
 
     const getCartCount = () => {
         return cart.reduce((count, item) => count + item.quantity, 0);
@@ -248,16 +248,16 @@ export const CartProvider = ({ children }) => {
     // both numbers, so anything showing a threshold must read them from here
     // rather than repeating the literals. The charged fee is computed by
     // place_order() from store_settings — see the note in siteConfig.js.
-    // Compared in stotinki, not in BGN. `getCartTotal() >= freeOverBgn` read
-    // 99.99999999999999 >= 100 for a cart whose lines total exactly 100.00 and
-    // charged the fee anyway, next to a subtotal that printed "100.00 лв".
+    // Compared in integer cents, never as floats. `getCartTotal() >= freeOverEur`
+    // read 49.99999999999999 >= 50 for a cart whose lines total exactly the
+    // threshold and charged the fee anyway, beside a subtotal printing "50.00 €".
     const getDeliveryFee = () => {
-        const { freeOverBgn, standardFeeBgn } = siteConfig.delivery;
-        return getCartTotalStotinki() >= toStotinki(freeOverBgn) ? 0 : standardFeeBgn;
+        const { freeOverEur, standardFeeEur } = siteConfig.delivery;
+        return getCartTotalCents() >= toCents(freeOverEur) ? 0 : standardFeeEur;
     };
 
     const getGrandTotal = () =>
-        fromStotinki(getCartTotalStotinki() + toStotinki(getDeliveryFee()));
+        fromCents(getCartTotalCents() + toCents(getDeliveryFee()));
 
     const value = {
         cart,

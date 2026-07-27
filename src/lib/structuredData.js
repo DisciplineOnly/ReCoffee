@@ -39,7 +39,7 @@ export function organizationSchema() {
         email: siteConfig.email,
         telephone: siteConfig.phone,
         priceRange: '$$',
-        currenciesAccepted: 'BGN',
+        currenciesAccepted: 'EUR',
         address: {
             '@type': 'PostalAddress',
             streetAddress: 'бул. „Витоша" 45',
@@ -114,7 +114,7 @@ export function productSchema(product, { image } = {}) {
         offers: {
             '@type': 'Offer',
             url,
-            priceCurrency: 'BGN',
+            priceCurrency: 'EUR',
             price: Number(product.price).toFixed(2),
             availability: product.inStock
                 ? 'https://schema.org/InStock'

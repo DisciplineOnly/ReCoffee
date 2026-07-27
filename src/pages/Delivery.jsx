@@ -22,7 +22,7 @@ export default function Delivery() {
         {
             icon: Banknote,
             title: 'Цена на доставката',
-            text: `Безплатна доставка за поръчки над ${formatPrice(siteConfig.delivery.freeOverBgn)}. За по-малки поръчки — фиксирана такса от ${formatPrice(siteConfig.delivery.standardFeeBgn)}.`,
+            text: `Безплатна доставка за поръчки над ${formatPrice(siteConfig.delivery.freeOverEur)}. За по-малки поръчки — фиксирана такса от ${formatPrice(siteConfig.delivery.standardFeeEur)}.`,
         },
         {
             icon: Clock,

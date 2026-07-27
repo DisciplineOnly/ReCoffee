@@ -9,7 +9,7 @@ export default function Marquee() {
     // The threshold is interpolated rather than baked into the string, so
     // changing siteConfig.delivery actually changes what the banner promises.
     const freeShipping = t('marquee.free_shipping')
-        .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverBgn));
+        .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverEur));
 
     const content = (
         <>

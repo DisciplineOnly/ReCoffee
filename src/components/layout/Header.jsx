@@ -81,10 +81,10 @@ export default function Header() {
                                 {siteConfig.phone}
                             </a>
                             <p className="text-xs font-medium tracking-wide text-slate-500 text-center flex-1">
-                                {/* Derived, never typed: this used to read "над 50€" while the
+                                {/* Derived, never typed: this once read "над 50€" while the
                                     threshold charged at 100 лв — 51.13 €. */}
                                 {t('header.topbar.free_shipping')
-                                    .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverBgn))}
+                                    .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverEur))}
                             </p>
                             <nav className="flex items-center gap-6 flex-shrink-0">
                                 <Link to="/faq" className={topLinkClass}>{t('header.topbar.faq')}</Link>

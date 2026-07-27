@@ -7,7 +7,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useProducts } from '../hooks/useProducts';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useSEO } from '../hooks/useSEO';
-import { formatBgn, formatEur, formatPrice, toEur } from '../lib/price';
+import { formatBgn, formatEur, formatPrice } from '../lib/price';
 import ProductReviews from '../components/shop/ProductReviews';
 import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../lib/categories';
 import { PLACEHOLDER_IMAGE, onImageError } from '../lib/productImage';
@@ -188,7 +188,7 @@ export default function ProductDetail() {
 
                         <div className="my-8 flex items-baseline gap-4 flex-wrap">
                             <span className="text-5xl font-bold text-brand-primary">
-                                {toEur(product.price).toFixed(2)}
+                                {product.price.toFixed(2)}
                             </span>
                             <span className="text-2xl font-serif text-slate-400">€</span>
                             <span className="text-lg text-slate-400">({formatBgn(product.price)})</span>

@@ -51,6 +51,10 @@ create table if not exists products (
   -- Public URL in the `products` storage bucket. Null falls back to the local
   -- image mapping in src/data/products.json.
   image_url      text,
+  -- Money is stored in EUR since 20260727000016. The marker is what makes that
+  -- migration's conversion safe to re-run; on a fresh project every row is born
+  -- 'EUR' and nothing is ever converted.
+  price_currency text not null default 'EUR' check (price_currency in ('BGN', 'EUR')),
   created_at     timestamptz default now()
 );
 
@@ -221,10 +225,10 @@ $$;
 -- these for display; place_order() below computes the actual fee from this row.
 create table if not exists store_settings (
   id                        smallint primary key default 1 check (id = 1),
-  free_delivery_over_bgn    decimal(10,2) not null default 100
-                            check (free_delivery_over_bgn >= 0),
-  standard_delivery_fee_bgn decimal(10,2) not null default 5
-                            check (standard_delivery_fee_bgn >= 0),
+  free_delivery_over_eur    decimal(10,2) not null default 50
+                            check (free_delivery_over_eur >= 0),
+  standard_delivery_fee_eur decimal(10,2) not null default 2.56
+                            check (standard_delivery_fee_eur >= 0),
   updated_at                timestamptz not null default now()
 );
 
@@ -728,7 +732,7 @@ begin
 
   -- ── delivery fee ─────────────────────────────────────────────────────────
 
-  select s.free_delivery_over_bgn, s.standard_delivery_fee_bgn
+  select s.free_delivery_over_eur, s.standard_delivery_fee_eur
     into v_free_over, v_flat_fee
   from store_settings s
   where s.id = 1;
@@ -736,8 +740,8 @@ begin
   if not found then
     -- Unreachable: the row is seeded above. Charge the documented fee rather
     -- than nothing if it ever is.
-    v_free_over := 100;
-    v_flat_fee  := 5;
+    v_free_over := 50;
+    v_flat_fee  := 2.56;
   end if;
 
   v_delivery_fee := case when v_subtotal >= v_free_over then 0 else v_flat_fee end;

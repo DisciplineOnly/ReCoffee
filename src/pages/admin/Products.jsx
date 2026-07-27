@@ -61,7 +61,7 @@ export default function ProductList() {
                 );
             },
         },
-        { label: t('admin.products.col_price'), padding: true, render: (row) => <span className="font-mono font-medium">{row.price.toFixed(2)} лв</span> },
+        { label: t('admin.products.col_price'), padding: true, render: (row) => <span className="font-mono font-medium">{row.price.toFixed(2)} €</span> },
         {
             label: t('admin.products.col_stock'),
             render: (row) => (

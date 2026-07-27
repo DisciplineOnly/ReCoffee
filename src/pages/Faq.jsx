@@ -18,7 +18,7 @@ export default function Faq() {
         },
         {
             q: 'Каква е цената на доставката?',
-            a: `Доставката е безплатна за поръчки над ${formatPrice(siteConfig.delivery.freeOverBgn)}. За по-малки поръчки таксата е ${formatPrice(siteConfig.delivery.standardFeeBgn)}, чрез ${siteConfig.delivery.couriers.join(' или ')}.`,
+            a: `Доставката е безплатна за поръчки над ${formatPrice(siteConfig.delivery.freeOverEur)}. За по-малки поръчки таксата е ${formatPrice(siteConfig.delivery.standardFeeEur)}, чрез ${siteConfig.delivery.couriers.join(' или ')}.`,
         },
         {
             q: 'В кои населени места доставяте?',

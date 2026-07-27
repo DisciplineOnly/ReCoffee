@@ -61,7 +61,7 @@ export default function ServiceList() {
                 </div>
             ),
         },
-        { label: t('admin.services.col_price'), padding: true, render: (row) => <span className="font-mono font-medium">{row.price ? `${row.price.toFixed(2)} лв` : t('admin.services.price_custom')}</span> },
+        { label: t('admin.services.col_price'), padding: true, render: (row) => <span className="font-mono font-medium">{row.price ? `${row.price.toFixed(2)} €` : t('admin.services.price_custom')}</span> },
         {
             label: t('admin.services.col_status'),
             render: (row) => (

@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by nineteen idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by twenty idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 11 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -60,8 +60,12 @@ The whole DB is created by nineteen idempotent migrations in `supabase/migration
     request stores the validated plan (`frequency`, `quantity`) and never a client-computed price.
 19. `20260727000015_remove_t20_test_inquiries.sql` — data cleanup for T20's verification rows, like
     files 14 and 16. Not folded into file 1.
+20. `20260727000016_price_in_euro.sql` — redenomination. `store_settings` gains
+    `free_delivery_over_eur` (**50.00**) / `standard_delivery_fee_eur` (2.56) and drops the BGN pair,
+    `place_order()` reads them, and the catalog is converted at the peg. The schema half is folded
+    into file 1; the **data conversion is not**, because a fresh project seeds euro prices already.
 
-Files 3-13, 15, 17 and 18 are *also* folded into file 1, so a fresh project bootstraps to the identical state
+Files 3-13, 15, 17, 18 and the schema half of 20 are *also* folded into file 1, so a fresh project bootstraps to the identical state
 from file 1 alone. **`place_order()` now exists in three files** — its own migration
 (`20260727000000`), the reissue in `20260727000011`, and section 7 of `init_schema.sql`. Only the
 latter two are current, and they are kept byte-identical; change both together.
@@ -175,13 +179,16 @@ machines → personal/professional). Legacy beans-only category values still exi
 
 - **Company / contact / legal data** → `src/lib/siteConfig.js`. Footer, contact, legal pages, and
   checkout all read from it. Change it in one place.
+- **Money is euro — stored, calculated and displayed.** `products.price`, `orders.total`,
+  `store_settings.free_delivery_over_eur`, the cart, the subscription plans: all EUR. Nothing in the
+  business logic reads lev. The columns held BGN until `20260727000016_price_in_euro.sql` converted
+  them at the peg; `products.price_currency` is the marker that makes that conversion re-runnable.
 - **Prices** always render through `src/lib/price.js`, dual currency at the fixed peg `1.95583`.
-  **The euro leads** (`formatPrice` → "6.60 € (12.90 лв)"); on a two-line layout the EUR figure is the
-  prominent one and BGN the muted line beneath. Never format money inline — no `.toFixed(2) лв` in
-  JSX. Money is still **stored** in BGN (`products.price`, `orders.total`, `store_settings`) and all
-  arithmetic runs in stotinki, so currency order is presentation only. **Admin screens stay in lev**:
-  they edit the stored column, and showing an operator a converted number they cannot type back is
-  worse than showing them the column.
+  `formatPrice` → "6.60 € (12.90 лв)"; on a two-line layout EUR is the prominent figure and the lev
+  the muted line beneath. `formatBgn` takes a **euro** amount and renders its lev equivalent — it is
+  display only and its result must never re-enter a calculation. Never format money inline. Cart
+  arithmetic runs in integer **cents** (`toCents`/`fromCents`), not floats — see T17 in PROGRESS.md
+  for why the threshold comparison needs it. Dropping the lev half later changes no arithmetic.
 - **Amounts in copy** are interpolated from `siteConfig`, never typed. The free-delivery banner read
   "над 50€" while the threshold charged at 100 лв — 51.13 € — so a 50.50 € cart was charged delivery
   against a banner promising otherwise.
