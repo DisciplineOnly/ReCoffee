@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by four idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by five idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -31,18 +31,25 @@ The whole DB is created by four idempotent migrations in `supabase/migrations/`,
 3. `20260723000002_fix_product_names.sql` — one name correction.
 4. `20260727000000_place_order_rpc.sql` — `store_settings`, `order_items.product_name` and
    `place_order()`, for databases already created from the files above.
+5. `20260727000001_revoke_client_order_inserts.sql` — drops the two insert policies on `orders` /
+   `order_items` and revokes the INSERT privilege from `anon` and `authenticated`.
 
-Files 3 and 4 are *also* folded into file 1, so a fresh project bootstraps to the identical state
-from file 1 alone. **A change to the schema needs both a new numbered migration and the same change
+Files 3-5 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.
 
-Orders are **not** inserted from the client. `place_order(p_items, p_client, p_delivery,
-p_payment_method)` is a `security definer` RPC that prices every line from `products`, computes the
-delivery fee from `store_settings`, pins `status` to `'pending'`, sets `user_id` from `auth.uid()`
-and writes the order plus its items in one transaction. It ignores anything price-shaped in its
-payload. Rejections come back as stable tokens (`ORDER_PRODUCT_OUT_OF_STOCK`,
-`ORDER_PRODUCT_UNKNOWN`, `ORDER_INVALID_LINE`, …) that the frontend maps to locale strings.
+Orders are **not** insertable from the client — `anon` and `authenticated` have no INSERT privilege
+on `orders` or `order_items` and no insert policy, so a direct PostgREST insert returns `42501`.
+The only way in is `place_order(p_items, p_client, p_delivery, p_payment_method)`, a
+`security definer` RPC that prices every line from `products`, computes the delivery fee from
+`store_settings`, pins `status` to `'pending'`, sets `user_id` from `auth.uid()` and writes the
+order plus its items in one transaction. It ignores anything price-shaped in its payload.
+Rejections come back as stable tokens (`ORDER_PRODUCT_OUT_OF_STOCK`, `ORDER_PRODUCT_UNKNOWN`,
+`ORDER_INVALID_LINE`, …) that the frontend maps to locale strings. Note that a policy is only
+consulted *after* the table-privilege check, and Supabase's default privileges grant INSERT on new
+`public` tables to `anon`/`authenticated` — so a new write-restricted table needs the `revoke`, not
+just the absence of a policy.
 
 - Use `gen_random_uuid()`, never `uuid_generate_v4()` (uuid-ossp is off the migration search_path).
 - Never write migration files with PowerShell `Set-Content -Encoding UTF8` — it emits a BOM that

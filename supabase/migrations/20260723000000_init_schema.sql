@@ -255,16 +255,15 @@ create policy "Admins can insert services" on services for insert with check (is
 create policy "Admins can update services" on services for update using (is_admin());
 create policy "Admins can delete services" on services for delete using (is_admin());
 
--- ── orders: guest checkout in, owner or admin out ───────────────────────────
+-- ── orders: no client writes in, owner or admin out ─────────────────────────
+-- Orders are created *only* by place_order() (section 7), which is
+-- `security definer` and so inserts as its owner. There is deliberately no
+-- insert policy: a policy is consulted only after the table privilege check
+-- passes, and the privilege is revoked below, so neither is load-bearing alone.
 drop policy if exists "Anyone can create an order"            on orders;
 drop policy if exists "Users can view own orders"             on orders;
 drop policy if exists "Admins can view all orders (dashboard)" on orders;
 drop policy if exists "Admins can update orders"              on orders;
-
--- Guests insert with user_id null; logged-in customers only as themselves.
-create policy "Anyone can create an order"
-  on orders for insert to anon, authenticated
-  with check (user_id is null or user_id = auth.uid());
 
 create policy "Users can view own orders"
   on orders for select using (user_id = auth.uid());
@@ -276,11 +275,11 @@ create policy "Admins can update orders"
   on orders for update using (is_admin());
 
 -- ── order_items: visibility follows the parent order ────────────────────────
+-- Same as orders: written only by place_order(). The insert policy this
+-- replaces was `with check (true)` with no link between the caller and
+-- `order_id`, so anyone holding an order uuid could append lines to any order.
 drop policy if exists "Anyone can create order items"            on order_items;
 drop policy if exists "Users and admins can view order items"    on order_items;
-
-create policy "Anyone can create order items"
-  on order_items for insert to anon, authenticated with check (true);
 
 create policy "Users and admins can view order items"
   on order_items for select using (
@@ -290,6 +289,11 @@ create policy "Users and admins can view order items"
         and (o.user_id = auth.uid() or is_admin())
     )
   );
+
+-- Supabase's default privileges grant INSERT on new `public` tables to anon and
+-- authenticated, so revoking is the half that actually closes the door.
+revoke insert on orders      from anon, authenticated;
+revoke insert on order_items from anon, authenticated;
 
 -- ── reviews: public read + write, admin moderation ──────────────────────────
 drop policy if exists "Reviews are viewable by everyone" on reviews;

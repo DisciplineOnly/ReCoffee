@@ -152,7 +152,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): route checkout through place_order instead of direct inserts`
 
-- [ ] **T3 — Revoke direct client writes to orders and order_items**
+- [x] **T3 — Revoke direct client writes to orders and order_items**
 
   **Closes findings:** H1 (`order_items` insert policy is unconditionally `true`), the remainder of
   C1/H2.
@@ -598,6 +598,17 @@ out-of-scope findings inline.
   null, the component returns null and the customer gets a blank page with no redirect — instead of
   the `/shop` redirect the missing-value branch gives. Pre-existing, untouched by T2. **T7** rewrites
   this reader and is the natural place to fix it.
+
+- **`anon` and `authenticated` hold far more table privilege than they need.** Found while doing
+  T3's revoke: on **every** table in `public`, both roles are granted the full
+  `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` set — Supabase's default, with RLS
+  expected to do the actual gating. It mostly does: `orders` has no DELETE policy, `order_items` has
+  neither UPDATE nor DELETE, so those are refused. **But `TRUNCATE` is not subject to RLS at all.**
+  It is not reachable today because PostgREST only issues SELECT/INSERT/UPDATE/DELETE, so there is no
+  live exposure — the exposure would begin the moment any `security definer` function, trigger or
+  future endpoint executes SQL under those roles. A blanket
+  `revoke truncate on all tables in schema public from anon, authenticated;` costs nothing and
+  removes the footgun. T3 revoked INSERT only, as scoped.
 
 - **A cart can hold products from a different Supabase project.** Found in the real browser profile
   during T2: `recoffee_cart` contained a `mass-appeal` line whose `id` was a valid uuid and whose

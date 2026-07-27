@@ -507,3 +507,79 @@ two unsynchronised inserts are replaced by one `supabase.rpc('place_order', …)
 - Two entries were added to *Discovered during the loop* for later tasks: the review-step price
   mismatch above (T8), and an unguarded `JSON.parse` in `CheckoutSuccess` that blanks the page on a
   corrupt `recoffee_last_order` instead of redirecting (T7 rewrites that reader anyway).
+
+---
+
+## LOOP T3 COMPLETE — direct client inserts on orders revoked
+
+**What was built:** `supabase/migrations/20260727000001_revoke_client_order_inserts.sql`, the third
+and final step of the Phase 1 change. It drops both insert policies and revokes the underlying
+privilege:
+
+```sql
+drop policy if exists "Anyone can create an order"   on orders;
+drop policy if exists "Anyone can create order items" on order_items;
+revoke insert on orders      from anon, authenticated;
+revoke insert on order_items from anon, authenticated;
+```
+
+**Dropping the policies alone would not have been enough**, and this is the part worth remembering:
+Supabase's default privileges grant table-level INSERT on new `public` tables to `anon` and
+`authenticated`, and a policy is only consulted *after* the privilege check passes. Removing the
+policy denies the write; revoking the privilege means the right to attempt it never existed. Both
+are applied so neither is load-bearing on its own. The same reasoning is now written into CLAUDE.md,
+because the next write-restricted table will hit it too.
+
+Folded into `init_schema.sql`: the two `create policy` statements are gone and the two `revoke`s
+added, so a fresh project bootstraps closed rather than open-then-closed. SELECT policies were left
+exactly as they were. CLAUDE.md's migration list is now five.
+
+**Verified by:**
+
+- **The hole is measurably shut.** The same direct `insert` into `orders` that returned **HTTP 201**
+  during T1 — storing `status: 'delivered'`, `total: 0.01`, zero line items — now returns
+  **HTTP 401 / `42501` "permission denied for table orders"**. The direct `insert` into
+  `order_items` (H1: append a line at any price to any order, using a foreign `order_id`) returns
+  the same. Both over real PostgREST with the shipped anon key.
+- **`place_order` is unaffected**, as predicted — it is `security definer` and inserts as its owner.
+  Called with the anon key immediately after the revoke: HTTP 200, `RC-2026-3AKECG`, subtotal 79.00,
+  delivery 5.00, total 84.00.
+- **Checkout still works through the UI.** Full run on a dev server (port 5178): added to cart,
+  three checkout steps, placed. Landed on `/checkout/success` with `RC-2026-YMDDFS`, 79.00 / 5.00 /
+  84.00, no alerts, and `history` recorded exactly `["push:/checkout/success"]`.
+- **The admin dashboard still lists and updates orders.** Tested by running the *actual* queries from
+  `src/pages/admin/Orders.jsx` under `set role authenticated` with the real admin's
+  `request.jwt.claims` — so table grants and RLS both applied exactly as they do for a logged-in
+  admin, rather than as the superuser the CLI normally connects as. The list returned the order, its
+  line count and the snapshotted `product_name`; the status `UPDATE` succeeded and read back as
+  `processing`.
+- **Anon SELECT still behaves**: HTTP 200 with `[]` — the policy is intact and guest orders remain
+  invisible, which is exactly the pre-existing state T6 will address.
+- **`init_schema.sql` re-applied cleanly**, and the direct-insert test was re-run *afterwards* and
+  still returned 42501 — so re-running the bootstrap file does not silently re-open the hole. That
+  was the specific risk of folding a `revoke` into a file whose other statements are
+  `drop policy` / `create policy` pairs.
+- `npm run lint`: **12 warnings, 0 errors — unchanged baseline.** `npm run build` passed in 1.20s.
+  No application code changed in this task, so both were expected to be untouched.
+- **Test data removed**: all four verification orders deleted, `orders` and `order_items` back to 0
+  rows, browser `localStorage` cleared.
+
+**Assumptions made:**
+- **INSERT only was revoked.** `anon`/`authenticated` also hold UPDATE, DELETE and TRUNCATE on these
+  tables. RLS covers UPDATE and DELETE (no DELETE policy on `orders`; no UPDATE or DELETE policy on
+  `order_items`), and TRUNCATE is not reachable through PostgREST. Widening the revoke was tempting
+  but out of T3's scope, so it is logged under *Discovered during the loop* instead — see the note
+  on TRUNCATE not being subject to RLS, which is the genuinely surprising part.
+- **`service_role` was left alone.** It needs INSERT for admin tooling, backfills and the T5
+  negative-total test that LOOP.md explicitly says to run as `service_role`.
+- **The admin check used simulated JWT claims, not a real browser login.** I do not have the admin
+  password. `set role authenticated` + `request.jwt.claims` exercises the same grant and policy path
+  PostgREST uses; what it does *not* exercise is the login flow itself, which T4 covers and which
+  this task did not touch.
+
+**Follow-ups needed:**
+- Phase 1 is complete: order money is server-computed (T1), checkout goes through the RPC (T2), and
+  the direct write path is closed (T3). `payment_info` is no longer client-writable, which LOOP.md
+  lists as the prerequisite for wiring in a real payment gateway.
+- Guest orders are now created by a definer function but still readable only by admins. T6 is the
+  other half and is now the blocker for T7.
