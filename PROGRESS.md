@@ -1160,3 +1160,64 @@ All four call sites now use the RPCs, with a `rate_limited` status and new strin
   but reviews are still inserted directly, so that needs the same revoke treatment. Out of T10's
   stated scope (inquiry and newsletter endpoints).
 - **`lookup_order` is still unlimited** (T6's follow-up). Same mechanism applies.
+
+---
+
+## LOOP T11 COMPLETE — newsletter signup no longer confirms who is subscribed
+
+**What was built:** `supabase/migrations/20260727000006_neutral_newsletter_signup.sql` changes one
+statement inside `subscribe_newsletter()`:
+
+```sql
+insert into newsletter_subscribers (email) values (v_email)
+on conflict (email) do nothing;
+```
+
+Previously the unique violation propagated, so a duplicate returned `23505` and a fresh address
+returned 204 — and the Footer branched on that to show "already subscribed". Anyone could therefore
+test whether a given address was on the subscriber list. That is an enumeration leak against the
+shop's **customers**, not just the shop.
+
+T10 had already moved this call behind an RPC, so this was a one-statement change rather than a
+rewrite — the transport move and the behaviour change stayed in separate commits deliberately.
+
+Frontend: the `23505` branch is gone from `Footer.jsx` along with the `already` status, and
+`newsletter.already` is removed from **both** locale files — the only reader was the branch just
+deleted, so leaving it would be dead weight.
+
+**Verified by:** three consecutive calls to the RPC with the same address, over PostgREST with the
+shipped anon key — one fresh, two duplicates:
+
+| call | status | body | content-length |
+|---|---|---|---|
+| 1st (fresh address) | **204** | `""` | none |
+| 2nd (already subscribed) | **204** | `""` | none |
+| 3rd (already subscribed) | **204** | `""` | none |
+
+Identical status, identical empty body, no `content-length`, no error code. The distinction is gone
+from the response itself, not just from the visible string.
+
+- **Timing was measured, and the honest answer is "same class, not constant-time."** Interleaved
+  duplicate/fresh calls on a warm connection gave 209, 129, 131, 97 ms — a monotonic downward drift
+  as the connection warmed, with duplicate and fresh samples interleaved throughout. The variation is
+  dominated by network warm-up, not by the code path, and the two are not separable at four samples.
+  The migration comment says so explicitly rather than claiming a constant-time guarantee it does not
+  have: both paths do one index probe and one attempted insert after the same rate-limit check.
+- `npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed. `init_schema.sql`
+  re-applied cleanly with the fold in place. Both locales re-parsed as valid JSON.
+- **Test data removed**: subscribers and `rate_limit_hits` back to 0.
+
+**Assumptions made:**
+- **The success message is now shown for a duplicate too.** A returning subscriber is told
+  "Успешно се абонира!" rather than "already subscribed". That is the intended trade: the customer
+  loses a mildly useful acknowledgement, and an attacker loses an oracle. Nothing breaks for the
+  customer — they were subscribed either way.
+- **The footer form was not re-driven in the browser for this task.** T10 exercised it end to end
+  and the change here is a branch deletion plus a locale key removal; the network-level check above
+  is the stronger evidence and covers the actual finding. Stating it rather than implying a UI run.
+- **`on conflict (email) do nothing` relies on the unique constraint** already on
+  `newsletter_subscribers.email` from the original schema. No new index was needed.
+
+**Follow-ups needed:**
+- None for this task. Note that T19 adds an unsubscribe path, which will need the same care: a
+  token-based unsubscribe must not reveal whether the token matched a real subscriber either.

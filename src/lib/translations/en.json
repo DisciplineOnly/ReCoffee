@@ -207,7 +207,6 @@
     },
     "newsletter": {
         "success": "Subscribed successfully! Welcome to the community.",
-        "already": "This email is already subscribed.",
         "error": "Something went wrong. Please try again.",
         "invalid": "Please enter a valid email address.",
         "rate_limited": "Too many attempts. Please try again in an hour."

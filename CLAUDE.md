@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by nine idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by ten idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -38,8 +38,9 @@ The whole DB is created by nine idempotent migrations in `supabase/migrations/`,
 8. `20260727000004_moderate_reviews.sql` — review moderation and length limits.
 9. `20260727000005_rate_limit_public_writes.sql` — size limits and IP rate limiting on the public
    write surface.
+10. `20260727000006_neutral_newsletter_signup.sql` — makes newsletter signup non-enumerable.
 
-Files 3-9 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+Files 3-10 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
 file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.

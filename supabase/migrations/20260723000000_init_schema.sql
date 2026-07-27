@@ -1005,11 +1005,13 @@ begin
 
   perform enforce_rate_limit('newsletter', 5, interval '1 hour');
 
-  -- NOTE: a duplicate still raises 23505 here, which is exactly the
-  -- subscriber-enumeration leak T11 is about. Behaviour is deliberately
-  -- unchanged in this commit so T10 is purely additive; T11 makes the response
-  -- neutral.
-  insert into newsletter_subscribers (email) values (v_email);
+  -- Already-present and newly-inserted are indistinguishable to the caller:
+  -- same 204, same empty body, no error code. Letting the unique violation
+  -- through would let anyone test whether an address is on the subscriber list.
+  -- Do not "improve" this by returning whether a row was written.
+  insert into newsletter_subscribers (email)
+  values (v_email)
+  on conflict (email) do nothing;
 end
 $fn$;
 

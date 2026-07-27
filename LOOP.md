@@ -348,7 +348,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): rate-limit public inquiry and newsletter writes`
 
-- [ ] **T11 — Stop the newsletter leaking subscription status**
+- [x] **T11 — Stop the newsletter leaking subscription status**
 
   **Problem.** `src/components/layout/Footer.jsx:32-35` branches on the Postgres unique violation:
 

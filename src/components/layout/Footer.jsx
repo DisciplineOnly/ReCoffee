@@ -11,7 +11,7 @@ const footerLinkClass = 'text-sm text-slate-600 hover:text-brand-primary transit
 export default function Footer() {
     const { t } = useTranslation();
     const [email, setEmail] = useState('');
-    const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'already' | 'error' | 'invalid'
+    const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error' | 'invalid' | 'rate_limited'
 
     const handleSubscribe = async (e) => {
         e.preventDefault();
@@ -27,11 +27,6 @@ export default function Footer() {
         if (!error) {
             setStatus('success');
             setEmail('');
-        } else if (error.code === '23505') {
-            // unique violation — already subscribed. NOTE: this branch is the
-            // subscriber-enumeration leak T11 removes; it is left in place here
-            // so T10 changes only the transport, not the behaviour.
-            setStatus('already');
         } else if (error.message === 'RATE_LIMITED') {
             setStatus('rate_limited');
         } else {
@@ -42,7 +37,6 @@ export default function Footer() {
 
     const statusMessage = {
         success: { text: t('newsletter.success'), className: 'text-green-600' },
-        already: { text: t('newsletter.already'), className: 'text-slate-500' },
         error: { text: t('newsletter.error'), className: 'text-red-600' },
         invalid: { text: t('newsletter.invalid'), className: 'text-red-600' },
         rate_limited: { text: t('newsletter.rate_limited'), className: 'text-red-600' },
