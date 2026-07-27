@@ -629,6 +629,10 @@
         "inquiries": {
             "title": "Inquiries",
             "subtitle": "Contact messages, B2B leads & subscription requests",
+            "plan_frequency": "Frequency",
+            "plan_quantity": "Quantity (g)",
+            "plan_price": "Price per delivery",
+            "plan_unknown": "Unknown plan",
             "all_types": "All types",
             "loading": "Loading inquiries...",
             "load_error": "Could not load inquiries. Make sure the latest DB migration is applied.",

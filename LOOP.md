@@ -545,7 +545,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `feat(recoffee): add newsletter unsubscribe and order PII erasure`
 
-- [ ] **T20 — Stop trusting the client-computed subscription quote**
+- [x] **T20 — Stop trusting the client-computed subscription quote**
 
   **Problem.** `src/pages/Subscription.jsx:64-73` writes `details.pricePerDelivery`, computed in the
   browser from `SUBSCRIPTION_DISCOUNT`. It's an inquiry rather than an order so no money moves — but

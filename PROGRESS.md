@@ -1854,3 +1854,74 @@ state from the RPC's promise. 12 back to 11, and one fewer wasted render.
   all**, so nothing can honour that limit. This is the same class of policy-vs-schema gap T19 just
   closed for the newsletter, and it is left flagged rather than fixed because T19 is scoped to the
   newsletter and orders.
+
+---
+
+## LOOP T20 COMPLETE — the subscription quote is derived, not received
+
+**What was built:** the number stopped travelling. `src/pages/Subscription.jsx` used to send
+`details.pricePerDelivery`, computed in the browser from a discount constant in the bundle;
+`src/pages/admin/Inquiries.jsx` rendered `details` verbatim as JSON, so a requester could name their
+own price and have it read back to the member of staff who would honour it. No money moves on an
+inquiry — the defect was that people quote from what they read.
+
+- **`src/lib/subscription.js`** (new) is the single source for the discount and the three plan
+  prices. Both screens read it: the public page quotes the customer, the admin view derives the same
+  number when reading the request back. It computes in integer stotinki via T17's `price.js` helpers.
+- **`submit_inquiry()` reissued** (`20260727000014`, folded into `init_schema.sql` — both copies
+  verified identical at 2,898 chars). For `type = 'subscription'` it validates `frequency` and
+  `quantity` against allowlists and **projects** `details` to just those two, the same treatment
+  `place_order()` gives `client_info` since T18. `contact` and `b2b` inquiries are untouched.
+- **The admin view no longer prints `details` for subscriptions.** It renders frequency, quantity and
+  a price computed from the stored quantity, with `plan_unknown` if the id does not resolve. Strings
+  in both locales.
+
+**Verified by:** the anon key over real PostgREST — the actual threat, since the form's own selectors
+cannot produce a bad value.
+
+| submitted `p_details` | result |
+|---|---|
+| `{frequency: biweekly, quantity: 500}` | 204 |
+| `{frequency: biweekly, quantity: 500, pricePerDelivery: 0.01}` | **204 — accepted, price discarded** |
+| `{frequency: biweekly, quantity: 99999}` | **400 `INQUIRY_INVALID_PLAN`** |
+| `{frequency: hourly, quantity: 500}` | **400 `INQUIRY_INVALID_PLAN`** |
+| `null` | **400 `INQUIRY_INVALID_PLAN`** |
+
+Reading both stored rows back (through a rolled-back migration, since `inquiries` is admin-read-only)
+is the point of the exercise — **the tampered submission is byte-identical to the honest one**:
+
+```
+subscription -> {"quantity": "500", "frequency": "biweekly"}
+subscription -> {"quantity": "500", "frequency": "biweekly"}
+```
+
+Through the browser, the request body now carries `"p_details":{"frequency":"biweekly","quantity":"1000"}`
+and nothing else — captured by intercepting the call and fulfilling it locally, so the check created
+no row to clean up afterwards.
+
+`npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed.
+
+**One displayed price changed, and it should be said plainly.** Moving the calculation to stotinki
+shifts the 250 g plan from **15.21 to 15.22 лв**. The exact decimal is 17.90 × 0.85 = 15.2150, which
+rounds half-up to 15.22; the old float landed on 15.214999999999998 and `toFixed(2)` took it down to
+15.21. So the new figure is the arithmetically correct one and the old was a rounding artefact — but
+it is a public price that moved by a stotinka, verified on the live page (15.22 / 30.43 / 60.86). The
+other two plans are unchanged.
+
+**Assumptions made:**
+- **Deriving beat recomputing server-side.** LOOP.md allowed either. Storing no price at all means
+  there is nothing untrusted to display, which is stronger than storing a server-computed number and
+  a smaller change than moving the plan catalogue into the database. `store_settings` remains the
+  precedent if subscription prices ever need to be admin-editable.
+- **The plan ids are duplicated** — in `src/lib/subscription.js` and in `submit_inquiry()`'s
+  `c_freqs` / `c_sizes`. That is deliberate: the server must not trust the client's list. It is
+  written in the migration's comments and in `CLAUDE.md` that adding a plan means editing both.
+- **`INQUIRY_INVALID_PLAN` has no dedicated locale string.** The form's own controls cannot produce
+  an invalid id, so a user reaching it means the payload was hand-made; it falls back to the generic
+  error. Recorded rather than papered over with a message no legitimate user will see.
+- **The admin rendering was not exercised in a browser** — it needs an admin session, the same
+  limitation recorded since T4. The derivation function it calls was checked directly and the page
+  builds; what is unverified is the visual rendering, not the arithmetic.
+
+**Follow-ups needed:** none for this task. Note that the cleanup migration for T20's own test rows
+exists only because `inquiries` has no DELETE policy — the retention gap logged during T19.

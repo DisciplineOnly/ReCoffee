@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
+import { formatPrice } from '../../lib/price';
+import { subscriptionPriceForQuantity } from '../../lib/subscription';
 
 // DB enum values — only their labels are translated, never the stored value.
 const TYPES = ['contact', 'b2b', 'subscription'];
@@ -162,7 +164,30 @@ export default function AdminInquiries() {
                                                 {inquiry.message && (
                                                     <p className="text-slate-700 whitespace-pre-wrap mb-3">{inquiry.message}</p>
                                                 )}
-                                                {inquiry.details && (
+                                                {inquiry.type === 'subscription' ? (
+                                                    // The price is computed here from the stored
+                                                    // quantity, never read out of `details`. The
+                                                    // requester chooses a plan; the shop decides
+                                                    // what that plan costs.
+                                                    <dl className="text-xs bg-white border border-slate-200 rounded-lg p-3 space-y-1">
+                                                        <div className="flex gap-2">
+                                                            <dt className="text-slate-400 w-32">{t('admin.inquiries.plan_frequency')}</dt>
+                                                            <dd className="text-slate-700">{inquiry.details?.frequency || '—'}</dd>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <dt className="text-slate-400 w-32">{t('admin.inquiries.plan_quantity')}</dt>
+                                                            <dd className="text-slate-700">{inquiry.details?.quantity || '—'}</dd>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <dt className="text-slate-400 w-32">{t('admin.inquiries.plan_price')}</dt>
+                                                            <dd className="text-slate-700">
+                                                                {subscriptionPriceForQuantity(inquiry.details?.quantity) !== null
+                                                                    ? formatPrice(subscriptionPriceForQuantity(inquiry.details.quantity))
+                                                                    : t('admin.inquiries.plan_unknown')}
+                                                            </dd>
+                                                        </div>
+                                                    </dl>
+                                                ) : inquiry.details && (
                                                     <pre className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg p-3 overflow-x-auto">
                                                         {JSON.stringify(inquiry.details, null, 2)}
                                                     </pre>

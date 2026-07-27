@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by seventeen idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by nineteen idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 11 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -56,8 +56,12 @@ The whole DB is created by seventeen idempotent migrations in `supabase/migratio
     verification order. Also not folded into file 1.
 17. `20260727000013_retention_and_erasure.sql` — `newsletter_subscribers.unsubscribe_token` plus
     `unsubscribe_newsletter()`, and `erase_order_pii()` with the `orders.pii_erased_at/by` columns.
+18. `20260727000014_trusted_subscription_quote.sql` — `submit_inquiry()` reissued so a subscription
+    request stores the validated plan (`frequency`, `quantity`) and never a client-computed price.
+19. `20260727000015_remove_t20_test_inquiries.sql` — data cleanup for T20's verification rows, like
+    files 14 and 16. Not folded into file 1.
 
-Files 3-13, 15 and 17 are *also* folded into file 1, so a fresh project bootstraps to the identical state
+Files 3-13, 15, 17 and 18 are *also* folded into file 1, so a fresh project bootstraps to the identical state
 from file 1 alone. **`place_order()` now exists in three files** — its own migration
 (`20260727000000`), the reissue in `20260727000011`, and section 7 of `init_schema.sql`. Only the
 latter two are current, and they are kept byte-identical; change both together.
@@ -108,6 +112,12 @@ rate-limit to 5 per hour per client IP. The IP comes from the `cf-connecting-ip`
 forwards (set at Supabase's Cloudflare edge, so a client cannot forge it) and is stored only as a
 salted md5 in `rate_limit_hits`. **Supabase's built-in CAPTCHA setting does not help here** — it
 guards the auth endpoints, not PostgREST table writes.
+
+A **subscription** inquiry stores only its validated plan — `{frequency, quantity}`, checked against
+the ids in `src/lib/subscription.js` — and never a price. The browser used to send
+`details.pricePerDelivery`, which staff then quoted from; the admin view now derives the price from
+the stored quantity instead. **Adding a plan means adding it in both places**: the arrays in
+`subscription.js` and the `c_freqs` / `c_sizes` constants in `submit_inquiry()`.
 
 Note that a policy is only
 consulted *after* the table-privilege check, and Supabase's default privileges grant INSERT on new

@@ -4,10 +4,9 @@ import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/price';
+import { SUBSCRIPTION_QUANTITIES, subscriptionPrice } from '../lib/subscription';
 import PageHeader from '../components/ui/PageHeader';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-
-const SUBSCRIPTION_DISCOUNT = 0.15;
 
 export default function Subscription() {
     const { t } = useTranslation();
@@ -22,11 +21,12 @@ export default function Subscription() {
         { id: 'monthly', label: t('subscriptionPage.plan_monthly') },
     ];
 
-    const quantities = [
-        { id: '250', label: t('subscriptionPage.plan_250'), regularPrice: 17.90 },
-        { id: '500', label: t('subscriptionPage.plan_500'), regularPrice: 35.80 },
-        { id: '1000', label: t('subscriptionPage.plan_1000'), regularPrice: 71.60 },
-    ];
+    // Prices come from src/lib/subscription.js so the admin view derives the
+    // same number from the stored quantity. Only the labels are local.
+    const quantities = SUBSCRIPTION_QUANTITIES.map((plan) => ({
+        ...plan,
+        label: t(`subscriptionPage.plan_${plan.id}`),
+    }));
 
     const steps = [
         { icon: CalendarClock, title: t('subscriptionPage.step1_title'), desc: t('subscriptionPage.step1_desc') },
@@ -40,7 +40,7 @@ export default function Subscription() {
     const [errors, setErrors] = useState({});
     const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
 
-    const subPrice = (regular) => regular * (1 - SUBSCRIPTION_DISCOUNT);
+    const subPrice = subscriptionPrice;
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -60,18 +60,18 @@ export default function Subscription() {
         e.preventDefault();
         if (!validate()) return;
         setStatus('loading');
-        const selectedQuantity = quantities.find(q => q.id === quantity);
+        // The choice, not the quote. `pricePerDelivery` used to travel here,
+        // computed in the browser — an inquiry moves no money, but staff quote
+        // from what they read, and this was a number the requester controlled.
+        // submit_inquiry() validates these two against the same ids and stores
+        // nothing else; the admin view derives the price from `quantity`.
         const { error } = await supabase.rpc('submit_inquiry', {
             p_type: 'subscription',
             p_name: form.name.trim(),
             p_email: form.email.trim().toLowerCase(),
             p_phone: form.phone.trim() || null,
             p_message: form.preference.trim() || null,
-            p_details: {
-                frequency,
-                quantity,
-                pricePerDelivery: Number(subPrice(selectedQuantity.regularPrice).toFixed(2)),
-            },
+            p_details: { frequency, quantity },
         });
         if (error) {
             console.error('Subscription request failed:', error);

@@ -1080,6 +1080,12 @@ set search_path = public
 as $fn$
 declare
   c_types constant text[] := array['contact', 'b2b', 'subscription'];
+  -- Mirrors SUBSCRIPTION_FREQUENCIES / SUBSCRIPTION_QUANTITIES in
+  -- src/lib/subscription.js. If a plan is added there, add it here or the
+  -- request is refused.
+  c_freqs constant text[] := array['weekly', 'biweekly', 'monthly'];
+  c_sizes constant text[] := array['250', '500', '1000'];
+  v_details jsonb;
   v_name    text := nullif(btrim(coalesce(p_name, '')), '');
   v_email   text := lower(nullif(btrim(coalesce(p_email, '')), ''));
   v_phone   text := nullif(btrim(coalesce(p_phone, '')), '');
@@ -1109,11 +1115,30 @@ begin
     raise exception 'INQUIRY_TOO_LONG';
   end if;
 
+  -- A subscription request carries a plan, not a quote. Validate the two ids
+  -- and store only those: a `pricePerDelivery` in the payload — or anything
+  -- else — does not reach the column, so the admin view has nothing
+  -- attacker-controlled to read back as a price.
+  if p_type = 'subscription' then
+    if coalesce(p_details ->> 'frequency', '') <> all (c_freqs)
+       or coalesce(p_details ->> 'quantity', '') <> all (c_sizes) then
+      raise exception 'INQUIRY_INVALID_PLAN'
+        using detail = 'frequency must be weekly|biweekly|monthly and quantity 250|500|1000';
+    end if;
+
+    v_details := jsonb_build_object(
+      'frequency', p_details ->> 'frequency',
+      'quantity',  p_details ->> 'quantity'
+    );
+  else
+    v_details := p_details;
+  end if;
+
   perform enforce_rate_limit('inquiry', 5, interval '1 hour');
 
   -- `status` is never accepted from the caller; it defaults to 'new'.
   insert into inquiries (type, name, company, email, phone, message, details)
-  values (p_type, v_name, v_company, v_email, v_phone, v_message, p_details);
+  values (p_type, v_name, v_company, v_email, v_phone, v_message, v_details);
 end
 $fn$;
 
