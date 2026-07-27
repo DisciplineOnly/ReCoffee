@@ -624,6 +624,79 @@ revoke all    on function public.place_order(jsonb, jsonb, jsonb, text) from pub
 grant  execute on function public.place_order(jsonb, jsonb, jsonb, text) to anon, authenticated;
 
 
+-- ── guest order lookup ──────────────────────────────────────────────────────
+-- The SELECT policy above is `user_id = auth.uid()`, and a guest order stores
+-- `user_id = null`, so it is invisible to everyone but admins. The policy is
+-- deliberately NOT loosened with `or user_id is null` — that would expose every
+-- guest order to every anonymous caller. This definer function demands both the
+-- order number and the exact email stored on that order instead.
+--
+-- Every failure mode returns zero rows: wrong email, wrong number and unknown
+-- order are indistinguishable. Matching is `=` on normalised text, never LIKE.
+--
+-- Kept byte-identical to 20260727000003_guest_order_lookup.sql; change both.
+
+drop function if exists public.lookup_order(text, text);
+
+create function public.lookup_order(
+  p_order_number text,
+  p_email        text
+)
+returns table (
+  order_number  text,
+  status        text,
+  subtotal      numeric,
+  delivery_fee  numeric,
+  total         numeric,
+  created_at    timestamptz,
+  client_info   jsonb,
+  delivery_info jsonb,
+  payment_info  jsonb,
+  items         jsonb
+)
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select
+    o.order_number,
+    o.status,
+    o.subtotal,
+    o.delivery_fee,
+    o.total,
+    o.created_at,
+    o.client_info,
+    o.delivery_info,
+    o.payment_info,
+    coalesce(
+      (
+        select jsonb_agg(
+                 jsonb_build_object(
+                   'product_id',   i.product_id,
+                   'product_name', i.product_name,
+                   'quantity',     i.quantity,
+                   'unit_price',   i.unit_price,
+                   'grind_type',   i.grind_type
+                 )
+                 order by i.product_name nulls last, i.id
+               )
+        from order_items i
+        where i.order_id = o.id
+      ),
+      '[]'::jsonb
+    )
+  from orders o
+  where coalesce(trim(p_order_number), '') <> ''
+    and coalesce(trim(p_email), '') <> ''
+    and o.order_number = upper(trim(p_order_number))
+    and lower(o.client_info ->> 'email') = lower(trim(p_email));
+$fn$;
+
+revoke all    on function public.lookup_order(text, text) from public;
+grant  execute on function public.lookup_order(text, text) to anon, authenticated;
+
+
 -- ============================================================================
 -- 8. STORAGE — product / service images
 --

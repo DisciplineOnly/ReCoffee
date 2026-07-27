@@ -723,3 +723,89 @@ Each constraint is wrapped in a `pg_constraint` existence guard, because Postgre
 **Follow-ups needed:**
 - Nothing outstanding for this task. Note that the constraint set assumes the current column list; the
   `orders_total_consistent` comment is the tripwire for whoever adds a discount field.
+
+---
+
+## LOOP T6 COMPLETE — guest order lookup by number and email
+
+**What was built:** `supabase/migrations/20260727000003_guest_order_lookup.sql`, a `stable
+security definer` function `lookup_order(p_order_number text, p_email text)` returning the one
+matching order — number, status, all three money columns, `created_at`, `client_info`,
+`delivery_info`, `payment_info`, and the line items as jsonb.
+
+**The SELECT policy was deliberately left alone.** Adding `or user_id is null` to
+`using (user_id = auth.uid())` would have been the one-line fix and would have exposed *every* guest
+order to *every* anonymous caller — the anon key is in the shipped bundle, so that is a full table
+dump. The definer function demands both halves instead.
+
+Input handling: the order number is upper-cased and both fields trimmed, and the email is compared
+case-insensitively — a customer reading a number off a confirmation email should not be punished for
+typing it in lower case. Empty or whitespace-only input matches nothing. Matching is `=` on
+normalised text, never `LIKE`, so no wildcard reaches the comparison.
+
+The returned payload is deliberately complete enough for T7 to render `CheckoutSuccess` without
+`localStorage` — that is the next task and this is its dependency.
+
+**Verified by:** two guest orders placed via `place_order` under *different* emails, so "does it leak
+the other one" was a real question rather than a hypothetical. All 16 cases run over PostgREST with
+the shipped anon key:
+
+| case | result |
+|---|---|
+| correct number + correct email | **1 row** |
+| correct pair, lower-case number | **1 row** |
+| correct pair, UPPER-CASE email | **1 row** |
+| correct pair, whitespace padded | **1 row** |
+| correct number + wrong email | 0 rows |
+| correct number + empty email | 0 rows |
+| correct number + null email | 0 rows |
+| wrong number + correct email | 0 rows |
+| **someone else's number + my email** | 0 rows |
+| number only, email omitted | refused (404 PGRST202) |
+| email only, number omitted | refused (404 PGRST202) |
+| `%` as number | 0 rows |
+| `%` as email | 0 rows |
+| `RC-2026-%` as number | 0 rows |
+| both wildcards | 0 rows |
+| both empty | 0 rows |
+
+- **Enumeration is not possible through this function.** Wrong email, wrong number and unknown order
+  are indistinguishable — all return an empty array with HTTP 200. The wildcard cases confirm the
+  comparison is equality, not pattern matching.
+- **A correction to my own test.** The two "omitted parameter" cases first showed as FAIL. That was
+  the test's expectation being wrong, not the function: both parameters are required, so leaving one
+  out fails PostgREST's signature match (`PGRST202`) before the function body ever runs — a stronger
+  refusal than returning zero rows. The assertion was corrected to treat it as a pass; the function
+  was not changed.
+- **The policy really is untouched**: an anon `select` on `orders` still returns `[]`.
+- **Both files re-applied cleanly** (init_schema and the new migration), confirming idempotency with
+  the `drop function if exists` guard.
+- `npm run lint`: **12 warnings, 0 errors — unchanged baseline.** `npm run build` passed in 1.65s.
+  No application code changed in this task.
+- **Test data removed**: both guest orders deleted, `orders` and `order_items` back to 0 rows.
+
+**Assumptions made:**
+- **The lookup is not restricted to guest orders.** It returns any order whose number and email
+  match, including a registered customer's. The authentication bar is identical either way — you must
+  know both — and restricting it to `user_id is null` would force T7 to carry two different code
+  paths for the confirmation page. Recorded here because it is a deliberate widening of what T6's
+  title implies.
+- **`client_info` is returned in full**, including name, phone and address. The caller has already
+  proven they know the email on that order, and those fields are exactly what a "track my order" page
+  renders. Returning less would make the function useless for T7.
+- **Case-insensitive email matching** is a usability choice, not an oversight. It slightly widens what
+  counts as a match; it does not widen *who* can match, since the address still has to be right.
+- **No rate limiting was implemented.** T6 says "rate-limit **or** at minimum require the exact
+  email", and the exact email is required. See follow-ups — this is the weakest part of the task.
+
+**Follow-ups needed:**
+- **Rate limiting is genuinely absent.** The order number is 32^6 ≈ 1.07e9, which is fine against a
+  targeted guess but is not a cryptographic secret, and the function can be called as fast as the
+  network allows. An attacker who knows a customer's email can grind the number space. T10 introduces
+  a rate-limiting mechanism for the inquiry and newsletter endpoints — whatever approach that task
+  settles on (Edge Function, CAPTCHA, or a counter table) should be extended to cover this function.
+  Until then the practical protection is that the attacker must already know a valid customer email.
+- **`order_items` has no line-ordinal column**, so the original cart order cannot be recovered on
+  re-fetch. The function sorts by `product_name` to at least be stable between calls, but a re-fetched
+  order may list its lines in a different order than the confirmation page showed at purchase time.
+  Adding a `line_no` to `order_items` would fix it; not done here as it is outside T6.

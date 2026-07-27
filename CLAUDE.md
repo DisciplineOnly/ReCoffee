@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by six idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by seven idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -34,8 +34,9 @@ The whole DB is created by six idempotent migrations in `supabase/migrations/`, 
 5. `20260727000001_revoke_client_order_inserts.sql` — drops the two insert policies on `orders` /
    `order_items` and revokes the INSERT privilege from `anon` and `authenticated`.
 6. `20260727000002_constrain_order_amounts.sql` — CHECK constraints on order money.
+7. `20260727000003_guest_order_lookup.sql` — `lookup_order()`.
 
-Files 3-6 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+Files 3-7 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
 file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.
@@ -47,7 +48,15 @@ The only way in is `place_order(p_items, p_client, p_delivery, p_payment_method)
 `store_settings`, pins `status` to `'pending'`, sets `user_id` from `auth.uid()` and writes the
 order plus its items in one transaction. It ignores anything price-shaped in its payload.
 Rejections come back as stable tokens (`ORDER_PRODUCT_OUT_OF_STOCK`, `ORDER_PRODUCT_UNKNOWN`,
-`ORDER_INVALID_LINE`, …) that the frontend maps to locale strings. Note that a policy is only
+`ORDER_INVALID_LINE`, …) that the frontend maps to locale strings.
+
+Guest orders store `user_id = null` and the SELECT policy is `user_id = auth.uid()`, so they are
+invisible to everyone but admins. **Do not loosen that policy** — `or user_id is null` would expose
+every guest order to every anonymous caller. Read one back with
+`lookup_order(p_order_number, p_email)`, a definer function requiring both the order number and the
+exact email stored on that order; every failure mode returns zero rows.
+
+Note that a policy is only
 consulted *after* the table-privilege check, and Supabase's default privileges grant INSERT on new
 `public` tables to `anon`/`authenticated` — so a new write-restricted table needs the `revoke`, not
 just the absence of a policy.

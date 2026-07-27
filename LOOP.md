@@ -235,7 +235,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): constrain order amounts at the database level`
 
-- [ ] **T6 — Give guest orders a lookup path**
+- [x] **T6 — Give guest orders a lookup path**
 
   **Problem.** The SELECT policy is `using (user_id = auth.uid())` (`init_schema.sql:249-250`). Guest
   orders store `user_id = null`, and `null = auth.uid()` evaluates to NULL — never true. So a guest
