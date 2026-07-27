@@ -184,7 +184,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
 ## Phase 2 — Auth, constraints, and order visibility
 
-- [ ] **T4 — Fix the fail-open admin check**
+- [x] **T4 — Fix the fail-open admin check**
 
   **Problem.** `src/components/admin/ProtectedRoute.jsx:41-46`:
 

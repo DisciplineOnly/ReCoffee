@@ -583,3 +583,64 @@ exactly as they were. CLAUDE.md's migration list is now five.
   lists as the prerequisite for wiring in a real payment gateway.
 - Guest orders are now created by a definer function but still readable only by admins. T6 is the
   other half and is now the blocker for T7.
+
+---
+
+## LOOP T4 COMPLETE — the admin check now fails closed
+
+**What was built:** `src/components/admin/ProtectedRoute.jsx:41-53`. `setIsAdmin(error ? true : !!data)`
+became `setIsAdmin(!!data && !error)`, and the "pre-migration fallback" comment that justified the old
+behaviour is gone — `admin_users` has existed since the consolidated bootstrap, so there is nothing
+left to fall back to. Any error now means "not proven staff" rather than "assume staff".
+
+Added a `.catch(() => setIsAdmin(false))` alongside it. A *thrown* request — offline, DNS failure —
+never reaches `.then`, so `isAdmin` stayed `null`, and `loading` is `!sessionLoaded || (session &&
+isAdmin === null)`. The old code did not grant admin in that case; it hung on the spinner forever.
+`src/pages/Account.jsx:57` already had this `.catch`, and T4 asked for the two to agree.
+
+The documented constraint at `:16-17` — **no awaited Supabase queries inside the `onAuthStateChange`
+callback**, because the client holds an auth lock and awaiting deadlocks — is untouched. The
+`admin_users` query lives in its own effect keyed on `session`, which is what keeps it legal.
+
+**Verified by:** all four branches driven through the real component and real supabase-js on a dev
+server (port 5179).
+
+- **Query errors → denied.** A session was placed in `localStorage` under
+  `sb-<ref>-auth-token` with a syntactically valid but unsigned JWT. `getSession()` reads storage
+  without a network round trip, so the component mounts with a session; PostgREST then rejects the
+  token, which is exactly the "admin_users query errored" branch. Result: redirected to `/account`.
+  **This is the branch that used to hand over the admin shell.**
+- **Admin member → dashboard.** With `window.fetch` intercepted to return
+  `200 {"user_id": …}` for `/rest/v1/admin_users`, a client-side navigation to `/admin` landed on
+  `/admin/orders` with the "ReCaffe Админ" shell.
+- **Ordinary customer → `/account`.** Same interception returning `406` + `PGRST116` — which is what
+  PostgREST actually sends for `maybeSingle()` on zero rows, and which supabase-js converts to
+  `{data: null, error: null}` — redirected to `/account`.
+- **Thrown request → denied, and no hang.** With the fetch rejecting outright, the route redirected
+  to `/account` and `document.querySelector('.animate-spin')` was **null**, confirming the new
+  `.catch` resolves the loading state instead of leaving the spinner up.
+- **No regression for logged-out visitors**: with the forged session cleared, `/admin` still
+  redirects to `/admin/login`.
+- `npm run lint`: **12 warnings, 0 errors — unchanged baseline.** `npm run build` passed in 1.25s.
+- Forged session and all other test keys removed from `localStorage` afterwards.
+
+**Assumptions made:**
+- **No real login was performed, and this is the honest limitation of this task's verification.**
+  Two attempts to obtain a genuine session were blocked: signup is rejected by this project for
+  made-up email domains (`email_address_invalid` on both a `.invalid` and a `.dev` address), and
+  creating a temporary `auth.users` row directly was denied by the tool sandbox. Rather than claim a
+  login test I did not run, the session was forged client-side and the `admin_users` response
+  intercepted. That exercises the real component, the real supabase-js response handling and the
+  real routing — but **not** the login form or the server's token validation.
+- **The "prove the old code was fail-open" demonstration was not completed.** I briefly reverted the
+  line to re-run the error branch against the old behaviour; the navigation was blocked mid-test, so
+  I restored the fix immediately and did not retry. The forward direction — new code denies on error
+  — is demonstrated above, and the old behaviour is plain from the diff, but I did not observe the
+  old code grant access in the browser and am not claiming otherwise.
+- **The redirect target stays `/account`**, not `/admin/login`. A logged-in customer is authenticated
+  but not staff, so sending them to a login form would be a dead end. Unchanged from before.
+
+**Follow-ups needed:**
+- This check controls routing and UI only; RLS via `is_admin()` remains the real enforcement, and
+  nothing here changes that. The value of the fix is that admin routes, forms and destructive-looking
+  controls stop being reachable on a transient error — not that data was ever exposed.

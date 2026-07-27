@@ -40,9 +40,16 @@ export default function ProtectedRoute() {
             .maybeSingle()
             .then(({ data, error }) => {
                 if (cancelled) return;
-                // Pre-migration fallback: if the table doesn't exist yet, keep
-                // the old behavior where any authenticated user is admin.
-                setIsAdmin(error ? true : !!data);
+                // Fail closed. A network blip, a timeout or a PostgREST hiccup
+                // must not hand out the admin shell — this check controls
+                // routing and UI, so an error means "not proven staff", not
+                // "assume staff". Matches src/pages/Account.jsx.
+                setIsAdmin(!!data && !error);
+            })
+            .catch(() => {
+                // A thrown request (offline, DNS failure) would otherwise leave
+                // isAdmin null forever and hang on the loading spinner.
+                if (!cancelled) setIsAdmin(false);
             });
         return () => {
             cancelled = true;
