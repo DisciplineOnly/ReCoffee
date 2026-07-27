@@ -20,6 +20,12 @@ export const siteConfig = {
         instagram: 'https://www.instagram.com/recoffee.bg',
         facebook: 'https://www.facebook.com/recoffee.bg',
     },
+    // DISPLAY ONLY. The database is authoritative for what a customer is
+    // actually charged: place_order() computes the delivery fee from the
+    // `store_settings` row, ignoring anything the browser sends. These two
+    // numbers only drive what the cart, checkout and marketing copy *show*, so
+    // keep them in step with `store_settings` or the quoted fee will not match
+    // the charged one.
     delivery: {
         freeOverBgn: 100,
         standardFeeBgn: 5,

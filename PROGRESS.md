@@ -319,3 +319,109 @@ rule from Task 5 no longer applied.
 - The admin dashboard (`Orders`, `Products`, `Services`) still formats money inline as BGN only.
 - `PaymentStep` and `orders.payment_info` remain the payment-gateway integration point, untouched.
 
+
+---
+
+## LOOP T1 COMPLETE — server-authoritative `place_order()` RPC
+
+**What was built:** `supabase/migrations/20260727000000_place_order_rpc.sql`, a `security definer`
+function with `search_path = public` that is now the only way an order gets created. It ignores
+anything price-shaped in its payload and recomputes every line from `products` as
+`case when sale_price is not null and sale_price < price then sale_price else price end` — the same
+rule as `effectivePrice` in `src/hooks/useProducts.jsx:51-52`. It also:
+
+- rejects unknown and out-of-stock products, with unknown ids reported first so a bad id is never
+  mislabelled as a stock problem;
+- validates each line as `product_id` uuid-shaped + `quantity` a whole number in 1..999, in a
+  separate pass *before* any cast, so a malformed payload returns a token rather than an opaque
+  `22P02`; caps the cart at 50 lines; validates `grind_type` against the five known values;
+- computes the delivery fee from a new `store_settings` row (public read, admin update, no insert or
+  delete policy, `check (id = 1)` so it stays a singleton) rather than from anything the browser
+  sends;
+- hardcodes `status = 'pending'`, writes `payment_info` as `{"method": …}` validated against
+  card/cash/bank and nothing else, and takes `user_id` from `auth.uid()` — none of the three is a
+  parameter;
+- adds `order_items.product_name` and snapshots it at order time, so a rename or delete can no
+  longer rewrite history;
+- ports the client order-number generator whole: same Crockford base32 alphabet minus I/L/O/U, same
+  `RC-<year>-<6>` shape, same 5-attempt retry on `23505`. Randomness comes from
+  `decode(replace(gen_random_uuid()::text,'-',''),'hex')` and bytes 0..5, which in a v4 uuid carry no
+  version or variant bits — six uniform random bytes, and `256 % 32 = 0`, so the modulus stays
+  unbiased. No pgcrypto dependency, consistent with the `gen_random_uuid()` rule in CLAUDE.md;
+- writes the order and all its lines in one transaction, closing H2's orphan-order window;
+- returns `order_number, subtotal, delivery_fee, total, created_at, items` — enough for T7 to render
+  the confirmation page without trusting localStorage.
+
+The same change is folded into `20260723000000_init_schema.sql` so a fresh project bootstraps
+identically. `src/lib/siteConfig.js` keeps its `delivery` block, now labelled display-only.
+CLAUDE.md's "exactly two idempotent migrations" is updated to four, with the fold-into-init rule
+written down.
+
+**Verified by:** all against the **live project** (`mwmgjdcegrcjekkyjnas`) with the shipped anon key
+over PostgREST — not the admin UI.
+
+- **4 accepted calls, 10 rejected, and the rejections left zero rows.** Accepted: an over-threshold
+  cart (`128.50` subtotal → `0.00` delivery → `128.50`), an under-threshold cart (`49.50` → `5.00` →
+  `54.50`), and both tamper attempts. Rejected: out-of-stock (`ORDER_PRODUCT_OUT_OF_STOCK`),
+  unknown id (`ORDER_PRODUCT_UNKNOWN`), `quantity: -5`, `quantity: 1000`, `quantity: 1.5`, 51 lines,
+  empty cart, `payment_method: 'free'`, `grind_type: '<script>'`, and `product_id: "prod_009"` (the
+  local-JSON fallback shape). Counting rows afterwards gave exactly 4 orders from the RPC.
+- **Tampering ignored, confirmed on the stored row.** A cart sending `unit_price: 0.01`, `price:
+  0.01` and `sale_price: 0.01` on every line stored `49.50` and `79.00` — the catalog prices — and a
+  subtotal of `178.00`, not `0.02`. `status`, `user_id` and a full `payment_info` (including a card
+  number) forged inside `p_client`/`p_delivery`/the lines were all discarded: the row came back
+  `status = 'pending'`, `user_id = null`, `payment_info = {"method": "bank"}`.
+- **The sale-price rule is the `<` rule, not `coalesce`.** Set up deliberately: one product with
+  `sale_price 49.50 < price 79.00` priced at `49.50`; one with `sale_price 99.00 >= price 79.00`
+  priced at `79.00`, not `99.00`.
+- **`user_id` really is `auth.uid()`.** Signup could not be used (this project rejects
+  non-deliverable domains — `email_address_invalid` on both `.invalid` and a made-up `.dev`), so it
+  was tested by setting `request.jwt.claims` to the one existing auth user and calling the function:
+  the stored `user_id` matched that user's id exactly.
+- **Both files re-applied cleanly**, then the tamper cases were re-run and still behaved — so
+  `init_schema.sql` is genuinely still idempotent with the function folded in, and the standalone
+  migration is too.
+- `npm run build` passed (1.30s). `npm run lint` **0 errors, 12 warnings — unchanged baseline**.
+  Only `siteConfig.js` (a comment), `CLAUDE.md` and SQL changed, so this was expected.
+- **All test data was removed.** `orders` and `order_items` are back to 0 rows (they were empty
+  before), and the three fixture products are back to `sale_price null` / `in_stock true`.
+
+**Assumptions made:**
+- **The return signature was extended** beyond the four columns LOOP.md sketched, to
+  `+ created_at + items`. The task also required "return enough for the confirmation page to render
+  without trusting localStorage", and four scalars are not enough — T7 needs the line items and the
+  date. `items` carries the server's own prices and snapshotted names.
+- **`store_settings` is a table, not constants in the function.** "Put an authoritative copy in the
+  DB" reads either way, but a table lets an admin change the threshold without a migration, and
+  public-read means a later task can make the storefront display the live value instead of the
+  hardcoded one.
+- **`grind_type` is validated**, which LOOP.md did not ask for. It is unconstrained `text` reaching a
+  `not null` column straight from the browser, and the allowlist was one line next to the quantity
+  check.
+- **Errors are stable uppercase tokens** (`ORDER_PRODUCT_OUT_OF_STOCK`, …) in the exception message,
+  with human detail in `detail`. Locale strings belong in `bg.json`/`en.json`, not in SQL; T2 maps
+  them.
+- **The function is duplicated** between the new migration and `init_schema.sql`. That is the rule in
+  LOOP.md's ground rules, not an oversight — but it is ~180 lines in two places and will drift, so
+  both files now carry a comment saying to change them together.
+- **`jsonb` shape validation on `client_info`/`delivery_info` was deliberately left out** — that is
+  T18's scope, and doing it here would have widened T1.
+
+**Worth knowing for T2 and T3:**
+- **PostgREST refuses unknown top-level RPC arguments outright.** The first attempt at the "tampered
+  payload" tests put `subtotal`/`status` alongside `p_items` and got `404 PGRST202`, not a stored
+  row — the function is never reached. That is a stronger property than the function's own checks,
+  but it also means the realistic attack is tampering *inside* `p_items`/`p_client`, which is how the
+  tests were rewritten. T2 must send exactly the four parameters.
+- **T3's premise is confirmed empirically.** As a control, a direct anon `insert` into `orders` was
+  attempted alongside the RPC tests: **HTTP 201**, storing `status: 'delivered'`, `total: 0.01` and
+  **zero line items**. The hole is open exactly as described, and `place_order` does not close it —
+  T3 does.
+
+**Follow-ups needed:**
+- `place_order` does not decrement stock or hold it. `in_stock` is a boolean, not a count, so there
+  is nothing to decrement today; if inventory ever becomes numeric this function is where the
+  reservation belongs.
+- The `not found` fallback to hardcoded `100`/`5` inside the function is unreachable while the
+  seeded row exists, but it is a second copy of the numbers. If `store_settings` ever gains rows for
+  multiple stores, delete it rather than letting it drift.

@@ -22,9 +22,27 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by exactly two idempotent migrations in `supabase/migrations/`:
-`20260723000000_init_schema.sql` (9 tables, `is_admin()`, indexes, RLS, the public `products`
-storage bucket) and `20260723000001_seed_catalog.sql`. Apply with `npx supabase db push`.
+The whole DB is created by four idempotent migrations in `supabase/migrations/`, applied with
+`npx supabase db push`:
+
+1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
+   public `products` storage bucket. This file is the complete current state and is re-runnable.
+2. `20260723000001_seed_catalog.sql` — the catalog.
+3. `20260723000002_fix_product_names.sql` — one name correction.
+4. `20260727000000_place_order_rpc.sql` — `store_settings`, `order_items.product_name` and
+   `place_order()`, for databases already created from the files above.
+
+Files 3 and 4 are *also* folded into file 1, so a fresh project bootstraps to the identical state
+from file 1 alone. **A change to the schema needs both a new numbered migration and the same change
+folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
+database only gets the new file, while a fresh one only gets `init_schema.sql`.
+
+Orders are **not** inserted from the client. `place_order(p_items, p_client, p_delivery,
+p_payment_method)` is a `security definer` RPC that prices every line from `products`, computes the
+delivery fee from `store_settings`, pins `status` to `'pending'`, sets `user_id` from `auth.uid()`
+and writes the order plus its items in one transaction. It ignores anything price-shaped in its
+payload. Rejections come back as stable tokens (`ORDER_PRODUCT_OUT_OF_STOCK`,
+`ORDER_PRODUCT_UNKNOWN`, `ORDER_INVALID_LINE`, …) that the frontend maps to locale strings.
 
 - Use `gen_random_uuid()`, never `uuid_generate_v4()` (uuid-ossp is off the migration search_path).
 - Never write migration files with PowerShell `Set-Content -Encoding UTF8` — it emits a BOM that
