@@ -22,15 +22,18 @@ export default function Footer() {
         }
         setStatus('loading');
         const { error } = await supabase
-            .from('newsletter_subscribers')
-            .insert({ email: value });
+            .rpc('subscribe_newsletter', { p_email: value });
 
         if (!error) {
             setStatus('success');
             setEmail('');
         } else if (error.code === '23505') {
-            // unique violation — already subscribed
+            // unique violation — already subscribed. NOTE: this branch is the
+            // subscriber-enumeration leak T11 removes; it is left in place here
+            // so T10 changes only the transport, not the behaviour.
             setStatus('already');
+        } else if (error.message === 'RATE_LIMITED') {
+            setStatus('rate_limited');
         } else {
             console.error('Newsletter subscription failed:', error);
             setStatus('error');
@@ -42,6 +45,7 @@ export default function Footer() {
         already: { text: t('newsletter.already'), className: 'text-slate-500' },
         error: { text: t('newsletter.error'), className: 'text-red-600' },
         invalid: { text: t('newsletter.invalid'), className: 'text-red-600' },
+        rate_limited: { text: t('newsletter.rate_limited'), className: 'text-red-600' },
     }[status];
 
     return (

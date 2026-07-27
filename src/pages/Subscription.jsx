@@ -61,13 +61,13 @@ export default function Subscription() {
         if (!validate()) return;
         setStatus('loading');
         const selectedQuantity = quantities.find(q => q.id === quantity);
-        const { error } = await supabase.from('inquiries').insert({
-            type: 'subscription',
-            name: form.name.trim(),
-            email: form.email.trim().toLowerCase(),
-            phone: form.phone.trim() || null,
-            message: form.preference.trim() || null,
-            details: {
+        const { error } = await supabase.rpc('submit_inquiry', {
+            p_type: 'subscription',
+            p_name: form.name.trim(),
+            p_email: form.email.trim().toLowerCase(),
+            p_phone: form.phone.trim() || null,
+            p_message: form.preference.trim() || null,
+            p_details: {
                 frequency,
                 quantity,
                 pricePerDelivery: Number(subPrice(selectedQuantity.regularPrice).toFixed(2)),
@@ -75,7 +75,7 @@ export default function Subscription() {
         });
         if (error) {
             console.error('Subscription request failed:', error);
-            setStatus('error');
+            setStatus(error.message === 'RATE_LIMITED' ? 'rate_limited' : 'error');
         } else {
             setStatus('success');
         }
@@ -198,6 +198,7 @@ export default function Subscription() {
                                         />
                                     </div>
                                     {status === 'error' && <p className="text-sm text-red-600">{t('forms.error_generic')}</p>}
+                                    {status === 'rate_limited' && <p className="text-sm text-red-600">{t('forms.error_rate_limited')}</p>}
                                     <button
                                         type="submit"
                                         disabled={status === 'loading'}

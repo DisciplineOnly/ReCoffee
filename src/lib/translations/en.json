@@ -202,13 +202,15 @@
         "invalid_email": "Invalid email address",
         "sending": "Sending...",
         "error_generic": "Something went wrong. Please try again.",
+        "error_rate_limited": "You have sent too many requests. Please try again in an hour.",
         "new_request": "New inquiry"
     },
     "newsletter": {
         "success": "Subscribed successfully! Welcome to the community.",
         "already": "This email is already subscribed.",
         "error": "Something went wrong. Please try again.",
-        "invalid": "Please enter a valid email address."
+        "invalid": "Please enter a valid email address.",
+        "rate_limited": "Too many attempts. Please try again in an hour."
     },
     "footer": {
         "newsletter_text": "Join our community for brewing guides, new release alerts, and exclusive events.",

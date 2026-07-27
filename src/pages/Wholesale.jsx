@@ -54,18 +54,18 @@ export default function Wholesale() {
         e.preventDefault();
         if (!validate()) return;
         setStatus('loading');
-        const { error } = await supabase.from('inquiries').insert({
-            type: 'b2b',
-            name: form.name.trim(),
-            company: form.company.trim(),
-            email: form.email.trim().toLowerCase(),
-            phone: form.phone.trim() || null,
-            message: form.message.trim() || null,
-            details: { segment: form.segment },
+        const { error } = await supabase.rpc('submit_inquiry', {
+            p_type: 'b2b',
+            p_name: form.name.trim(),
+            p_company: form.company.trim(),
+            p_email: form.email.trim().toLowerCase(),
+            p_phone: form.phone.trim() || null,
+            p_message: form.message.trim() || null,
+            p_details: { segment: form.segment },
         });
         if (error) {
             console.error('B2B inquiry failed:', error);
-            setStatus('error');
+            setStatus(error.message === 'RATE_LIMITED' ? 'rate_limited' : 'error');
         } else {
             setStatus('success');
         }
@@ -173,6 +173,7 @@ export default function Wholesale() {
                                         />
                                     </div>
                                     {status === 'error' && <p className="text-sm text-red-600">{t('forms.error_generic')}</p>}
+                                    {status === 'rate_limited' && <p className="text-sm text-red-600">{t('forms.error_rate_limited')}</p>}
                                     <button
                                         type="submit"
                                         disabled={status === 'loading'}

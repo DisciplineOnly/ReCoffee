@@ -37,16 +37,18 @@ export default function Contact() {
         e.preventDefault();
         if (!validate()) return;
         setStatus('loading');
-        const { error } = await supabase.from('inquiries').insert({
-            type: 'contact',
-            name: form.name.trim(),
-            email: form.email.trim().toLowerCase(),
-            phone: form.phone.trim() || null,
-            message: form.message.trim(),
+        // Rate-limited and size-checked server-side; direct inserts into
+        // `inquiries` are revoked, so this RPC is the only way in.
+        const { error } = await supabase.rpc('submit_inquiry', {
+            p_type: 'contact',
+            p_name: form.name.trim(),
+            p_email: form.email.trim().toLowerCase(),
+            p_phone: form.phone.trim() || null,
+            p_message: form.message.trim(),
         });
         if (error) {
             console.error('Contact inquiry failed:', error);
-            setStatus('error');
+            setStatus(error.message === 'RATE_LIMITED' ? 'rate_limited' : 'error');
         } else {
             setStatus('success');
         }
@@ -143,6 +145,9 @@ export default function Contact() {
                                     </div>
                                     {status === 'error' && (
                                         <p className="text-sm text-red-600">{t('forms.error_generic')}</p>
+                                    )}
+                                    {status === 'rate_limited' && (
+                                        <p className="text-sm text-red-600">{t('forms.error_rate_limited')}</p>
                                     )}
                                     <button
                                         type="submit"

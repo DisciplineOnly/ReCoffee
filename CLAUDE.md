@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by eight idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by nine idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -36,8 +36,10 @@ The whole DB is created by eight idempotent migrations in `supabase/migrations/`
 6. `20260727000002_constrain_order_amounts.sql` — CHECK constraints on order money.
 7. `20260727000003_guest_order_lookup.sql` — `lookup_order()`.
 8. `20260727000004_moderate_reviews.sql` — review moderation and length limits.
+9. `20260727000005_rate_limit_public_writes.sql` — size limits and IP rate limiting on the public
+   write surface.
 
-Files 3-8 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+Files 3-9 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
 file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.
@@ -56,6 +58,13 @@ invisible to everyone but admins. **Do not loosen that policy** — `or user_id 
 every guest order to every anonymous caller. Read one back with
 `lookup_order(p_order_number, p_email)`, a definer function requiring both the order number and the
 exact email stored on that order; every failure mode returns zero rows.
+
+`inquiries` and `newsletter_subscribers` are likewise not directly writable. The public submits via
+`submit_inquiry(...)` and `subscribe_newsletter(...)`, definer functions that cap field sizes and
+rate-limit to 5 per hour per client IP. The IP comes from the `cf-connecting-ip` header PostgREST
+forwards (set at Supabase's Cloudflare edge, so a client cannot forge it) and is stored only as a
+salted md5 in `rate_limit_hits`. **Supabase's built-in CAPTCHA setting does not help here** — it
+guards the auth endpoints, not PostgREST table writes.
 
 Note that a policy is only
 consulted *after* the table-privilege check, and Supabase's default privileges grant INSERT on new

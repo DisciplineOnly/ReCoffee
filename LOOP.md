@@ -330,7 +330,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `feat(recoffee): add review moderation and length limits`
 
-- [ ] **T10 — Rate-limit the public inquiry and newsletter endpoints**
+- [x] **T10 — Rate-limit the public inquiry and newsletter endpoints**
 
   **Problem.** `init_schema.sql:288` and `:296` are both `with check (true)`. Call sites:
   `src/pages/Contact.jsx:40`, `src/pages/Wholesale.jsx:57`, `src/pages/Subscription.jsx:64`,

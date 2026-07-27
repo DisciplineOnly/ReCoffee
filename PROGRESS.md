@@ -1085,3 +1085,78 @@ no `setState` runs synchronously in the effect body. Back to 11.
   builds a rate-limiting mechanism for the inquiry and newsletter endpoints; reviews should be
   covered by whatever it settles on. Until then, moderation bounds the *damage* (nothing publishes
   unreviewed) but not the *volume* (the queue can still be flooded).
+
+---
+
+## LOOP T10 COMPLETE — public write surface rate-limited and size-capped
+
+**What was built:** `supabase/migrations/20260727000005_rate_limit_public_writes.sql`.
+
+**The approach is neither of the two LOOP.md proposed, and the reason matters.** "Enable Supabase's
+built-in CAPTCHA" would not have worked: that setting guards the **auth** endpoints (signup, signin,
+recover) and does nothing for arbitrary PostgREST table writes, which is exactly what these four
+forms are. It would have been a control in the wrong place. An Edge Function would work but adds a
+second runtime and a deploy step to a project with neither.
+
+Instead the limit lives in the database. I checked first, rather than assuming: PostgREST forwards
+request headers into Postgres, and behind Supabase's Cloudflare front door **`cf-connecting-ip` is
+present and is set at the edge**, so a client cannot forge it the way it can append to
+`x-forwarded-for`. That makes a DB-side limiter viable with no new infrastructure.
+
+- `rate_limit_hits` — bucket, salted-md5 client key, timestamp. RLS on, **no policies and no
+  privileges at all**: only the definer functions touch it. A client that could read it would learn
+  who has been submitting; one that could write it could evict its own limit. The IP is stored only
+  as `md5('recoffee-rl-v1:' || ip)` — this is spam control and should not quietly become an IP log of
+  everyone who uses the contact form.
+- `enforce_rate_limit(bucket, limit, window)` — prunes the caller's expired hits, counts, raises
+  `RATE_LIMITED`, records the hit.
+- `submit_inquiry(...)` and `subscribe_newsletter(...)` — validate type, trim, check every field
+  length, then rate-limit at **5 per hour per IP**, then insert. `status` is never accepted from the
+  caller.
+- **Direct inserts revoked** on both tables, policies dropped. Without this the limiter is optional —
+  a script would simply POST to the table, exactly as T3 reasoned for orders.
+- CHECK constraints hold regardless of the limiter: name 1–120, email 3–160, phone ≤40, company ≤160,
+  message ≤4000, `pg_column_size(details) < 4096`, newsletter email 3–160.
+
+All four call sites now use the RPCs, with a `rate_limited` status and new strings in both locales.
+
+**Verified by:**
+- **Direct table inserts refused**: `inquiries` and `newsletter_subscribers` both return
+  **401 / 42501**.
+- **Oversized and malformed payloads rejected at the DB**: message 4001 chars, name 121 chars, an
+  ~8KB `details` blob → `INQUIRY_TOO_LONG`; `not-an-email` → `INQUIRY_INVALID_EMAIL`; `type: 'admin'`
+  → `INQUIRY_INVALID_TYPE`.
+- **20 rapid submissions, both endpoints**: inquiries **5 accepted / 15 rate-limited**; newsletter
+  **5 accepted / 15 rate-limited**. Exactly the configured budget.
+- **Forms work through the UI**: the Contact form submitted and rendered "Съобщението е изпратено!",
+  and the footer newsletter subscribed — both rows confirmed in the DB, with hits recorded under the
+  `inquiry` and `newsletter` buckets respectively.
+- `npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed. `init_schema.sql`
+  re-applied cleanly with the fold in place.
+- **Test data removed**: inquiries, subscribers and `rate_limit_hits` all back to 0.
+
+**Assumptions made:**
+- **Only two of the four forms were driven through the browser** (Contact, and the footer newsletter
+  — the two distinct RPCs). Wholesale and Subscription were verified by their rewritten call sites
+  plus direct RPC calls with the same payload shape, not by filling their forms. Context budget, and
+  they exercise the identical `submit_inquiry` path with one extra field each. Stated rather than
+  implied.
+- **5/hour per IP** is a guess at a sane budget for low-frequency forms. Shared NAT means several
+  users behind one address share it; the limit is deliberately generous enough that this is unlikely
+  to bite a real customer.
+- **The newsletter's 23505 still propagates**, so the Footer's "already subscribed" branch still
+  fires. That is the enumeration leak T11 removes — left deliberately unchanged so T10 alters only
+  the transport, and noted in the migration itself.
+- **A stray double-click during the UI check** (my `??` returning undefined so both branches ran)
+  submitted the newsletter twice; the second hit reported "already subscribed". That is current
+  intended behaviour, and it incidentally demonstrated the leak T11 addresses.
+
+**Follow-ups needed:**
+- **`rate_limit_hits` grows slowly.** Pruning is per-key, so a caller who never returns leaves rows
+  behind. A periodic `delete from rate_limit_hits where created_at < now() - interval '1 day'` (pg_cron
+  or an admin action) would bound it. Not urgent at this traffic.
+- **Reviews are still not rate-limited** — flagged as a follow-up in T9 and still open. The mechanism
+  now exists: `perform enforce_rate_limit('review', …)` inside a `submit_review()` RPC would close it,
+  but reviews are still inserted directly, so that needs the same revoke treatment. Out of T10's
+  stated scope (inquiry and newsletter endpoints).
+- **`lookup_order` is still unlimited** (T6's follow-up). Same mechanism applies.
