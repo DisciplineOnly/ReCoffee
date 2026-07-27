@@ -184,6 +184,36 @@ begin
     alter table order_items add constraint order_items_quantity_sane
       check (quantity between 1 and 999);
   end if;
+
+  -- Payload size. place_order() projects client_info and delivery_info onto
+  -- their known keys before storing them, so in the normal path these never
+  -- fire — they are the backstop for every other writer, present and future.
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_client_info_bounded' and conrelid = 'orders'::regclass
+  ) then
+    alter table orders add constraint orders_client_info_bounded
+      check (pg_column_size(client_info) < 8192);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_delivery_info_bounded' and conrelid = 'orders'::regclass
+  ) then
+    alter table orders add constraint orders_delivery_info_bounded
+      check (pg_column_size(delivery_info) < 8192);
+  end if;
+
+  -- payment_info holds exactly {"method": "..."} today. The cap is deliberately
+  -- tight so that whatever a payment gateway integration decides to store here
+  -- has to be a decision, not an accident.
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_payment_info_bounded' and conrelid = 'orders'::regclass
+  ) then
+    alter table orders add constraint orders_payment_info_bounded
+      check (payment_info is null or pg_column_size(payment_info) < 1024);
+  end if;
 end
 $$;
 
@@ -514,6 +544,7 @@ declare
   c_max_lines constant int    := 50;
   c_grinds    constant text[] := array['whole-bean', 'espresso', 'filter', 'french-press', 'none'];
   c_methods   constant text[] := array['card', 'cash', 'bank'];
+  c_dtypes    constant text[] := array['home', 'office'];
   c_uuid_re   constant text   := '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
   v_lines        jsonb;
@@ -530,6 +561,9 @@ declare
   v_attempt      int;
   v_i            int;
   v_bad          text;
+  v_client       jsonb;
+  v_delivery     jsonb;
+  v_dtype        text;
 begin
   -- ── payload shape ────────────────────────────────────────────────────────
   -- Every message below is a stable token the frontend matches on; the human
@@ -544,6 +578,61 @@ begin
      or p_delivery is null or jsonb_typeof(p_delivery) <> 'object' then
     raise exception 'ORDER_INVALID_DETAILS';
   end if;
+
+  -- ── bound the two client-supplied jsonb columns ──────────────────────────
+  -- Reject over-length values rather than truncating them: a silently
+  -- shortened street address is a failed delivery and a shortened phone number
+  -- is an uncontactable customer. The caps are generous — these are names and
+  -- addresses, not documents.
+  if length(coalesce(p_client ->> 'firstName', '')) > 80
+     or length(coalesce(p_client ->> 'lastName',  '')) > 80
+     or length(coalesce(p_client ->> 'email',     '')) > 160
+     or length(coalesce(p_client ->> 'phone',     '')) > 40 then
+    raise exception 'ORDER_INVALID_DETAILS' using detail = 'a client field exceeds its maximum length';
+  end if;
+
+  v_dtype := coalesce(p_delivery ->> 'type', '');
+  if v_dtype <> all (c_dtypes) then
+    raise exception 'ORDER_INVALID_DETAILS' using detail = 'delivery type must be home or office';
+  end if;
+
+  if length(coalesce(p_delivery #>> '{address,street}',     '')) > 200
+     or length(coalesce(p_delivery #>> '{address,city}',       '')) > 80
+     or length(coalesce(p_delivery #>> '{address,postalCode}', '')) > 20
+     or length(coalesce(p_delivery #>> '{address,notes}',      '')) > 500
+     or length(coalesce(p_delivery ->> 'courier',              '')) > 40
+     or length(coalesce(p_delivery ->> 'courierCity',          '')) > 80
+     or length(coalesce(p_delivery ->> 'courierOffice',        '')) > 160 then
+    raise exception 'ORDER_INVALID_DETAILS' using detail = 'a delivery field exceeds its maximum length';
+  end if;
+
+  -- Projection, not pass-through: whatever else the payload carried — extra
+  -- keys, nested junk, megabytes of it — is not stored, by construction. Same
+  -- treatment payment_info already gets at the insert below. The CHECK
+  -- constraints on these columns are the backstop for every *other* writer.
+  v_client := jsonb_strip_nulls(jsonb_build_object(
+    'firstName', nullif(btrim(p_client ->> 'firstName'), ''),
+    'lastName',  nullif(btrim(p_client ->> 'lastName'),  ''),
+    'email',     nullif(btrim(p_client ->> 'email'),     ''),
+    'phone',     nullif(btrim(p_client ->> 'phone'),     '')
+  ));
+
+  -- `address` stays an object even when empty, and the courier keys are only
+  -- kept for office delivery, so the stored shape matches what the checkout
+  -- already sent and src/pages/admin/Orders.jsx already reads.
+  v_delivery := jsonb_strip_nulls(jsonb_build_object(
+    'type', v_dtype,
+    'address',
+      case when v_dtype = 'home' then jsonb_strip_nulls(jsonb_build_object(
+        'street',     nullif(btrim(p_delivery #>> '{address,street}'),     ''),
+        'city',       nullif(btrim(p_delivery #>> '{address,city}'),       ''),
+        'postalCode', nullif(btrim(p_delivery #>> '{address,postalCode}'), ''),
+        'notes',      nullif(btrim(p_delivery #>> '{address,notes}'),      '')
+      )) else '{}'::jsonb end,
+    'courier',       case when v_dtype = 'office' then nullif(btrim(p_delivery ->> 'courier'),       '') end,
+    'courierCity',   case when v_dtype = 'office' then nullif(btrim(p_delivery ->> 'courierCity'),   '') end,
+    'courierOffice', case when v_dtype = 'office' then nullif(btrim(p_delivery ->> 'courierOffice'), '') end
+  ));
 
   if p_items is null or jsonb_typeof(p_items) <> 'array'
      or jsonb_array_length(p_items) = 0 then
@@ -676,7 +765,7 @@ begin
         v_order_number,
         'pending',                                          -- never from the caller
         v_subtotal, v_delivery_fee, v_total,
-        p_client, p_delivery,
+        v_client, v_delivery,                               -- projected, never the raw payload
         jsonb_build_object('method', p_payment_method),      -- nothing else reaches this column
         auth.uid()                                           -- null for guests; never a parameter
       )

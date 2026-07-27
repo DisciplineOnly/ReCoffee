@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by fourteen idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by sixteen idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 11 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -49,11 +49,20 @@ The whole DB is created by fourteen idempotent migrations in `supabase/migration
 14. `20260727000010_remove_t15_test_order.sql` — data cleanup, not schema: deletes the one synthetic
     order T15 placed to verify the trigger. A no-op on a fresh project, so it is **not** folded into
     file 1.
+15. `20260727000011_bound_order_payloads.sql` — `pg_column_size` CHECK constraints on the three
+    `orders` jsonb columns, and `place_order()` reissued so it **projects** `client_info` /
+    `delivery_info` onto known keys instead of storing the payload it was handed.
+16. `20260727000012_remove_t18_test_order.sql` — the same kind of data cleanup as file 14, for T18's
+    verification order. Also not folded into file 1.
 
-Files 3-13 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
-file 1 alone. **A change to the schema needs both a new numbered migration and the same change
-folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
-database only gets the new file, while a fresh one only gets `init_schema.sql`.
+Files 3-13 and 15 are *also* folded into file 1, so a fresh project bootstraps to the identical state
+from file 1 alone. **`place_order()` now exists in three files** — its own migration
+(`20260727000000`), the reissue in `20260727000011`, and section 7 of `init_schema.sql`. Only the
+latter two are current, and they are kept byte-identical; change both together.
+
+**A change to the schema needs both a new numbered migration and the same change folded into
+`init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing database only
+gets the new file, while a fresh one only gets `init_schema.sql`.
 
 Orders are **not** insertable from the client — `anon` and `authenticated` have no INSERT privilege
 on `orders` or `order_items` and no insert policy, so a direct PostgREST insert returns `42501`.
@@ -63,6 +72,12 @@ The only way in is `place_order(p_items, p_client, p_delivery, p_payment_method)
 order plus its items in one transaction. It ignores anything price-shaped in its payload.
 Rejections come back as stable tokens (`ORDER_PRODUCT_OUT_OF_STOCK`, `ORDER_PRODUCT_UNKNOWN`,
 `ORDER_INVALID_LINE`, …) that the frontend maps to locale strings.
+
+`client_info` and `delivery_info` are **projected onto known keys** by `place_order()`, not stored as
+handed over — extra keys are dropped and over-length values are rejected as `ORDER_INVALID_DETAILS`.
+**If you add a field to the checkout form you must add it to that projection**, or it will be
+silently discarded. `pg_column_size` CHECK constraints cap all three jsonb columns as the backstop
+for any other writer.
 
 Guest orders store `user_id = null` and the SELECT policy is `user_id = auth.uid()`, so they are
 invisible to everyone but admins. **Do not loosen that policy** — `or user_id is null` would expose

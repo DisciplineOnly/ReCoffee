@@ -1648,3 +1648,98 @@ Regression against the **real** catalog with interception removed: 1 × 79.00 �
 
 **Follow-ups needed:** none. The two helpers are exported from `price.js`, so any future money
 comparison has somewhere obvious to go.
+
+---
+
+## LOOP T18 COMPLETE — jsonb payloads projected and size-capped
+
+**What was built:** `supabase/migrations/20260727000011_bound_order_payloads.sql`, folded into
+`init_schema.sql` (the constraints into the orders section, the reissued function into section 7 —
+verified byte-identical, 11,926 chars each).
+
+Two layers, because they fail differently:
+
+1. **`place_order()` now projects rather than passes through.** The insert used to be
+   `values (..., p_client, p_delivery, ...)` — the caller's objects, verbatim. It now builds both
+   from known keys with `jsonb_build_object` + `jsonb_strip_nulls`, which is the treatment
+   `payment_info` has had since T1. Over-length values in *known* fields are rejected as
+   `ORDER_INVALID_DETAILS` rather than truncated: a silently shortened street address is a failed
+   delivery, and a shortened phone number is an uncontactable customer. `delivery.type` is checked
+   against `home`/`office`.
+2. **CHECK constraints** — `pg_column_size < 8192` on `client_info` and `delivery_info`, and
+   `< 1024` on `payment_info`. Layer 1 is what runs today; layer 2 is what still holds when a
+   gateway callback, an Edge Function or a migration becomes the second writer. Unlike RLS, a CHECK
+   applies to `service_role` too.
+
+`payment_info` was not in LOOP.md's list but is the third jsonb on the same table and got the same
+treatment — one line, and the tight cap means a future gateway integration storing more there has to
+be a decision rather than an accident.
+
+**`inquiries.details` needed nothing.** T10 already capped it at 4096 bytes, both as a CHECK and
+inside `submit_inquiry()`. Checked before writing anything.
+
+**Existing rows were checked first**, as LOOP.md asked — the migration opens with a `do` block that
+counts violating rows per column and raises a descriptive exception rather than letting Postgres
+fail with "check constraint is violated by some row" and no indication of which column. It applied
+cleanly, so the count was zero on all three.
+
+**Verified by:** the anon key over real PostgREST, plus a constraint test through a self-rolling-back
+migration.
+
+| call | result |
+|---|---|
+| normal order **+ 450 KB of junk keys** (`evil`, `nested`, `isAdmin`, a 50 KB key inside `address`) | **200** — order placed |
+| `street` 5,000 chars | **400 `ORDER_INVALID_DETAILS`** — "a delivery field exceeds its maximum length" |
+| `email` 500 chars | **400 `ORDER_INVALID_DETAILS`** — "a client field exceeds its maximum length" |
+| `delivery.type = "warehouse"` | **400 `ORDER_INVALID_DETAILS`** — "delivery type must be home or office" |
+
+Reading the junk order back through `lookup_order()` is the part that matters — **450,259 bytes sent,
+179 bytes stored**:
+
+```
+client_info  : {"email":"t18-payload@example.com","phone":"0888000000","lastName":"Payload","firstName":"T18"}
+delivery_info: {"type":"home","address":{"city":"Sofia","street":"ul. Test 1","postalCode":"1000"}}
+payment_info : {"method":"cash"}
+```
+
+Not one junk key survived, and the order still succeeded — which is the deliberate choice: an
+attacker's padding is discarded silently while a *legitimate* customer never has a checkout fail over
+an unexpected key.
+
+The constraints themselves can't be reached through the RPC any more, so they were tested with direct
+inserts inside a `do` block that ends in `raise exception` (nothing committed, no ledger entry —
+confirmed):
+
+```
+client_info 9KB   : REJECTED by ... violates check constraint "orders_client_info_bounded"
+delivery_info 9KB : REJECTED by ... violates check constraint "orders_delivery_info_bounded"
+payment_info 2KB  : REJECTED by ... violates check constraint "orders_payment_info_bounded"
+normal row        : ACCEPTED
+```
+
+That test needed a second attempt: `r := r || 'literal'` on a `text[]` made Postgres parse the
+literal as an array (`malformed array literal`), because bare string literals resolve to
+`anyarray || anyarray`. Fixed with an explicit `::text`.
+
+`npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed. No application code
+changed in this task.
+
+**Assumptions made:**
+- **Projection over rejection for unknown keys.** Rejecting would be louder, but it breaks checkout
+  the first time someone adds a field to `CheckoutContext` and forgets the RPC. Dropping is the same
+  contract `payment_info` already has. The trade-off is real and now documented in `CLAUDE.md`: **add
+  a checkout field to the projection or it is silently discarded.**
+- **Field content is not validated, only shape and length.** No email-format check, no phone
+  normalisation — those are rejection risks against real customers with unusual data, and
+  `lookup_order()` matching on a garbage email hurts only the customer who typed it.
+- **8192 bytes is far above any legitimate value** (the real payload is ~180 bytes) and far below
+  anything worth calling storage abuse. It is a backstop, not a business rule.
+- **`20260727000012_remove_t18_test_order.sql`** removes the junk-key verification order, same
+  pattern and reasoning as T15's cleanup migration. Confirmed gone via `lookup_order` → `[]`.
+
+**Follow-ups needed:**
+- **`place_order()` now exists in three files** — its original migration, the T18 reissue, and
+  `init_schema.sql` section 7. Only the last two are current. Noted in `CLAUDE.md`, but a fourth
+  reissue would make this genuinely error-prone; at that point the function should move to a single
+  file that later migrations `\i`-style reference, or the older copies should be marked superseded in
+  their headers.

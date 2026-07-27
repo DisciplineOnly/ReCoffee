@@ -511,7 +511,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): compare cart totals without float drift`
 
-- [ ] **T18 — Bound the jsonb payload columns**
+- [x] **T18 — Bound the jsonb payload columns**
 
   **Problem.** `orders.client_info`, `orders.delivery_info` and `inquiries.details` are `jsonb` with
   no size or shape validation. A direct insert can carry arbitrary keys and megabytes. Values render
