@@ -271,7 +271,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): stop persisting order PII in localStorage`
 
-- [ ] **T8 — Store cart entries by id, not as full product snapshots**
+- [x] **T8 — Store cart entries by id, not as full product snapshots**
 
   **Problem.** `src/contexts/CartContext.jsx:33-52` puts the entire `product` object into the cart
   and `:17-26` rehydrates it from localStorage forever. A cart built in January still carries
@@ -584,14 +584,14 @@ out-of-scope findings inline.
 - **`order_items` has no `product_id` index** — already noted in T12, restating only because the
   cost is now visible: `place_order()` does an FK check per line on insert. T12 adds the index.
 
-- **The review step quotes a price the server may not honour.** `ReviewStep.jsx:262-299` renders the
-  order summary from `CartContext`, which is localStorage. Now that `place_order()` prices the order,
-  a stale cart can show one total on the review screen and a different one on the confirmation page —
-  observed live during T2 with a cart forged to `0.01`: review said **5.03 лв**, the confirmation and
-  the DB said **237.00 лв**. For a tamperer that is correct. For an honest customer holding a cart
-  from before a price change it is a surprise at the worst moment. **T8** (cart stores ids and joins
-  the live catalog) fixes the underlying staleness; if it does not also make the review step quote
-  the server, that gap should be closed separately.
+- ~~**The review step quotes a price the server may not honour.**~~ **Largely resolved by T8.** The
+  cart now stores ids and joins the live catalog, so the review step quotes current prices rather
+  than a snapshot — verified by changing a price in the DB and seeing an already-open cart pick it up
+  on reload. The *residual* gap is narrower than originally written: a price that changes between the
+  review screen rendering and the customer pressing "Поръчай" would still be quoted stale for those
+  seconds, because the review step reads the catalog the page loaded with. Closing that fully needs
+  either a dry-run price quote from the server or a re-fetch on submit; neither is worth it for a
+  seconds-wide window, and `place_order()` remains authoritative either way.
 
 - ~~**`CheckoutSuccess` has an unguarded `JSON.parse`.**~~ **Resolved by T7.** The component no
   longer reads or parses `localStorage` at all — it fetches from `lookup_order()` — so the crash

@@ -883,3 +883,98 @@ the shipped anon key:
   customer sees the order-number-only fallback, which is honest but thinner than before, when the
   page rendered from local data. Given the alternative was keeping PII at rest, that is the right
   trade — but a retry button on that branch would be a cheap improvement.
+
+---
+
+## LOOP T8 COMPLETE — cart stores product ids, not snapshots
+
+**What was built:** `recoffee_cart` now persists `{productId, slug, quantity, grindType}` and nothing
+else. `CartProvider` calls `useProducts()` and joins the stored lines against the live catalog.
+
+**The in-memory shape is unchanged** — `cart` is still `[{ product, quantity, grindType }]` — so
+`CartItem`, `CartSummary`, `ReviewStep`, `Header`, `ProductCard` and the rest needed no edits. Only
+what goes to disk changed, which is the whole point: prices, `onSale` and stock are read fresh on
+every load instead of being frozen at the moment the customer clicked "add to cart".
+
+`slug` is stored alongside `productId` deliberately. The local-JSON fallback emits ids like
+`prod_009` that are not the database uuids, and a cart outlives the fallback session that created it;
+the slug is the one key stable across both sources. Resolution tries id first, then slug.
+
+Supporting changes:
+- **Migration of live carts.** `normalizeStoredLine` accepts the pre-T8 `{ product: {...} }` shape and
+  converts it, per entry — one malformed line is dropped, not the whole cart.
+- **Storage is written canonically, not raw.** The persist effect writes the *resolved* projection:
+  ids rewritten to the catalog's own, unresolvable lines omitted. So a cart self-heals on the next
+  load, and no second state variable or `setState`-in-an-effect is needed.
+- **`cartLoading`.** The join is async, so the cart reads as empty until the catalog lands. Without a
+  guard, a hard refresh on `/checkout` would bounce to `/cart` — the exact failure the lazy
+  initialiser was written to prevent, just moved one step later. `Checkout` renders nothing while
+  loading; `Cart` shows a spinner instead of the empty state.
+- **Unavailable lines are reported**, derived as `lines.length - cart.length`, with a dismissible
+  notice on the cart page and new `cart.unavailable_removed` / `cart.dismiss` strings in both locales.
+- Pruning is **skipped while `productsError` is set** — that is the degraded local-JSON path, and
+  emptying a customer's cart against a catalog we do not trust would be worse than a stale line.
+
+**Verified by:** a seeded old-shape cart with three deliberately awkward lines, on a dev server
+(port 5181) against the live catalog.
+
+- **Migration, canonicalisation and dropping, in one run.** Seeded in the pre-T8 shape:
+  (1) a real product with a **stale price of 12.34** and `originalPrice: 999`, (2) a line whose id was
+  `prod_009` — the fallback shape — and (3) `ghost-product-that-was-deleted`, which is not in the
+  catalog. After one load:
+  - storage was rewritten to the new shape;
+  - `prod_009` became `c1a10001-…-000000000004`, resolved **via slug**;
+  - the ghost line was gone from both cart and storage;
+  - the removal notice was shown;
+  - **none of `12.34`, `1.11` or `999` appeared anywhere** — the page showed 79.00 and 158.00, the
+    live prices.
+- **A price change reaches an open cart.** `illy-iperespresso-classico-lungo` was set to 65.00 in the
+  DB; reloading the already-populated cart showed **65.00**, subtotal **223.00** (65 + 2×79), with no
+  trace of 79.00 on that line. Price restored to 79.00 afterwards and confirmed.
+- **Threshold and totals still compute.** Removing a line through the UI — which also exercises
+  `removeFromCart` against a canonicalised id — left 65.00: delivery **5.00**, total **70.00**, and
+  the hint read "Добави още 35.00 лв", exactly 100 − 65.
+- **The `/checkout` regression holds both ways.** A hard refresh on `/checkout` with items **stayed on
+  `/checkout`** with the form rendered; with `recoffee_cart` set to `[]` it still **redirected to
+  `/cart`**. Both matter — the guard had to keep working, not just stop misfiring.
+- **A full order still completes**: added to cart, three steps, placed. History recorded exactly
+  `["push:/checkout/success"]`, no alerts, cart cleared to `[]`, totals 79.00 / 5.00 / 84.00, and the
+  DB row matches.
+- Browser console: **0 errors** across the whole run.
+- `npm run lint`: **11 warnings, 0 errors — unchanged from the post-T7 baseline**, and **0 of them in
+  `CartContext.jsx`**. `npm run build` passed in 1.20s. Both locales re-parsed as valid JSON.
+- **Test data removed**: order deleted, `orders`/`order_items` at 0, price restored, browser storage
+  cleared.
+
+**A correction I made to my own work:** the first implementation canonicalised and pruned in a
+`useEffect` that called `setLines`, which added a twelfth lint warning — a **gain** over the
+post-T7 baseline of 11, which the loop's rules forbid. Rather than accept it or suppress the rule, I
+restructured: the persist effect writes the canonical projection to storage, `unavailableCount` is
+derived during render, and the extra state variable is gone. Fewer moving parts and the warning
+disappeared. Worth recording because the lint delta is what caught it, not review.
+
+**Assumptions made:**
+- **`CartProvider` now calls `useProducts()`, which adds a catalog fetch on every page.** `useProducts`
+  has no shared cache — each caller fetches independently — so pages that already use it (Shop,
+  ProductDetail, Home) now issue **two** catalog requests, and pages that never needed products
+  (legal, contact) now issue one. That is a real cost, accepted because T8 explicitly specifies
+  joining against `useProducts()`. See follow-ups.
+- **The unavailable notice names no products.** Only `{productId, slug}` is persisted, so a dropped
+  line has no name to show — the message is generic. Storing the last-known name to improve the
+  message would reintroduce exactly the snapshot this task removes.
+- **Matching in `removeFromCart`/`updateQuantity` resolves through the catalog first**
+  (`resolve(line)?.id ?? line.productId`) rather than trusting the stored id, so a line whose stored
+  id is stale is still addressable by the id the UI hands back.
+- **Lines are keyed by `productId` + `grindType`, as before.** PROGRESS Task 5 noted that a cart built
+  during a fallback session could hold two lines for the same product; canonicalising ids on write
+  makes duplicates converge on the next load, but two lines added *within* one degraded session can
+  still coexist until then.
+
+**Follow-ups needed:**
+- **The duplicate catalog fetch is worth fixing.** Lifting `useProducts` into a provider (or giving it
+  a module-level cache) would make the extra request free and speed up every page that currently
+  refetches. It is a refactor across ~8 call sites, so it is out of T8's scope, but this task is what
+  makes it worth doing.
+- The **review-step price mismatch** logged during T2 is largely resolved; the residual seconds-wide
+  window is described in *Discovered during the loop* rather than left implying the whole finding
+  still stands.

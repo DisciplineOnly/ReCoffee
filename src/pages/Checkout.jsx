@@ -12,7 +12,7 @@ import { useSEO } from '../hooks/useSEO';
 
 function CheckoutContent() {
     const { t } = useTranslation();
-    const { cart } = useCart();
+    const { cart, cartLoading } = useCart();
     const { currentStep, orderPlaced } = useCheckout();
 
     useSEO({ title: t('checkout.title'), noindex: true });
@@ -25,6 +25,15 @@ function CheckoutContent() {
     // customer on /cart instead of the confirmation. Render nothing rather than
     // flashing an empty checkout for that frame.
     if (orderPlaced) {
+        return null;
+    }
+
+    // The cart is stored as product ids and joined against the live catalog, so
+    // it reads as empty until that fetch lands. Without this the guard below
+    // fires on a hard refresh and dumps the customer on /cart — the same
+    // failure the lazy initialiser in CartContext was written to prevent, moved
+    // one step later by the join.
+    if (cartLoading) {
         return null;
     }
 

@@ -302,6 +302,8 @@
     },
     "cart": {
         "title": "Cart",
+        "unavailable_removed": "One or more products are no longer available and were removed from your cart.",
+        "dismiss": "Got it",
         "empty": "Your cart is empty",
         "empty_message": "Looks like you haven't added anything to your cart yet.",
         "browse_products": "Browse products",
