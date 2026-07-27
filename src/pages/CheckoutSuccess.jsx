@@ -7,6 +7,25 @@ import { formatBgn, formatEur, formatPrice } from '../lib/price';
 import { onImageError, productImage } from '../lib/productImage';
 import { useSEO } from '../hooks/useSEO';
 
+// Order lines now come from place_order()'s return value — the server's own
+// names and prices — rather than from the cart snapshot. An order placed just
+// before this shipped can still be sitting in localStorage under the old
+// `{ product: {...} }` shape, so fold that into the new one on read.
+const normalizeOrder = (order) => ({
+    ...order,
+    items: (order?.items ?? []).map((item) =>
+        item.name !== undefined
+            ? item
+            : {
+                name: item.product?.name,
+                quantity: item.quantity,
+                unitPrice: item.product?.price,
+                grindType: item.grindType,
+                images: item.product?.images ?? []
+            }
+    )
+});
+
 export default function CheckoutSuccess() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -18,7 +37,7 @@ export default function CheckoutSuccess() {
         // Try to get the last order from localStorage
         const lastOrder = localStorage.getItem('recoffee_last_order');
         if (lastOrder) {
-            setOrder(JSON.parse(lastOrder));
+            setOrder(normalizeOrder(JSON.parse(lastOrder)));
         } else {
             // If no order found, redirect to shop
             navigate('/shop');
@@ -134,23 +153,23 @@ export default function CheckoutSuccess() {
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {order.items.map((item, idx) => (
+                                        {(order.items ?? []).map((item, idx) => (
                                             <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
-                                                        <img src={productImage(item.product)} onError={onImageError} alt={item.product.name} className="w-full h-full object-cover mix-blend-multiply" />
+                                                        <img src={productImage(item)} onError={onImageError} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold text-slate-900">{item.product.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {formatPrice(item.product.price)}</p>
+                                                        <p className="text-sm font-bold text-slate-900">{item.name}</p>
+                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {formatPrice(item.unitPrice)}</p>
                                                     </div>
                                                 </div>
                                                 <span className="text-right whitespace-nowrap">
                                                     <span className="block text-sm font-bold text-slate-900">
-                                                        {formatBgn(item.product.price * item.quantity)}
+                                                        {formatBgn(item.unitPrice * item.quantity)}
                                                     </span>
                                                     <span className="block text-[10px] font-medium text-slate-400">
-                                                        {formatEur(item.product.price * item.quantity)}
+                                                        {formatEur(item.unitPrice * item.quantity)}
                                                     </span>
                                                 </span>
                                             </div>

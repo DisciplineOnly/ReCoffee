@@ -123,7 +123,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `feat(recoffee): add server-authoritative place_order RPC`
 
-- [ ] **T2 — Switch checkout to the RPC**
+- [x] **T2 — Switch checkout to the RPC**
 
   **Problem.** `ReviewStep.handlePlaceOrder` (`src/components/checkout/ReviewStep.jsx:142-219`) does
   two independent inserts with no transaction. If the second fails, the `orders` row survives with
@@ -583,6 +583,29 @@ out-of-scope findings inline.
 
 - **`order_items` has no `product_id` index** — already noted in T12, restating only because the
   cost is now visible: `place_order()` does an FK check per line on insert. T12 adds the index.
+
+- **The review step quotes a price the server may not honour.** `ReviewStep.jsx:262-299` renders the
+  order summary from `CartContext`, which is localStorage. Now that `place_order()` prices the order,
+  a stale cart can show one total on the review screen and a different one on the confirmation page —
+  observed live during T2 with a cart forged to `0.01`: review said **5.03 лв**, the confirmation and
+  the DB said **237.00 лв**. For a tamperer that is correct. For an honest customer holding a cart
+  from before a price change it is a surprise at the worst moment. **T8** (cart stores ids and joins
+  the live catalog) fixes the underlying staleness; if it does not also make the review step quote
+  the server, that gap should be closed separately.
+
+- **`CheckoutSuccess` has an unguarded `JSON.parse`.** `src/pages/CheckoutSuccess.jsx:36` parses
+  `recoffee_last_order` with no try/catch. A corrupt value throws inside the effect, so `order` stays
+  null, the component returns null and the customer gets a blank page with no redirect — instead of
+  the `/shop` redirect the missing-value branch gives. Pre-existing, untouched by T2. **T7** rewrites
+  this reader and is the natural place to fix it.
+
+- **A cart can hold products from a different Supabase project.** Found in the real browser profile
+  during T2: `recoffee_cart` contained a `mass-appeal` line whose `id` was a valid uuid and whose
+  image URL pointed at `hoirqrkdgbmvpwutwuwj.supabase.co` — a *previous* project. It passes the
+  `isUuid` check, so it reaches the RPC and is correctly rejected as `ORDER_PRODUCT_UNKNOWN`. Before
+  T2 it would have hit a raw foreign-key violation and shown the generic error. Nothing to fix — the
+  handling is now right — but it is a reminder that `recoffee_cart` in the wild holds arbitrary old
+  shapes, which **T8**'s migration path has to survive.
 
 ## Not in scope
 

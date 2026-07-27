@@ -8,34 +8,31 @@ import { supabase } from '../../lib/supabase';
 import { NO_GRIND } from '../../lib/categories';
 import { formatBgn, formatEur, formatPrice } from '../../lib/price';
 
-// Crockford-style base32 — I, L, O and U are left out so an order number read
-// out over the phone can't be mistyped. 256 % 32 === 0, so indexing a random
-// byte into it is unbiased.
-const ORDER_NUMBER_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-const ORDER_NUMBER_LENGTH = 6;
-const ORDER_NUMBER_ATTEMPTS = 5;
-// Postgres unique_violation, surfaced by PostgREST as error.code.
-const UNIQUE_VIOLATION = '23505';
-
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid = (value) => typeof value === 'string' && UUID_RE.test(value);
 
-// "RC-2026-4KJ8QW". Six base32 characters is ~1.07 billion codes rather than the
-// 10^6 six random digits gave: at a few thousand orders a year the birthday
-// problem made a collision likely, and orders.order_number is `unique not null`,
-// so it failed the insert *after* the customer had confirmed. The space is still
-// finite, hence the retry loop in handlePlaceOrder.
-const generateOrderNumber = () => {
-    const bytes = new Uint8Array(ORDER_NUMBER_LENGTH);
-    crypto.getRandomValues(bytes);
-    const code = Array.from(bytes, (byte) => ORDER_NUMBER_ALPHABET[byte % 32]).join('');
-    return `RC-${new Date().getFullYear()}-${code}`;
+// The order number, every line price, the delivery fee and the totals are all
+// computed by the place_order() RPC now. Nothing money-shaped leaves this file:
+// the cart is localStorage, so anything derived from it is attacker-controlled.
+// These are the tokens place_order() raises; the human text lives in the locale
+// files, keyed here so an unrecognised failure still falls back to the generic
+// message rather than showing a raw Postgres error.
+const ORDER_ERROR_KEYS = {
+    ORDER_PRODUCT_OUT_OF_STOCK: 'checkout.error_out_of_stock',
+    ORDER_PRODUCT_UNKNOWN: 'checkout.error_product_unknown',
+    ORDER_EMPTY_CART: 'checkout.error_empty_cart',
+    ORDER_TOO_MANY_LINES: 'checkout.error_too_many_lines',
+    ORDER_INVALID_LINE: 'checkout.error_invalid_order',
+    ORDER_INVALID_PAYMENT_METHOD: 'checkout.error_invalid_order',
+    ORDER_INVALID_DETAILS: 'checkout.error_invalid_order',
+    ORDER_NUMBER_EXHAUSTED: 'checkout.error_try_again',
 };
 
 // Cart entries added while useProducts was on its local-JSON fallback carry ids
-// like "prod_009", but order_items.product_id is a uuid — the insert would fail
-// on invalid syntax. Such a cart also outlives the fallback session in
+// like "prod_009", but order_items.product_id is a uuid — place_order() rejects
+// the line outright. Such a cart also outlives the fallback session in
 // localStorage. The slug is stable across both sources, so resolve through it.
+// T14 removes the need for this path by blocking checkout while degraded.
 const resolveFallbackProductIds = async (items) => {
     const slugs = [...new Set(
         items
@@ -50,9 +47,11 @@ const resolveFallbackProductIds = async (items) => {
         .select('id, slug')
         .in('slug', slugs);
 
+    // Returning an empty Map here used to send `product_id: null` down the wire
+    // and store order lines pointing at nothing. Fail the checkout instead.
     if (error) {
-        console.warn('Could not resolve fallback product ids by slug:', error);
-        return new Map();
+        console.error('Could not resolve fallback product ids by slug:', error);
+        throw new Error('ORDER_PRODUCT_UNKNOWN');
     }
 
     return new Map(data.map((row) => [row.slug, row.id]));
@@ -105,38 +104,16 @@ export default function ReviewStep() {
         return methods[method] || method;
     };
 
-    const insertOrder = async (orderNumber, session) => {
-        const orderPayload = {
-            order_number: orderNumber,
-            status: 'pending',
-            subtotal,
-            delivery_fee: delivery,
-            total,
-            client_info: checkoutData.client,
-            delivery_info: checkoutData.delivery,
-            payment_info: checkoutData.payment,
-            user_id: session?.user?.id || null
-        };
-
-        let { data, error } = await supabase
-            .from('orders')
-            .insert(orderPayload)
-            .select()
-            .single();
-
-        // Pre-migration fallback: retry without the new columns if they don't exist yet
-        if (error && error.code === 'PGRST204') {
-            const legacyPayload = { ...orderPayload };
-            delete legacyPayload.payment_info;
-            delete legacyPayload.user_id;
-            ({ data, error } = await supabase
-                .from('orders')
-                .insert(legacyPayload)
-                .select()
-                .single());
+    const orderErrorMessage = (error) => {
+        const key = ORDER_ERROR_KEYS[error?.message];
+        if (!key) return t('checkout.order_error');
+        // place_order() puts the offending product names in `detail`, which is
+        // the useful half of an out-of-stock message. The other tokens carry
+        // uuids or internal limits there, so they stay hidden.
+        if (error.message === 'ORDER_PRODUCT_OUT_OF_STOCK' && error.details) {
+            return `${t(key)} ${error.details}`;
         }
-
-        return { data, error };
+        return t(key);
     };
 
     const handlePlaceOrder = async () => {
@@ -148,54 +125,55 @@ export default function ReviewStep() {
         setIsSubmitting(true);
 
         try {
-            // Attach the order to the customer account, if logged in
-            const { data: { session } } = await supabase.auth.getSession();
-
             const productIdBySlug = await resolveFallbackProductIds(cart);
 
-            // 1. Create Order. A taken order number is recoverable — draw
-            // another one rather than failing a confirmed order.
-            let orderNumber;
-            let orderData;
-            let orderError;
-
-            for (let attempt = 0; attempt < ORDER_NUMBER_ATTEMPTS; attempt++) {
-                orderNumber = generateOrderNumber();
-                ({ data: orderData, error: orderError } = await insertOrder(orderNumber, session));
-                if (!orderError || orderError.code !== UNIQUE_VIOLATION) break;
-            }
-
-            if (orderError) throw orderError;
-
-            // 2. Create Order Items
-            const orderItems = cart.map(item => ({
-                order_id: orderData.id,
-                // Null beats an invalid uuid: the line still records what was
-                // bought and at what price, and the admin order table already
-                // falls back to a generic label when the product join misses.
-                product_id: isUuid(item.product.id)
+            // Identity and intent only. The server prices it.
+            const items = cart.map((item) => {
+                const productId = isUuid(item.product.id)
                     ? item.product.id
-                    : productIdBySlug.get(item.product.slug) ?? null,
-                quantity: item.quantity,
-                unit_price: item.product.price,
-                grind_type: item.grindType
-            }));
+                    : productIdBySlug.get(item.product.slug);
 
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(orderItems);
+                if (!productId) throw new Error('ORDER_PRODUCT_UNKNOWN');
 
-            if (itemsError) throw itemsError;
+                return {
+                    product_id: productId,
+                    quantity: item.quantity,
+                    grind_type: item.grindType
+                };
+            });
 
-            // Success!
-            // Save minimal order info to display on Success page (since we can't query by ID publicly)
+            // One call, one transaction: the order and its lines land together
+            // or not at all. The old two-insert path could leave an orders row
+            // with zero line items behind and no way to roll it back.
+            const { data, error } = await supabase.rpc('place_order', {
+                p_items: items,
+                p_client: checkoutData.client,
+                p_delivery: checkoutData.delivery,
+                p_payment_method: checkoutData.payment.method
+            });
+
+            if (error) throw error;
+
+            const placed = Array.isArray(data) ? data[0] : data;
+            if (!placed) throw new Error('ORDER_NUMBER_EXHAUSTED');
+
+            // Everything money-shaped here is the server's own figure, read
+            // back from the row it just wrote — not the local cart. Line order
+            // is preserved by place_order(), so the cart index still lines up
+            // and can supply the photo the RPC has no reason to return.
             const successOrder = {
-                orderNumber: orderNumber,
-                items: cart,
-                subtotal: subtotal,
-                deliveryFee: delivery,
-                total: total,
-                date: new Date().toISOString(),
+                orderNumber: placed.order_number,
+                date: placed.created_at,
+                subtotal: Number(placed.subtotal),
+                deliveryFee: Number(placed.delivery_fee),
+                total: Number(placed.total),
+                items: (placed.items ?? []).map((line, index) => ({
+                    name: line.product_name,
+                    quantity: line.quantity,
+                    unitPrice: Number(line.unit_price),
+                    grindType: line.grind_type,
+                    images: cart[index]?.product?.images ?? []
+                })),
                 delivery: checkoutData.delivery, // Required for success page calculation
                 client: checkoutData.client
             };
@@ -212,7 +190,7 @@ export default function ReviewStep() {
 
         } catch (error) {
             console.error('Order placement failed:', error);
-            alert(t('checkout.order_error'));
+            alert(orderErrorMessage(error));
         } finally {
             setIsSubmitting(false);
         }

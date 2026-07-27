@@ -425,3 +425,85 @@ over PostgREST — not the admin UI.
 - The `not found` fallback to hardcoded `100`/`5` inside the function is unreachable while the
   seeded row exists, but it is a second copy of the numbers. If `store_settings` ever gains rows for
   multiple stores, delete it rather than letting it drift.
+
+---
+
+## LOOP T2 COMPLETE — checkout routed through `place_order`
+
+**What was built:** `ReviewStep.handlePlaceOrder` no longer touches `orders` or `order_items`. The
+two unsynchronised inserts are replaced by one `supabase.rpc('place_order', …)` carrying
+`{product_id, quantity, grind_type}` per line and nothing else — no `unit_price`, no `subtotal`, no
+`total`, no `status`, no `user_id`. Also:
+
+- **The `PGRST204` legacy fallback is gone.** It retried the insert with `payment_info` and `user_id`
+  stripped, which silently turned a logged-in customer's order into a guest order they could never
+  see again. Its migration has long been applied.
+- **`resolveFallbackProductIds` now fails the checkout** on a query error instead of returning an
+  empty Map, and an unresolvable slug throws too. Both used to produce `product_id: null` order
+  lines. Kept otherwise, as T2 asked; T14 removes the need for it.
+- **The confirmation renders the server's figures.** `recoffee_last_order` now stores
+  `order_number`, `created_at`, `subtotal`, `delivery_fee` and `total` straight off the RPC's return
+  value, and each line carries the RPC's `product_name` and `unit_price`. `CheckoutSuccess` was
+  updated to the new item shape, with a `normalizeOrder` fold-in so an order placed just before this
+  shipped still renders from the old `{ product: {...} }` shape.
+- **Rejections get a specific message.** `ORDER_ERROR_KEYS` maps the RPC's tokens to six new locale
+  strings in **both** `bg.json` and `en.json`; anything unrecognised still falls back to
+  `checkout.order_error` rather than showing a raw Postgres error. For `ORDER_PRODUCT_OUT_OF_STOCK`
+  the offending product names from the exception's `detail` are appended — the other tokens carry
+  uuids or internal limits there, so those stay hidden.
+- The client-side order-number generator, its retry loop and the `UNIQUE_VIOLATION` constant are
+  deleted — that logic lives in SQL now. `isUuid` stays for the fallback resolver.
+
+**Verified by:** a real dev server (port 5177) driven end to end through the actual UI against the
+**live** Supabase project, not a mock.
+
+- **Happy path.** Added a product through the shop UI, filled all three checkout steps, placed the
+  order. Landed on `/checkout/success`; the DB row reads `RC-2026-50NP05`, `pending`, subtotal
+  `79.00`, delivery `5.00`, total `84.00`, `payment_info {"method":"cash"}`, `user_id null`, one line
+  at `unit_price 79.00` with `product_name` populated. The success page rendered the name, the line
+  price and all three totals.
+- **Tampered cart, and this is the one that matters.** Forged `recoffee_cart` to `price: 0.01`,
+  `quantity: 3`. The review step displayed **"Междинна сума 0.03 лв … Общо 5.03 лв"** — and the order
+  that was actually stored is subtotal **237.00**, delivery **0.00** (3 × 79.00 crosses the 100 BGN
+  threshold, so the fee correctly dropped), total **237.00**, line `unit_price 79.00`. The
+  confirmation page rendered 237.00, not 5.03: it is reading the server, not the cart.
+- **Rejection leaves nothing behind.** The browser profile turned out to already hold a stale cart
+  line from a *different* Supabase project (`mass-appeal`, image URL on `hoirqrkdgbmvpwutwuwj`), so
+  the rejection path got tested on real junk rather than something contrived. Result: the alert read
+  **"Част от продуктите в количката вече ги няма в каталога…"** — the specific string, not
+  `order_error` — the cart was left intact, no navigation fired, no `recoffee_last_order` was
+  written, and `select count(*) from orders` was **0**.
+- **Task 6 regression re-run.** `history.pushState`/`replaceState` were hooked before each run so an
+  intermediate bounce would be caught even if the final URL looked right. Both successful runs
+  recorded exactly `["push:/checkout/success"]` — no `replace:/cart`. The empty-cart guard never
+  fired.
+- Browser console across the whole session: **2 errors, both from the deliberate rejection** (the
+  400 from PostgREST and our own `console.error`). Nothing else.
+- `npm run lint`: **12 warnings, 0 errors before; 12 warnings, 0 errors after — unchanged.**
+  `npm run build` passed in 1.21s. Both locale files re-parsed as valid JSON.
+- **Test data removed**: both orders deleted, `orders` and `order_items` back to 0 rows, and the
+  browser's `recoffee_cart` / `recoffee_last_order` cleared.
+
+**Assumptions made:**
+- **The review step still quotes the local cart.** T2 said to render *the confirmation* from the RPC,
+  and that is done. The pre-submit review is an estimate by nature — the order does not exist yet, so
+  there is no server figure to show without a dry-run round trip. The consequence is real and was
+  observed (5.03 shown, 237.00 charged), so it is logged under *Discovered during the loop* for T8
+  rather than papered over.
+- **Line-to-photo matching is by array index.** `place_order()` returns its items `order by line_no`,
+  which is the order they were sent in, which is cart order — so index *i* of the response is index
+  *i* of the cart. The RPC has no reason to return image URLs, and this avoids a second lookup. It is
+  commented at the call site because it is a real coupling.
+- **Errors still use `alert()`.** Replacing it with inline error UI is a visual-design change T2 did
+  not ask for; only the *content* of the message changed.
+- **`supabase.auth.getSession()` was dropped from this path.** It existed only to populate `user_id`,
+  which the RPC now takes from `auth.uid()`. supabase-js already attaches the session's
+  `Authorization` header, so a logged-in customer's order is still attributed — verified in T1.
+
+**Follow-ups needed:**
+- Placing an order with an empty cart is prevented by the route guard, not by this code — the RPC
+  would reject it with `ORDER_EMPTY_CART` and the string exists, but the path is unreachable today.
+  Left in place as a backstop.
+- Two entries were added to *Discovered during the loop* for later tasks: the review-step price
+  mismatch above (T8), and an unguarded `JSON.parse` in `CheckoutSuccess` that blanks the page on a
+  corrupt `recoffee_last_order` instead of redirecting (T7 rewrites that reader anyway).
