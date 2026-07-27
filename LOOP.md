@@ -375,7 +375,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
 ## Phase 4 — Data integrity
 
-- [ ] **T12 — Fix product deletion against order history**
+- [x] **T12 — Fix product deletion against order history**
 
   **Problem.** `init_schema.sql:102` is `product_id uuid references products(id)` with **no
   `on delete` clause**, so it defaults to `NO ACTION`. Any product that has ever been ordered cannot
@@ -581,8 +581,8 @@ out-of-scope findings inline.
   Worth knowing that the ledger stores the SQL, so this is recoverable rather than fatal — and worth
   a habit of pushing from the repo rather than applying SQL from the dashboard.
 
-- **`order_items` has no `product_id` index** — already noted in T12, restating only because the
-  cost is now visible: `place_order()` does an FK check per line on insert. T12 adds the index.
+- ~~**`order_items` has no `product_id` index**~~ **Resolved by T12**, which also confirmed the
+  planner uses it (`Bitmap Index Scan on order_items_product_id_idx`).
 
 - ~~**The review step quotes a price the server may not honour.**~~ **Largely resolved by T8.** The
   cart now stores ids and joins the live catalog, so the review step quotes current prices rather

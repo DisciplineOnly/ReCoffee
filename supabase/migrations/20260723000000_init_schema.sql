@@ -100,7 +100,9 @@ create table if not exists orders (
 create table if not exists order_items (
   id         uuid primary key default gen_random_uuid(),
   order_id   uuid not null references orders(id) on delete cascade,
-  product_id uuid references products(id),
+  -- ON DELETE SET NULL, never CASCADE: deleting a product must not delete the
+  -- order lines that reference it and corrupt historical revenue.
+  product_id uuid references products(id) on delete set null,
   -- The product name as it was at order time. product_id is a live FK, so
   -- without this snapshot renaming or deleting a product rewrites history.
   product_name text,
@@ -113,6 +115,35 @@ create table if not exists order_items (
 
 -- For databases created before product_name existed.
 alter table order_items add column if not exists product_name text;
+
+-- For databases created before the FK became ON DELETE SET NULL.
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conname = 'order_items_product_id_fkey'
+      and conrelid = 'order_items'::regclass
+      and confdeltype <> 'n'          -- 'n' = SET NULL
+  ) then
+    alter table order_items drop constraint order_items_product_id_fkey;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'order_items_product_id_fkey' and conrelid = 'order_items'::regclass
+  ) then
+    alter table order_items
+      add constraint order_items_product_id_fkey
+      foreign key (product_id) references products(id) on delete set null;
+  end if;
+end
+$$;
+
+-- Backfill the snapshot where the product still resolves.
+update order_items i
+set product_name = p.name_bg
+from products p
+where i.product_id = p.id and i.product_name is null;
 
 -- Money constraints. place_order() computes all of these server-side, so in the
 -- normal path they never fire — they are the backstop for every other write
@@ -278,6 +309,7 @@ create index if not exists product_flavors_pid_idx  on product_flavors(product_i
 create index if not exists orders_user_id_idx       on orders(user_id);
 create index if not exists orders_created_at_idx    on orders(created_at desc);
 create index if not exists order_items_order_id_idx on order_items(order_id);
+create index if not exists order_items_product_id_idx on order_items(product_id);
 create index if not exists reviews_product_id_idx   on reviews(product_id);
 create index if not exists reviews_approved_idx     on reviews(product_id, approved);
 create index if not exists inquiries_created_at_idx on inquiries(created_at desc);

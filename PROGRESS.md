@@ -1221,3 +1221,55 @@ from the response itself, not just from the visible string.
 **Follow-ups needed:**
 - None for this task. Note that T19 adds an unsubscribe path, which will need the same care: a
   token-based unsubscribe must not reveal whether the token matched a real subscriber either.
+
+---
+
+## LOOP T12 COMPLETE — order history survives product deletion
+
+**What was built:** `supabase/migrations/20260727000007_preserve_order_history.sql`.
+
+`order_items.product_id references products(id)` had no `on delete` clause, so it defaulted to
+NO ACTION: **any product that had ever been ordered could not be deleted**, and the admin got a raw
+Postgres FK error in an `alert()`. The obvious fix — `on delete cascade` — is the wrong one: it would
+silently delete the order lines and corrupt historical revenue. The FK is now **`on delete set
+null`**, so the line survives and T1's `product_name` snapshot still says what was bought.
+
+- Added the missing `order_items_product_id_idx`. The table indexed `order_id` only, so the admin
+  orders join and every FK check on delete did a sequential scan.
+- Backfilled `product_name` for rows written before T1 added the column, where the product still
+  resolves. Rows whose product was already gone cannot be recovered — there is nothing left to read
+  the name from, and the migration says so rather than pretending otherwise.
+- **`src/pages/admin/Orders.jsx` needed a change LOOP.md did not mention.** It rendered
+  `item.products?.name_bg || fallback` — it never read `product_name`, so the snapshot would have
+  been invisible and a deleted product would still have shown the generic label. The select now
+  fetches `product_name` and the render prefers it: `item.product_name || item.products?.name_bg ||
+  fallback`. Preferring the snapshot is also more correct for a *renamed* product — order history
+  should show the name at purchase time.
+
+**Verified by:** a throwaway product, ordered through `place_order()`, then deleted.
+
+- **The delete succeeded** — the operation that previously failed with a foreign-key violation.
+- **The order line survived**: `product_id` is now null, `product_name` = "T12 Обречен продукт",
+  `quantity` 2, `unit_price` 42.00. `products` rows left for that id: **0**.
+- **The planner uses the new index**: `explain` on a `product_id` lookup gives
+  `Bitmap Heap Scan → Bitmap Index Scan on order_items_product_id_idx`.
+- `npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed. `init_schema.sql`
+  re-applied cleanly with the FK rebuild guarded on `confdeltype`, so re-running does not churn the
+  table.
+- **Test data removed**: the doomed product and its order are gone; catalog back to 11 products,
+  `orders`/`order_items` at 0.
+
+**Assumptions made:**
+- **Soft-delete (`archived boolean`) was considered and skipped**, as T12 allows. `on delete set
+  null` already preserves the financial record, which was the actual risk. An `archived` flag would
+  need filtering in `useProducts`, the admin list, the shop, search and `place_order` — a
+  cross-cutting change for a benefit (recoverable deletes, keeping the name joinable) that the
+  snapshot already covers. It is a product decision about whether deletes should be reversible, not a
+  data-integrity fix, so it belongs to whoever owns the admin UX.
+- **The admin UI was not re-driven in the browser.** The rendering change is a two-term fallback and
+  the DB-side behaviour — which is the actual finding — was verified directly. Stated rather than
+  implied.
+
+**Follow-ups needed:**
+- A deleted product's **image is still orphaned in storage** — T13 covers upload hardening and names
+  orphan cleanup explicitly.

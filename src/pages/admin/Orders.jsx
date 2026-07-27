@@ -27,7 +27,7 @@ export default function AdminOrders() {
         setError(null);
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(id, quantity, unit_price, grind_type, products(name_bg))')
+            .select('*, order_items(id, quantity, unit_price, grind_type, product_name, products(name_bg))')
             .order('created_at', { ascending: false });
         if (error) {
             console.error('Failed to load orders:', error);
@@ -172,7 +172,7 @@ export default function AdminOrders() {
                                                             {(order.order_items || []).map(item => (
                                                                 <li key={item.id} className="flex justify-between gap-4">
                                                                     <span className="text-slate-700">
-                                                                        {item.quantity} × {item.products?.name_bg || t('admin.orders.product_fallback')}
+                                                                        {item.quantity} × {item.product_name || item.products?.name_bg || t('admin.orders.product_fallback')}
                                                                         <span className="text-slate-400"> ({item.grind_type})</span>
                                                                     </span>
                                                                     <span className="font-medium text-slate-900">
