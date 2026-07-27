@@ -1577,3 +1577,74 @@ is its own hazard.
 - **`.playwright-mcp/` is still not ignored** — logged in *Discovered during the loop* rather than
   fixed, since T16 is scoped to `.env`. The browser tooling writes it into the repo root on every
   verification run; it is deleted by hand each iteration, but one `git add -A` would commit it.
+
+---
+
+## LOOP T17 COMPLETE — cart totals compared in stotinki, not floats
+
+**What was built:** `toStotinki` / `fromStotinki` in `src/lib/price.js` (no rounding helper existed
+there — checked before adding, as LOOP.md asked), and `CartContext` now adds money up exactly once,
+in integer stotinki:
+
+```js
+const getCartTotalStotinki = () =>
+    cart.reduce((t, item) => t + toStotinki(item.product.price) * item.quantity, 0);
+```
+
+`getCartTotal`, `getDeliveryFee` and `getGrandTotal` are all projections of that, so the float sum
+can no longer reach a threshold comparison. `Math.round` inside `toStotinki` is the part that makes
+the conversion safe: `4.30 * 100` is `430.00000000000006` as a double.
+
+**The bug is real, and I measured how real before fixing it.** Over 2.78M randomly generated carts
+whose lines total exactly 100.00 BGN:
+
+| threshold comparison | carts wrongly charged the 5 BGN fee |
+|---|---|
+| `getCartTotal() >= freeOverBgn` (before) | **434,292 — 15.6%** |
+| stotinki comparison (after) | **0** |
+
+Two facts that were *not* obvious from the finding as written, and that shape the fix:
+
+- **A single line never drifts, and neither does a two-line cart.** I brute-forced every 2dp price
+  and quantity whose product is exactly 100.00, and every pair of 2dp prices summing to 100.00:
+  **zero** drift in both. The per-value error (~1e-15) is below half an ULP at 100 (~7.1e-15), so it
+  rounds away. It takes **three or more lines** for the accumulated error to survive — the smallest
+  reproduction is `0.10 + 64.07 + 35.83 = 99.99999999999999`, which is exactly the value LOOP.md
+  quoted and conveniently contains the `.10`-style price it asked for.
+- **The live catalog cannot reproduce it.** Every price in the database is a whole number of BGN
+  (79, 84, 249, 590, 1450, 1890, 4200, 6900), and whole numbers do not drift. So this is latent
+  today and becomes reachable the moment anyone prices something at `x.90` or puts a product on
+  sale at a fractional price — which is what `sale_price` exists for.
+
+**Verified by:** the three threshold cases from LOOP.md, driven through the real cart UI on a dev
+server, using a crafted catalog served by request interception (the live catalog has no fractional
+prices to drift with):
+
+| cart | subtotal shown | delivery | total |
+|---|---|---|---|
+| `0.10 + 64.07 + 35.83` — exactly 100.00 | 100.00 лв | **Безплатна доставка** | 100.00 лв |
+| `64.07 + 35.83 + 0.09` — 99.99 | 99.99 лв | 5.00 лв | 104.99 лв |
+| `0.10 + 64.07 + 35.83 + 0.01` — 100.01 | 100.01 лв | **Безплатна доставка** | 100.01 лв |
+
+The first row is the regression: before this change that cart summed to 99.99999999999999, failed
+`>= 100`, and charged 5 лв **next to a subtotal printing "100.00 лв"** — `toFixed(2)` hid the drift
+in the display while the comparison acted on it.
+
+Regression against the **real** catalog with interception removed: 1 × 79.00 → 5.00 лв fee, total
+84.00; 2 × 79.00 → free delivery, total 158.00. Both correct.
+
+`npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed in 1.41s.
+
+**Assumptions made:**
+- **Only the cart's own arithmetic changed.** `place_order()` has recomputed the charged fee in
+  Postgres `numeric` since T1, so no stored money was ever at risk from this — the defect was
+  always what the customer was *shown* and quoted. LOOP.md says as much; this confirms it.
+- **`CartSummary`'s "add X more for free delivery" progress bar still subtracts in floats.** It
+  feeds `formatPrice` and a CSS width percentage, neither of which has a threshold, so a 1e-14 error
+  is invisible. Left alone rather than converted for symmetry.
+- **The crafted-catalog technique is the same request interception T14 used** — and this time the
+  routes were removed and `localStorage` cleared at the end of the run, which is the lesson recorded
+  in T16 after a stale interception produced a false "0 products" result.
+
+**Follow-ups needed:** none. The two helpers are exported from `price.js`, so any future money
+comparison has somewhere obvious to go.

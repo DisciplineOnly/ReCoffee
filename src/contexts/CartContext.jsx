@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { siteConfig } from '../lib/siteConfig';
 import { useProducts } from '../hooks/useProducts';
+import { fromStotinki, toStotinki } from '../lib/price';
 
 const CART_KEY = 'recoffee_cart';
 
@@ -231,9 +232,13 @@ export const CartProvider = ({ children }) => {
 
     const dismissUnavailable = () => setNoticeDismissed(true);
 
-    const getCartTotal = () => {
-        return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    };
+    // The one place cart money is actually added up. Everything below is a
+    // projection of this, so the float sum that used to live in getCartTotal()
+    // can no longer reach a threshold comparison.
+    const getCartTotalStotinki = () =>
+        cart.reduce((total, item) => total + toStotinki(item.product.price) * item.quantity, 0);
+
+    const getCartTotal = () => fromStotinki(getCartTotalStotinki());
 
     const getCartCount = () => {
         return cart.reduce((count, item) => count + item.quantity, 0);
@@ -243,14 +248,16 @@ export const CartProvider = ({ children }) => {
     // both numbers, so anything showing a threshold must read them from here
     // rather than repeating the literals. The charged fee is computed by
     // place_order() from store_settings — see the note in siteConfig.js.
+    // Compared in stotinki, not in BGN. `getCartTotal() >= freeOverBgn` read
+    // 99.99999999999999 >= 100 for a cart whose lines total exactly 100.00 and
+    // charged the fee anyway, next to a subtotal that printed "100.00 лв".
     const getDeliveryFee = () => {
         const { freeOverBgn, standardFeeBgn } = siteConfig.delivery;
-        return getCartTotal() >= freeOverBgn ? 0 : standardFeeBgn;
+        return getCartTotalStotinki() >= toStotinki(freeOverBgn) ? 0 : standardFeeBgn;
     };
 
-    const getGrandTotal = () => {
-        return getCartTotal() + getDeliveryFee();
-    };
+    const getGrandTotal = () =>
+        fromStotinki(getCartTotalStotinki() + toStotinki(getDeliveryFee()));
 
     const value = {
         cart,

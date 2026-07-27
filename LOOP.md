@@ -495,7 +495,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `chore(recoffee): untrack .env and add .env.example`
 
-- [ ] **T17 — Stop computing money in floats**
+- [x] **T17 — Stop computing money in floats**
 
   **Problem.** `src/contexts/CartContext.jsx:82,94,98` sum IEEE-754 doubles. Stored values are fine —
   Postgres rounds into `decimal(10,2)` — but the comparison at `:94`,
