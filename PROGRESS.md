@@ -1518,3 +1518,62 @@ the tool sandbox, and I did not try to work around it.
   `src/pages/admin/Orders.jsx` does not show it — answering "who cancelled this order" still means
   opening the SQL editor. A panel in the expanded order row is the obvious home. Logged rather than
   built, because LOOP.md scoped T15 to recording, not surfacing.
+
+---
+
+## LOOP T16 COMPLETE — .env untracked, .env.example committed
+
+**What was built:** `.env` is no longer tracked (`git rm --cached .env`, file untouched on disk),
+`.gitignore` gained an environment block (`.env`, `.env.local`, `.env.*.local`), and `.env.example`
+documents the two variables with empty values.
+
+`*.local` was already in `.gitignore` and would have caught `.env.local` on its own. The explicit
+entries stay anyway: the block is where someone looks, and the comment above it is the actual
+payload — **a server-only secret must never live in this file at all**, prefix or no prefix. Vite
+only *exposes* `VITE_`-prefixed vars, but `.env` is the file everyone copies, pastes and
+screenshares, and a `SUPABASE_SERVICE_ROLE_KEY` sitting there bypasses every RLS policy in the repo.
+The same note is in `CLAUDE.md` and at the top of `.env.example`.
+
+**History is deliberately not rewritten**, and it is worth being precise about what that leaves:
+
+- `.env` was added in `19d5c07` and modified in `d4de680` and `7cba1fb`. All three are ancestors of
+  `origin/main`, and `git ls-tree origin/main .env` confirms the file **is in the remote tree** on
+  `github-discipline:DisciplineOnly/ReCoffee.git`.
+- The remote blob is **byte-identical to the working copy** (`git hash-object` matches
+  `c802a6c4`), so the keys on GitHub are the *current* ones, not stale.
+- Both are public-by-design in a Vite SPA: `VITE_SUPABASE_URL` is in every network request the app
+  makes, and the anon key is the identity RLS policies are written *against*, not a secret. **There
+  is no live exposure to remediate** — which is exactly why a force-push is not worth it. The repo's
+  visibility could not be checked (`gh` is not installed here), but it does not change the answer:
+  the mitigation for a public anon key is RLS, and that is what the previous fifteen tasks were.
+- What this task actually fixes is the *next* file. The payment integration will want a gateway
+  secret, and a tracked `.env` sends it to the remote on the first commit that touches it.
+
+**Verified by:**
+- `git check-ignore -v .env` → `.gitignore:19:.env`. `git status` shows `D .env` (staged untrack)
+  and no `?? .env`, because it is now ignored. `ls -la .env` confirms the file is still on disk with
+  its contents intact.
+- **`npm run dev` still starts and still reaches Supabase.** Dev server on :5185, `/shop` rendered
+  **11 products with no degraded banner** — so the client got its credentials from the on-disk
+  `.env` and the T14 fallback did not engage.
+- `npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed in 1.66s. No
+  application code changed in this task.
+
+**A verification artefact of my own nearly produced a false result.** The first `/shop` check
+reported **0 products and no banner**. That was not the app: the Playwright session still had the
+`page.route` interception from T14's empty-catalog test installed, forcing `[]` on the products
+query. `page.unrouteAll()` and a reload gave the 11 products above. Worth recording because the
+failure looked exactly like a real one — an empty catalog is a legitimate state the code now handles
+deliberately, so it did not raise the alarm it should have. Test scaffolding that outlives its test
+is its own hazard.
+
+**Assumptions made:**
+- **`.env.example` carries empty values, not placeholders.** A fake-looking URL invites someone to
+  run with it and debug a confusing failure; an empty value fails immediately and legibly.
+- **The 15 unpushed local commits are left as they are.** This branch is ahead of `origin/main` by
+  the whole loop; pushing is the user's call, not a step in this task.
+
+**Follow-ups needed:**
+- **`.playwright-mcp/` is still not ignored** — logged in *Discovered during the loop* rather than
+  fixed, since T16 is scoped to `.env`. The browser tooling writes it into the repo root on every
+  verification run; it is deleted by hand each iteration, but one `git add -A` would commit it.

@@ -473,7 +473,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
 ## Phase 5 — Hygiene
 
-- [ ] **T16 — Untrack `.env`**
+- [x] **T16 — Untrack `.env`**
 
   **Problem.** `git ls-files` includes `.env`, and `.gitignore` has no `.env` entry. The remote is
   `github-discipline:DisciplineOnly/ReCoffee.git`. Current contents are only `VITE_SUPABASE_URL` and
@@ -638,6 +638,18 @@ out-of-scope findings inline.
   handling is now right — but it is a reminder that `recoffee_cart` in the wild holds arbitrary old
   shapes, which **T8**'s migration path has to survive.
 
+- **The order status history is recorded but not shown.** T15 added `order_status_history`, populated
+  by a trigger and readable by admins, but `src/pages/admin/Orders.jsx` renders nothing from it — so
+  "who moved this order to cancelled, and when" still requires the SQL editor. The expanded order row
+  is the obvious place for it. Recorded rather than built: LOOP.md scoped T15 to recording the
+  changes, not surfacing them.
+
+- **`.playwright-mcp/` is written into the repo root** by the browser tooling used to verify tasks
+  (page snapshots and console logs). It is deleted by hand after each iteration, but it is not in
+  `.gitignore`, so one distracted `git add -A` commits it. The "Tool scratch directories" block in
+  `.gitignore` already lists `.agent/` and `.firecrawl/` and is where it belongs. Found during T16;
+  not fixed there because T16 is scoped to `.env`.
+
 ## Not in scope
 
 - The payment gateway itself. T1 and T3 are its prerequisites — `payment_info` must stop being
@@ -649,9 +661,3 @@ out-of-scope findings inline.
   `crypto.getRandomValues` + unbiased modulus, the absence of any SQL-injection surface (everything
   goes through PostgREST's parameterised builder), and the absence of `dangerouslySetInnerHTML` on
   any DB-sourced value. Do not "fix" these.
-
-- **The order status history is recorded but not shown.** T15 added `order_status_history`, populated
-  by a trigger and readable by admins, but `src/pages/admin/Orders.jsx` renders nothing from it — so
-  "who moved this order to cancelled, and when" still requires the SQL editor. The expanded order row
-  is the obvious place for it. Recorded rather than built: LOOP.md scoped T15 to recording the
-  changes, not surfacing them.

@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Environment. `.env` was tracked until 2026-07-27 — see .env.example for the
+# shape. Vite exposes every VITE_-prefixed var to the browser, so a
+# server-only secret (service_role key, payment gateway key) must never live
+# in this file at all, ignored or not.
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

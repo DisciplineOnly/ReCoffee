@@ -154,4 +154,14 @@ machines → personal/professional). Legacy beans-only category values still exi
 
 `.env` provides `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Vite exposes only `VITE_`-prefixed
 vars to the client). Missing values log an error but don't crash — the app degrades to the local JSON
-fallback.
+fallback, which since T14 shows a banner and blocks checkout.
+
+`.env` is **gitignored and untracked**; `.env.example` documents the shape. It was tracked until
+2026-07-27 — no secret was exposed, since both values are public-by-design in a Vite SPA, but the
+habit is what leaks the next one.
+
+**Server-only secrets must never live in this file at all**, prefix or no prefix. A
+`SUPABASE_SERVICE_ROLE_KEY` or a payment-gateway secret bypasses every RLS policy in this repo; put
+them in the deployment platform's secret store and read them from an Edge Function or server, never
+from the browser bundle. The history still contains the old `.env` commits and that is deliberate —
+rewriting history to remove two public keys costs a force-push and buys nothing.
