@@ -82,7 +82,7 @@ const readStoredLines = () => {
 };
 
 export const CartProvider = ({ children }) => {
-    const { products, loading: productsLoading, error: productsError } = useProducts();
+    const { products, loading: productsLoading, degraded: catalogDegraded } = useProducts();
 
     // Lazy init so stored lines are known on the very first render — otherwise a
     // hard refresh on /checkout would see an empty cart and redirect to /cart.
@@ -91,7 +91,18 @@ export const CartProvider = ({ children }) => {
     const [lines, setLines] = useState(readStoredLines);
     const [noticeDismissed, setNoticeDismissed] = useState(false);
 
-    const catalogReady = !productsLoading && products.length > 0;
+    // "The catalog fetch settled", not "it found something". This used to also
+    // require `products.length > 0`, which meant a genuinely empty catalog left
+    // it false forever — /cart spun and /checkout rendered nothing, with no way
+    // out.
+    const catalogReady = !productsLoading;
+
+    // The stricter flag: a catalog worth *writing back* against. The degraded
+    // fallback resolves lines by slug to local-JSON ids like "prod_009", and an
+    // empty result would prune every line the customer had. Neither belongs in
+    // localStorage, and neither is grounds for telling someone their product is
+    // discontinued.
+    const catalogTrusted = catalogReady && !catalogDegraded && products.length > 0;
 
     const catalogIndex = useMemo(() => {
         const byId = new Map();
@@ -130,12 +141,13 @@ export const CartProvider = ({ children }) => {
     //   - lines that no longer resolve are dropped, so the cart self-heals on
     //     the next load instead of carrying a dead entry forever.
     //
-    // Skipped while `productsError` is set — that is the degraded local-JSON
-    // path (T14), and pruning a customer's cart against a catalog we do not
-    // trust would be worse than keeping a stale line.
+    // Skipped unless the catalog is trusted — the degraded local-JSON path and
+    // an empty result both fail that test, and pruning a customer's cart
+    // against a catalog we do not trust would be worse than keeping a stale
+    // line.
     useEffect(() => {
         const canonical =
-            catalogReady && !productsError
+            catalogTrusted
                 ? lines.reduce((acc, line) => {
                     const product = resolve(line);
                     if (product) {
@@ -156,7 +168,7 @@ export const CartProvider = ({ children }) => {
             console.error('Failed to save cart to localStorage:', error);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lines, catalogReady, productsError, catalogIndex]);
+    }, [lines, catalogTrusted, catalogIndex]);
 
     // True only while there is something stored that has not been joined yet, so
     // an empty cart never shows a spinner.
@@ -166,7 +178,7 @@ export const CartProvider = ({ children }) => {
     // catalog. It is excluded from `cart` immediately and gone from storage by
     // the next load, so the notice shows once and does not follow the customer
     // around.
-    const unavailableCount = catalogReady && !productsError ? lines.length - cart.length : 0;
+    const unavailableCount = catalogTrusted ? lines.length - cart.length : 0;
 
     const addToCart = (product, quantity, grindType) => {
         setLines((prev) => {
@@ -243,6 +255,11 @@ export const CartProvider = ({ children }) => {
     const value = {
         cart,
         cartLoading,
+        // Re-exported rather than read from useProducts() again: every extra
+        // call is another catalog fetch, and CartProvider already made one.
+        // Anything under the provider can ask whether the prices on screen came
+        // from the database or from the bundle.
+        catalogDegraded,
         unavailableCount: noticeDismissed ? 0 : unavailableCount,
         dismissUnavailable,
         addToCart,

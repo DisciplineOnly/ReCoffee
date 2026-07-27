@@ -10,7 +10,7 @@ const FREE_DELIVERY_OVER = siteConfig.delivery.freeOverBgn;
 
 export default function CartSummary() {
     const { t } = useTranslation();
-    const { getCartTotal, getDeliveryFee, getGrandTotal } = useCart();
+    const { getCartTotal, getDeliveryFee, getGrandTotal, catalogDegraded } = useCart();
 
     const subtotal = getCartTotal();
     const delivery = getDeliveryFee();
@@ -81,13 +81,31 @@ export default function CartSummary() {
 
             {/* Actions */}
             <div className="space-y-3">
-                <Link
-                    to="/checkout"
-                    className="block w-full bg-brand-primary text-white py-4 px-6 text-center text-sm font-bold uppercase tracking-widest hover:bg-slate-900 transition-colors"
-                >
-                    {t('cart.proceed_checkout')}
-                    <ArrowRight className="inline-block ml-2 w-4 h-4" />
-                </Link>
+                {catalogDegraded ? (
+                    // Prices here came from the bundle, not the database. The
+                    // checkout page refuses the order too — this just stops the
+                    // customer walking into it.
+                    <div>
+                        <button
+                            type="button"
+                            disabled
+                            className="block w-full bg-brand-primary text-white py-4 px-6 text-center text-sm font-bold uppercase tracking-widest opacity-50 cursor-not-allowed"
+                        >
+                            {t('cart.proceed_checkout')}
+                        </button>
+                        <p className="mt-2 text-xs text-brand-primary">
+                            {t('cart.checkout_unavailable')}
+                        </p>
+                    </div>
+                ) : (
+                    <Link
+                        to="/checkout"
+                        className="block w-full bg-brand-primary text-white py-4 px-6 text-center text-sm font-bold uppercase tracking-widest hover:bg-slate-900 transition-colors"
+                    >
+                        {t('cart.proceed_checkout')}
+                        <ArrowRight className="inline-block ml-2 w-4 h-4" />
+                    </Link>
+                )}
                 <Link
                     to="/shop"
                     className="block w-full border-2 border-slate-200 text-slate-900 py-4 px-6 text-center text-sm font-bold uppercase tracking-widest hover:bg-slate-50 transition-colors"

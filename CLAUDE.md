@@ -95,6 +95,13 @@ columns to the camelCase frontend shape (and derives `onSale`/`effectivePrice`/`
 flags), and **falls back to the local JSON if the DB call fails**. When you change the product shape,
 update both the DB mapping in this hook and `products.json`.
 
+That fallback is **degraded mode**: the hook returns `degraded: true`, `CartProvider` re-exports it as
+`catalogDegraded`, `DegradedCatalogBanner` says so on every public page, and **checkout is blocked**
+— the prices on screen were baked into the bundle at build time and stock is unknown. A catalog that
+returns *zero rows* is not degraded; that is a real answer from a healthy database. Degraded mode
+also stops the cart writing itself back to `localStorage`, because the local catalog's ids
+(`prod_009`) are not the database's uuids.
+
 **Routing.** `src/App.jsx` is the single source of routes. Two trees inside shared providers:
 public routes under `PublicLayout`, admin routes under `/admin` gated by `ProtectedRoute` →
 `AdminLayout`. Unknown paths redirect to `/`.

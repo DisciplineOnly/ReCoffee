@@ -1339,3 +1339,87 @@ change behaviour beyond validation:
   random deliberately: `ImageUpload` is a standalone field component that does not know the slug (and
   on a new product it may not exist yet), and a predictable name in a public bucket is its own small
   problem.
+
+---
+
+## LOOP T14 COMPLETE — degraded catalog mode is visible and checkout refuses to run in it
+
+**What was built:** the local-JSON fallback in `src/hooks/useProducts.jsx` stays — it is genuinely
+useful, a shop that still browses during an outage beats a blank page — but it stops being silent.
+
+`src/hooks/useProducts.jsx`:
+- Returns **`degraded`**. True only when the fetch threw and the bundled `products.json` is being
+  served in its place.
+- **An empty catalog is not degraded.** Zero rows is a real answer from a healthy database, and
+  falling back on it would resurrect a catalog an admin had deliberately emptied. It logs
+  `console.info` and serves the empty list.
+- `console.warn('Falling back to local JSON data.')` said nothing about *why*. Failures are now
+  classified before logging — permission (`42501`), schema (`42P01`/`42703`), PostgREST (`PGRST*`),
+  network — and the message carries `code`/`message`/`details`/`hint`.
+  - **The network case needed a second pass.** The first version tested `error instanceof TypeError`
+    and printed "unclassified failure" against a real dead host, because supabase-js does not
+    rethrow the fetch `TypeError` — it wraps it in a Postgres-error shape with an empty `code` and
+    the stringified original in `message`. Matching on that text is what makes the most common
+    outage the one case the log actually names. Found by running it, not by reading it.
+
+`src/contexts/CartContext.jsx` — re-exports it as **`catalogDegraded`** rather than calling
+`useProducts()` again (each call is another catalog fetch, and the provider already made one), and
+splits one flag into two:
+- `catalogReady` now means *the fetch settled*, not *it found something*. It used to require
+  `products.length > 0`, so a genuinely empty catalog left it false forever — `/cart` spun and
+  `/checkout` rendered nothing, with no way out. Fixed as a side effect of having to reason about
+  the empty case.
+- `catalogTrusted` (settled **and** not degraded **and** non-empty) now gates the localStorage
+  write-back and the "removed from your cart" notice. Neither the degraded catalog nor an empty one
+  may rewrite a customer's cart — the fallback's ids are `prod_009`, not uuids, and an empty result
+  would prune every line they had.
+
+`src/components/ui/DegradedCatalogBanner.jsx` (new), rendered by `PublicLayout` under the header.
+Deliberately **not dismissible**: it is not a promotion, it is the reason checkout is refusing
+orders.
+
+Checkout is blocked in two places: `CartSummary` swaps the "Към плащане" link for a disabled button
+with a note, and `src/pages/Checkout.jsx` refuses the route itself. The page **renders a message
+rather than redirecting** — `/cart` is what links there, so bouncing back would read as a broken
+button. `place_order()` would reject these lines anyway (the fallback's ids are not uuids), but a
+customer should learn that before filling in three steps of forms.
+
+`resolveFallbackProductIds` is **deleted** from `ReviewStep.jsx` (~25 lines). It existed to map
+`prod_009`-style ids to uuids by slug; since T8 the cart resolves against the live catalog, and since
+this task checkout cannot run while the fallback is active, so it had nothing left to resolve. The
+`isUuid` guard stays as the backstop.
+
+Six new strings in both locales (`catalog.degraded_*`, `checkout.degraded_*`,
+`cart.checkout_unavailable`).
+
+**Verified by:** the dev server plus a forced outage. `.env` was **not** touched — a `.env.local`
+with a dead host was used instead and deleted afterwards, so the tracked file never changed.
+
+| state | result |
+|---|---|
+| healthy | 11 products, no banner, `/checkout` renders step 1, cart line rewritten to its DB uuid |
+| dead host (`ERR_NAME_NOT_RESOLVED`) | 11 products **still render** from local JSON; banner shown; console says *"network failure — the Supabase host was unreachable"*; `/cart` has **no** `a[href="/checkout"]`, a disabled button and the note; `/checkout` renders "Поръчките са временно спрени"; **stored cart still holds the uuid**, un-pruned, no false "removed" notice |
+| catalog forced to `[]` (Playwright route interception, real host) | **no banner** — correctly not degraded; **no infinite spinner** (the pre-T14 `catalogReady` would have hung here); empty-cart state; **stored line preserved**; one `console.info`, zero errors |
+| `.env.local` removed | banner gone, `/checkout` back to step 1 |
+
+`npm run lint`: **11 warnings, 0 errors — unchanged from baseline.** `npm run build` passed. No
+migration in this task; the DB is untouched.
+
+**Assumptions made:**
+- **A real order was not placed end to end here.** T14 only adds a gate in front of a path T2 already
+  verified, and the healthy-state check confirms `/checkout` still reaches step 1 with a resolved
+  cart. The gate itself was tested in both directions.
+- **The banner is public-only.** `PublicLayout` renders it; the admin shell does not, because admin
+  pages query Supabase directly rather than through `useProducts`, and an admin whose queries are
+  failing sees those failures on their own screens.
+- **Degradation cannot start mid-session** — `useProducts` fetches once per mount — so a customer
+  already inside checkout when the database goes down is not a case that arises without a reload.
+  If that ever changes, `ReviewStep` will need the flag too; `place_order()` remains the backstop
+  either way.
+
+**Follow-ups needed:**
+- **The duplicate catalog fetch is now visibly duplicated.** The dead-host run showed **four**
+  identical failing requests on `/shop` — `CartProvider`, `Shop`, `SearchOverlay` and
+  `ShopFavorites` each call `useProducts()`. Already recorded as a follow-up after T8; this task
+  made it easy to count. Lifting the hook into a provider fixes it and would also make the degraded
+  flag single-sourced instead of per-consumer.

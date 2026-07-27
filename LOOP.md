@@ -432,7 +432,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): validate product image uploads by MIME type and size`
 
-- [ ] **T14 — Make the local-JSON fallback visible and block checkout in it**
+- [x] **T14 — Make the local-JSON fallback visible and block checkout in it**
 
   **Problem.** `src/hooks/useProducts.jsx:82-88` catches indiscriminately — an RLS denial, an outage
   and a schema change all land in the same branch — and silently serves prices baked into the bundle

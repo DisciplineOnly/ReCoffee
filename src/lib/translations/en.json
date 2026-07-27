@@ -305,6 +305,7 @@
         "title": "Cart",
         "unavailable_removed": "One or more products are no longer available and were removed from your cart.",
         "dismiss": "Got it",
+        "checkout_unavailable": "Ordering is paused until the catalogue is back.",
         "empty": "Your cart is empty",
         "empty_message": "Looks like you haven't added anything to your cart yet.",
         "browse_products": "Browse products",
@@ -350,6 +351,8 @@
         "terms_agree": "I agree with the Terms of Service",
         "terms_alert": "Please accept the Terms of Service",
         "order_error": "There was an error processing your order. Please try again.",
+        "degraded_title": "Ordering is paused",
+        "degraded_message": "We cannot load the current catalogue right now, so the prices and availability on screen may not be accurate. We are not taking orders until the connection is back. Your cart has been kept — please try again shortly.",
         "error_out_of_stock": "One or more items are no longer in stock, so the order was not placed:",
         "error_product_unknown": "Some items in your cart are no longer in the catalog. Please remove them and try again.",
         "error_empty_cart": "Your cart is empty.",
@@ -419,6 +422,10 @@
         "benefit_2": "Faster checkout",
         "benefit_3": "Early access to limited coffees",
         "admin_panel": "Admin panel"
+    },
+    "catalog": {
+        "degraded_title": "Showing a backup catalogue.",
+        "degraded_message": "The connection to the shop is down, so prices and availability may be out of date. Ordering is paused."
     },
     "common": {
         "loading": "Loading...",

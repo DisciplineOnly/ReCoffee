@@ -28,35 +28,6 @@ const ORDER_ERROR_KEYS = {
     ORDER_NUMBER_EXHAUSTED: 'checkout.error_try_again',
 };
 
-// Cart entries added while useProducts was on its local-JSON fallback carry ids
-// like "prod_009", but order_items.product_id is a uuid — place_order() rejects
-// the line outright. Such a cart also outlives the fallback session in
-// localStorage. The slug is stable across both sources, so resolve through it.
-// T14 removes the need for this path by blocking checkout while degraded.
-const resolveFallbackProductIds = async (items) => {
-    const slugs = [...new Set(
-        items
-            .filter((item) => !isUuid(item.product.id) && item.product.slug)
-            .map((item) => item.product.slug)
-    )];
-
-    if (slugs.length === 0) return new Map();
-
-    const { data, error } = await supabase
-        .from('products')
-        .select('id, slug')
-        .in('slug', slugs);
-
-    // Returning an empty Map here used to send `product_id: null` down the wire
-    // and store order lines pointing at nothing. Fail the checkout instead.
-    if (error) {
-        console.error('Could not resolve fallback product ids by slug:', error);
-        throw new Error('ORDER_PRODUCT_UNKNOWN');
-    }
-
-    return new Map(data.map((row) => [row.slug, row.id]));
-};
-
 export default function ReviewStep() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -125,18 +96,19 @@ export default function ReviewStep() {
         setIsSubmitting(true);
 
         try {
-            const productIdBySlug = await resolveFallbackProductIds(cart);
-
             // Identity and intent only. The server prices it.
             const items = cart.map((item) => {
-                const productId = isUuid(item.product.id)
-                    ? item.product.id
-                    : productIdBySlug.get(item.product.slug);
-
-                if (!productId) throw new Error('ORDER_PRODUCT_UNKNOWN');
+                // Every line reaching here resolved against the live catalog —
+                // CartContext joins stored ids and slugs against useProducts()
+                // — so the id is the database's own uuid. There used to be a
+                // slug-lookup path for carts built during the local-JSON
+                // fallback, whose ids look like "prod_009"; T14 blocks checkout
+                // outright while that fallback is active, so the lookup had
+                // nothing left to resolve. The check stays as the backstop.
+                if (!isUuid(item.product.id)) throw new Error('ORDER_PRODUCT_UNKNOWN');
 
                 return {
-                    product_id: productId,
+                    product_id: item.product.id,
                     quantity: item.quantity,
                     grind_type: item.grindType
                 };
