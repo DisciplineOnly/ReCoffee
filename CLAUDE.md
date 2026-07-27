@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by five idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by six idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -33,8 +33,9 @@ The whole DB is created by five idempotent migrations in `supabase/migrations/`,
    `place_order()`, for databases already created from the files above.
 5. `20260727000001_revoke_client_order_inserts.sql` — drops the two insert policies on `orders` /
    `order_items` and revokes the INSERT privilege from `anon` and `authenticated`.
+6. `20260727000002_constrain_order_amounts.sql` — CHECK constraints on order money.
 
-Files 3-5 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+Files 3-6 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
 file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.

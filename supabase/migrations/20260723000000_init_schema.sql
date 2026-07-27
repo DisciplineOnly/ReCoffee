@@ -113,6 +113,48 @@ create table if not exists order_items (
 -- For databases created before product_name existed.
 alter table order_items add column if not exists product_name text;
 
+-- Money constraints. place_order() computes all of these server-side, so in the
+-- normal path they never fire — they are the backstop for every other write
+-- path, and unlike RLS a CHECK applies to every role including service_role.
+-- Guarded on pg_constraint because Postgres has no `add constraint if not exists`.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_amounts_nonneg' and conrelid = 'orders'::regclass
+  ) then
+    alter table orders add constraint orders_amounts_nonneg
+      check (subtotal >= 0 and delivery_fee >= 0 and total >= 0);
+  end if;
+
+  -- NOTE: if a discount, coupon or credit column is ever added to `orders`, it
+  -- has to be folded into this equation or every order will fail to insert.
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'orders_total_consistent' and conrelid = 'orders'::regclass
+  ) then
+    alter table orders add constraint orders_total_consistent
+      check (total = subtotal + delivery_fee);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'order_items_unit_price_nonneg' and conrelid = 'order_items'::regclass
+  ) then
+    alter table order_items add constraint order_items_unit_price_nonneg
+      check (unit_price >= 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'order_items_quantity_sane' and conrelid = 'order_items'::regclass
+  ) then
+    alter table order_items add constraint order_items_quantity_sane
+      check (quantity between 1 and 999);
+  end if;
+end
+$$;
+
 -- Authoritative delivery thresholds. src/lib/siteConfig.js `delivery` mirrors
 -- these for display; place_order() below computes the actual fee from this row.
 create table if not exists store_settings (

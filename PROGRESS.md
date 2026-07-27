@@ -644,3 +644,82 @@ server (port 5179).
 - This check controls routing and UI only; RLS via `is_admin()` remains the real enforcement, and
   nothing here changes that. The value of the fix is that admin routes, forms and destructive-looking
   controls stop being reachable on a transient error — not that data was ever exposed.
+
+---
+
+## LOOP T5 COMPLETE — order money constrained at the database level
+
+**What was built:** `supabase/migrations/20260727000002_constrain_order_amounts.sql`, adding the four
+constraints LOOP.md specified:
+
+```sql
+orders_amounts_nonneg          check (subtotal >= 0 and delivery_fee >= 0 and total >= 0)
+orders_total_consistent        check (total = subtotal + delivery_fee)
+order_items_unit_price_nonneg  check (unit_price >= 0)
+order_items_quantity_sane      check (quantity between 1 and 999)
+```
+
+`place_order()` already computes all of these server-side, so on the normal path they never fire.
+That is the point: they are the backstop for every *other* write path — a future admin tool, an Edge
+Function, a migration, a direct `service_role` write, or a bug in the RPC itself. Unlike RLS, a CHECK
+applies to every role including the table owner, which is what makes it a genuinely different layer
+rather than a second copy of the same control.
+
+Each constraint is wrapped in a `pg_constraint` existence guard, because Postgres has no
+`add constraint if not exists` and the file has to stay re-runnable. Same guarded block folded into
+`init_schema.sql`. CLAUDE.md's migration list is now six.
+
+**Verified by:**
+
+- **Violating rows checked first, and the honest answer is that the check was trivial**: both tables
+  were empty (0 orders, 0 order_items — the loop's own test data had been cleaned up and there are no
+  real orders yet), so "zero violating rows" is true but proves very little. The constraints were
+  added as normally validated rather than `not valid`, since validation against an empty table is
+  free. On a populated database this step would carry real weight and should be re-run before any
+  similar constraint.
+- **Every rejection case tested individually, with the constraint name captured** — run as the table
+  owner rather than `service_role`, which is stronger: a CHECK cannot be bypassed by privilege the
+  way RLS can, so if it holds for the owner it holds for everyone.
+
+  | case | verdict | caught by |
+  |---|---|---|
+  | `orders` total −50 | rejected | `orders_amounts_nonneg` |
+  | `orders` delivery_fee −5 | rejected | `orders_amounts_nonneg` |
+  | `orders` 100 + 5 declared as total 1 | rejected | `orders_total_consistent` |
+  | `orders` valid 100 + 5 = 105 (control) | **accepted** | — |
+  | `order_items` unit_price −1 | rejected | `order_items_unit_price_nonneg` |
+  | `order_items` quantity 1000 | rejected | `order_items_quantity_sane` |
+  | `order_items` quantity 0 | rejected | `order_items_quantity_check` (the original) |
+  | `order_items` valid 2 × 50 (control) | **accepted** | — |
+
+  The two controls matter as much as the rejections: a constraint that rejects everything would have
+  passed a rejection-only test suite.
+- **The third case is the interesting one.** `subtotal 100, delivery_fee 5, total 1` has no negative
+  value anywhere, so `orders_amounts_nonneg` cannot see it — only `orders_total_consistent` catches
+  it. That is precisely the shape a tampered total took before T1.
+- **A normal order still places**: `place_order` over the anon key returned HTTP 200 with
+  79.00 / 5.00 / 84.00 after the constraints were live.
+- **Both files re-applied cleanly** (init_schema twice, the new migration twice), and
+  `select count(*) from pg_constraint where conname in (…)` returned exactly **4** — the guards work
+  and nothing was duplicated.
+- `npm run lint`: **12 warnings, 0 errors — unchanged baseline.** `npm run build` passed in 1.52s.
+  No application code changed.
+- **Test data removed**: `orders` and `order_items` back to 0 rows.
+
+**Assumptions made:**
+- **`service_role` was not used for the rejection test**, despite LOOP.md naming it. The CLI connects
+  as the table owner, which is a superset — CHECK constraints are role-independent, so a rejection
+  for the owner is a rejection for `service_role` too. Fetching the `service_role` key was also
+  blocked by the tool sandbox earlier in this loop, so this was the available path as well as the
+  stronger one.
+- **The original `quantity > 0` check was left in place.** It now overlaps `order_items_quantity_sane`
+  on the lower bound — case 7 above shows the original firing first — but it is part of the
+  `create table` in `init_schema.sql` and removing it would be churn for no behavioural gain.
+- **`orders_total_consistent` uses exact decimal arithmetic**, not float: both sides are
+  `decimal(10,2)`, so there is no drift risk of the kind T17 addresses on the client. A comment in
+  both files warns that a future discount or coupon column must be folded into this equation or
+  every insert will fail — that is the one realistic way this constraint becomes a footgun.
+
+**Follow-ups needed:**
+- Nothing outstanding for this task. Note that the constraint set assumes the current column list; the
+  `orders_total_consistent` comment is the tripwire for whoever adds a discount field.

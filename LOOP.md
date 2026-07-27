@@ -207,7 +207,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): deny admin access when the admin_users check errors`
 
-- [ ] **T5 — Add CHECK constraints on order money**
+- [x] **T5 — Add CHECK constraints on order money**
 
   **Problem.** `init_schema.sql:87-89` declares `subtotal`, `delivery_fee` and `total` as
   `decimal(10,2) not null` with no `>= 0` and no constraint that they reconcile.
