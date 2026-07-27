@@ -4,6 +4,14 @@ import { useTranslation } from '../../lib/translations';
 import { supabase } from '../../lib/supabase';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
+// Kept in step with the CHECK constraints in
+// 20260727000004_moderate_reviews.sql. These give a friendly message; the
+// database is what actually enforces the limit.
+const AUTHOR_NAME_MAX = 80;
+const COMMENT_MAX = 2000;
+// Postgres check_violation, surfaced by PostgREST as error.code.
+const CHECK_VIOLATION = '23514';
+
 function Stars({ value, size = 'w-4 h-4', interactive = false, onChange }) {
     const [hover, setHover] = useState(0);
     return (
@@ -48,6 +56,10 @@ export default function ProductReviews({ productId }) {
             .from('reviews')
             .select('*')
             .eq('product_id', productId)
+            // The SELECT policy already hides unapproved rows; asking for them
+            // explicitly means the average below cannot silently start counting
+            // the moderation queue if that policy is ever widened.
+            .eq('approved', true)
             .order('created_at', { ascending: false });
         if (!error && data) {
             setReviews(data);
@@ -66,24 +78,37 @@ export default function ProductReviews({ productId }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const newErrors = {};
-        if (!form.name.trim()) newErrors.name = t('forms.required_field');
+        const name = form.name.trim();
+        const comment = form.comment.trim();
+
+        if (!name) newErrors.name = t('forms.required_field');
+        // Mirrors the DB constraints so the customer gets a field-level message
+        // instead of a failed request. The database is what enforces it.
+        else if (name.length > AUTHOR_NAME_MAX) newErrors.name = t('reviews.name_too_long');
+        if (comment.length > COMMENT_MAX) newErrors.comment = t('reviews.comment_too_long');
+
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) return;
 
         setStatus('loading');
+        // `approved` is deliberately not sent. The insert policy is
+        // `with check (approved = false)`, so a review can only ever enter the
+        // moderation queue — never publish itself.
         const { error } = await supabase.from('reviews').insert({
             product_id: productId,
-            author_name: form.name.trim(),
+            author_name: name,
             rating: form.rating,
-            comment: form.comment.trim() || null,
+            comment: comment || null,
         });
         if (error) {
             console.error('Review submission failed:', error);
-            setStatus('error');
+            setStatus(error.code === CHECK_VIOLATION ? 'too_long' : 'error');
         } else {
             setStatus('success');
             setForm({ name: '', rating: 5, comment: '' });
             setShowForm(false);
+            // Nothing new will appear: the review is pending approval. Refetch
+            // anyway so the list stays current if a moderator acted meanwhile.
             fetchReviews();
         }
     };
@@ -114,7 +139,7 @@ export default function ProductReviews({ productId }) {
 
             {status === 'success' && (
                 <p className="mb-8 text-sm text-green-600 bg-green-50 border border-green-100 rounded-lg px-4 py-3">
-                    {t('reviews.success')}
+                    {t('reviews.success')} {t('reviews.pending_moderation')}
                 </p>
             )}
 
@@ -127,6 +152,7 @@ export default function ProductReviews({ productId }) {
                             <input
                                 type="text"
                                 value={form.name}
+                                maxLength={AUTHOR_NAME_MAX}
                                 onChange={(e) => { setForm(prev => ({ ...prev, name: e.target.value })); setErrors({}); }}
                                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary ${errors.name ? 'border-red-500' : 'border-slate-300'}`}
                             />
@@ -148,13 +174,21 @@ export default function ProductReviews({ productId }) {
                         <label className="block text-sm font-medium text-slate-700 mb-2">{t('reviews.your_comment')}</label>
                         <textarea
                             value={form.comment}
-                            onChange={(e) => setForm(prev => ({ ...prev, comment: e.target.value }))}
+                            maxLength={COMMENT_MAX}
+                            onChange={(e) => { setForm(prev => ({ ...prev, comment: e.target.value })); setErrors({}); }}
                             rows="4"
                             placeholder={t('reviews.comment_placeholder')}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary ${errors.comment ? 'border-red-500' : 'border-slate-300'}`}
                         />
+                        <div className="mt-1 flex items-center justify-between">
+                            {errors.comment
+                                ? <p className="text-sm text-red-600">{errors.comment}</p>
+                                : <span />}
+                            <span className="text-xs text-slate-400">{form.comment.length}/{COMMENT_MAX}</span>
+                        </div>
                     </div>
                     {status === 'error' && <p className="text-sm text-red-600">{t('reviews.error')}</p>}
+                    {status === 'too_long' && <p className="text-sm text-red-600">{t('reviews.too_long')}</p>}
                     <div className="flex gap-3">
                         <button
                             type="button"

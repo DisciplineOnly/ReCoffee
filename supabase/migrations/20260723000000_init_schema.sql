@@ -179,8 +179,42 @@ create table if not exists reviews (
   author_name text not null,
   rating      int2 not null check (rating between 1 and 5),
   comment     text,
+  -- Moderation queue. Public SELECT is gated on this and the INSERT policy
+  -- forces it false, so submission is open but publication is not.
+  approved    boolean not null default false,
   created_at  timestamptz default now()
 );
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'reviews' and column_name = 'approved'
+  ) then
+    alter table reviews add column approved boolean not null default false;
+    -- Only reached the first time, on a database that predates moderation:
+    -- those reviews were already public, so hiding them would be a regression.
+    -- Guarded so re-running this file can never bulk-approve a pending queue.
+    update reviews set approved = true;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reviews_author_name_length' and conrelid = 'reviews'::regclass
+  ) then
+    alter table reviews add constraint reviews_author_name_length
+      check (length(author_name) between 1 and 80);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'reviews_comment_length' and conrelid = 'reviews'::regclass
+  ) then
+    alter table reviews add constraint reviews_comment_length
+      check (comment is null or length(comment) <= 2000);
+  end if;
+end
+$$;
 
 -- Contact form, B2B/wholesale enquiries and subscription requests.
 create table if not exists inquiries (
@@ -244,6 +278,7 @@ create index if not exists orders_user_id_idx       on orders(user_id);
 create index if not exists orders_created_at_idx    on orders(created_at desc);
 create index if not exists order_items_order_id_idx on order_items(order_id);
 create index if not exists reviews_product_id_idx   on reviews(product_id);
+create index if not exists reviews_approved_idx     on reviews(product_id, approved);
 create index if not exists inquiries_created_at_idx on inquiries(created_at desc);
 
 
@@ -337,14 +372,30 @@ create policy "Users and admins can view order items"
 revoke insert on orders      from anon, authenticated;
 revoke insert on order_items from anon, authenticated;
 
--- ── reviews: public read + write, admin moderation ──────────────────────────
-drop policy if exists "Reviews are viewable by everyone" on reviews;
-drop policy if exists "Anyone can create a review"       on reviews;
-drop policy if exists "Admins can delete reviews"        on reviews;
+-- ── reviews: public submits, admin publishes ────────────────────────────────
+-- The `approved = false` check on INSERT is what makes the SELECT gate mean
+-- anything. With the old unconditional `with check (true)`, a client could POST
+-- `{"approved": true}` and publish straight past the queue — the anon key is in
+-- the shipped bundle, so every column is writable unless a policy says no.
+drop policy if exists "Reviews are viewable by everyone"          on reviews;
+drop policy if exists "Approved reviews are viewable by everyone" on reviews;
+drop policy if exists "Admins can view all reviews"               on reviews;
+drop policy if exists "Anyone can create a review"                on reviews;
+drop policy if exists "Anyone can submit a review for approval"   on reviews;
+drop policy if exists "Admins can update reviews"                 on reviews;
+drop policy if exists "Admins can delete reviews"                 on reviews;
 
-create policy "Reviews are viewable by everyone" on reviews for select using (true);
-create policy "Anyone can create a review" on reviews for insert to anon, authenticated with check (true);
-create policy "Admins can delete reviews" on reviews for delete using (is_admin());
+create policy "Approved reviews are viewable by everyone"
+  on reviews for select using (approved);
+-- Permissive policies OR together: admins see the whole queue, nobody else does.
+create policy "Admins can view all reviews"
+  on reviews for select using (is_admin());
+create policy "Anyone can submit a review for approval"
+  on reviews for insert to anon, authenticated with check (approved = false);
+create policy "Admins can update reviews"
+  on reviews for update using (is_admin()) with check (is_admin());
+create policy "Admins can delete reviews"
+  on reviews for delete using (is_admin());
 
 -- ── inquiries: write-only for the public, admin reads ───────────────────────
 drop policy if exists "Anyone can create an inquiry" on inquiries;

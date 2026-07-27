@@ -978,3 +978,110 @@ disappeared. Worth recording because the lint delta is what caught it, not revie
 - The **review-step price mismatch** logged during T2 is largely resolved; the residual seconds-wide
   window is described in *Discovered during the loop* rather than left implying the whole finding
   still stands.
+
+---
+
+## LOOP T9 COMPLETE — review moderation and length limits
+
+**What was built:** `supabase/migrations/20260727000004_moderate_reviews.sql` plus an admin
+moderation page.
+
+Three DB changes, and **the third is what makes the other two mean anything**:
+
+1. `reviews_author_name_length` (1–80) and `reviews_comment_length` (≤2000) — the columns were
+   unbounded `text`, so one insert could carry megabytes.
+2. `approved boolean not null default false`, with public SELECT gated on it and a second permissive
+   policy giving admins the whole queue.
+3. **The INSERT policy narrowed from `with check (true)` to `with check (approved = false)`.**
+
+Without (3), gating SELECT on `approved` would have been theatre. The old insert policy was
+unconditional, so a client could simply POST `{"approved": true}` and publish straight past the
+queue — this is a pure SPA, the anon key is in the bundle, and every column is writable unless a
+policy says otherwise. LOOP.md did not call this out; it is the difference between a moderation
+queue and a moderation-shaped decoration.
+
+Frontend: `ProductReviews` asks for `approved = true` explicitly, no longer sends `approved`, caps
+the inputs at the same limits with a live character counter, maps `23514` to a specific message, and
+tells the submitter their review is pending. New `src/pages/admin/Reviews.jsx` lists the queue with a
+pending badge, filters pending/approved/all, and approves, un-approves and deletes — routed at
+`/admin/reviews` with a sidebar entry. All strings in both locales.
+
+**Verified by:**
+
+- **The self-approving insert is refused.** Over PostgREST with the shipped anon key:
+
+  | case | result |
+  |---|---|
+  | ordinary submission | **201** |
+  | `{"approved": true}` submission | **401 / 42501** — RLS refused |
+  | `author_name` 81 chars | 400 / 23514 |
+  | `author_name` empty | 400 / 23514 |
+  | `comment` 2001 chars | 400 / 23514 |
+  | `comment` exactly 2000 (boundary) | **201** |
+  | `author_name` exactly 80 (boundary) | **201** |
+
+  The boundary cases matter as much as the rejections — a constraint that rejected 2000 too would
+  have passed a rejection-only test.
+- **The public cannot publish, approve or delete.** With three pending rows in the table, an anon
+  `select` returned **0 rows**. An anon `PATCH {approved:true}` and an anon `DELETE` both returned
+  **204** — which looks like success, so I checked the table afterwards: **all three rows still
+  present, all still `approved = false`**. The 204s were "no rows matched" after RLS filtering.
+- **End to end through the UI.** Submitted a review on a product page: success message plus "ще се
+  появи след преглед", and the page still read "Все още няма отзиви" — the review was in the DB as
+  `approved = false` and invisible. After approving it as an admin, it appeared and the header read
+  **"5.0 · 1 отзива"**. That is the product-page average demonstrably counting only approved reviews.
+- **Admin path, split honestly in two.** The DB half is real: the page's exact `select`/`update` run
+  under `set role authenticated` with the actual admin's JWT claims, so grants and RLS applied as
+  they do for a logged-in admin — the queue was visible and the approve took. The UI half used a
+  forged session with `admin_users` and `reviews` stubbed, because this project rejects signup for
+  made-up domains and creating an `auth.users` row is blocked by the sandbox (same limitation as T4).
+  That verified: the queue lists with a pending count, the filter switches, **approve** issues
+  `PATCH reviews?id=eq.r1 {"approved":true}` and the row leaves the pending view, and **delete**
+  issues `DELETE reviews?id=eq.r1` after a confirm. What was *not* exercised is a real browser login.
+- **Re-running the migrations does not bulk-approve the queue.** This was the specific risk of a
+  backfill inside an idempotent file. Inserted a deliberately pending review, re-applied both
+  `init_schema.sql` and the new migration, and confirmed it came back **still `approved = false`**.
+  The backfill sits inside the "column did not exist" branch, so it can only ever run once.
+- `npm run lint`: **11 warnings, 0 errors — unchanged from the post-T8 baseline.** `npm run build`
+  passed in 1.25s. Both locales re-parsed as valid JSON.
+- **Test data removed**: `reviews` back to 0 rows, forged session and cart cleared from the browser.
+
+**A correction to LOOP.md's own description.** T9 says ratings feed "the `AggregateRating` in
+`src/lib/structuredData.js`". There is no `AggregateRating` anywhere in the codebase —
+`grep -rn "AggregateRating" src/` returns nothing and `productSchema()` emits only
+name/description/sku/image/brand/weight/offers. The SEO-spam half of that finding did not exist. The
+rating-manipulation half was real and is fixed. Recorded in *Discovered during the loop*, along with
+the note that adding an `aggregateRating` is now a reasonable *feature* — moderated reviews are worth
+publishing as structured data — but that is not a fix and was not done.
+
+**A correction to my own work.** The first version of the admin page followed the sibling admin pages
+exactly — `fetchReviews()` called straight from a `useEffect` — which added a twelfth lint warning.
+The four existing admin pages each carry that same warning, so it was "consistent", but the loop's
+rule is that lint must not gain warnings and I have held that line on every task. Rather than accept
+it, the loader was split into a pure `queryReviews()` and an `applyResult()` applied in a `.then`, so
+no `setState` runs synchronously in the effect body. Back to 11.
+
+**Assumptions made:**
+- **Existing rows were approved on the way in**, as T9 specified — reviews written before moderation
+  existed were already public, so hiding them retroactively would be a visible regression. The live
+  table happened to be empty, so this backfill affected **zero rows in practice**; the code path
+  matters for any other database bootstrapped from these files.
+- **Un-approve is offered, not just approve.** A moderator who publishes something by mistake would
+  otherwise have to delete it, losing the record.
+- **The public form still validates client-side**, but only as courtesy — the DB constraints are the
+  enforcement, and the `23514` handler proves the client cap is not load-bearing.
+- **`reviews_approved_idx` on `(product_id, approved)`** was added because the public query now
+  filters on both columns on every product page.
+
+**Follow-ups needed:**
+- **Requiring a verified purchase before accepting a review was considered and skipped**, as T9
+  allows. Reviews are submitted by anonymous visitors with no account and no order reference, so the
+  only link available would be an email match against `orders.client_info`, which is both weak
+  (anyone can type a customer's email) and a privacy problem (it would confirm whether an address has
+  ordered). Doing it properly needs either a per-order review token emailed after delivery, or
+  login-gated reviews. Both are features rather than hardening, and both would change the submission
+  UX materially.
+- **Rate limiting is still absent** on review submission — the same gap noted for T6's lookup. T10
+  builds a rate-limiting mechanism for the inquiry and newsletter endpoints; reviews should be
+  covered by whatever it settles on. Until then, moderation bounds the *damage* (nothing publishes
+  unreviewed) but not the *volume* (the queue can still be flooded).

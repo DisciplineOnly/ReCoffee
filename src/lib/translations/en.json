@@ -432,7 +432,8 @@
             "orders": "Orders",
             "products": "Products",
             "services": "Services",
-            "inquiries": "Inquiries"
+            "inquiries": "Inquiries",
+            "reviews": "Reviews"
         },
         "sign_out": "Sign out",
         "actions": "Actions",
@@ -571,6 +572,34 @@
                 "shipped": "Shipped",
                 "delivered": "Delivered",
                 "cancelled": "Cancelled"
+            }
+        },
+        "reviews": {
+            "title": "Reviews",
+            "subtitle": "Check and approve reviews before they appear in the shop.",
+            "loading": "Loading reviews...",
+            "empty": "No reviews in this category.",
+            "load_error": "Reviews could not be loaded.",
+            "update_error": "The review status could not be changed: ",
+            "delete_error": "The review could not be deleted: ",
+            "confirm_delete": "Delete this review? This cannot be undone.",
+            "col_date": "Date",
+            "col_product": "Product",
+            "col_author": "Author",
+            "col_review": "Review",
+            "col_status": "Status",
+            "unknown_product": "(deleted product)",
+            "approve": "Approve",
+            "unapprove": "Hide",
+            "delete": "Delete",
+            "filter": {
+                "pending": "Pending approval",
+                "approved": "Approved",
+                "all": "All"
+            },
+            "status": {
+                "pending": "Pending",
+                "approved": "Approved"
             }
         },
         "inquiries": {

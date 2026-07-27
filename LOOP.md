@@ -297,7 +297,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
 ## Phase 3 — Public write surface
 
-- [ ] **T9 — Harden and moderate reviews**
+- [x] **T9 — Harden and moderate reviews**
 
   **Problem.** `init_schema.sql:280` is `"Anyone can create a review" ... with check (true)`.
   Anyone can POST unlimited reviews for any `product_id` under any `author_name` — no account, no
@@ -607,6 +607,14 @@ out-of-scope findings inline.
   future endpoint executes SQL under those roles. A blanket
   `revoke truncate on all tables in schema public from anon, authenticated;` costs nothing and
   removes the footgun. T3 revoked INSERT only, as scoped.
+
+- **LOOP.md's own T9 description was partly wrong, and worth correcting for the record.** It states
+  that ratings feed "the `AggregateRating` in `src/lib/structuredData.js`". There is **no**
+  `AggregateRating` anywhere in the codebase — `grep -rn "AggregateRating" src/` returns nothing, and
+  `productSchema()` emits only `name/description/sku/image/brand/weight/offers`. So the SEO half of
+  that finding did not exist. The rating-manipulation half was real and is fixed. **Adding an
+  `aggregateRating` to `productSchema` is a genuine SEO opportunity** now that reviews are moderated
+  and trustworthy — but it is a feature, not a fix, so it is recorded here rather than done.
 
 - **A cart can hold products from a different Supabase project.** Found in the real browser profile
   during T2: `recoffee_cart` contained a `mass-appeal` line whose `id` was a valid uuid and whose

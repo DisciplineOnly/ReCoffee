@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Package, Calendar, LogOut, Coffee, Inbox } from 'lucide-react';
+import { Package, Calendar, LogOut, Coffee, Inbox, Star } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
 export default function AdminLayout() {
@@ -19,6 +19,7 @@ export default function AdminLayout() {
         { path: '/admin/products', label: t('admin.nav.products'), icon: Coffee },
         { path: '/admin/services', label: t('admin.nav.services'), icon: Calendar },
         { path: '/admin/inquiries', label: t('admin.nav.inquiries'), icon: Inbox },
+        { path: '/admin/reviews', label: t('admin.nav.reviews'), icon: Star },
     ];
 
     return (

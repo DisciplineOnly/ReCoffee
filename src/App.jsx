@@ -33,6 +33,7 @@ import ServiceList from './pages/admin/Services';
 import ServiceForm from './pages/admin/ServiceForm';
 import AdminOrders from './pages/admin/Orders';
 import AdminInquiries from './pages/admin/Inquiries';
+import AdminReviews from './pages/admin/Reviews';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
                   <Route path="services/new" element={<ServiceForm />} />
                   <Route path="services/:id" element={<ServiceForm />} />
                   <Route path="inquiries" element={<AdminInquiries />} />
+                  <Route path="reviews" element={<AdminReviews />} />
                 </Route>
               </Route>
 
