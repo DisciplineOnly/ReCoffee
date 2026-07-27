@@ -353,6 +353,7 @@
         "error_too_many_lines": "Your cart holds too many different products. Please split it into two orders.",
         "error_invalid_order": "The order details are not valid. Please review your cart and try again.",
         "error_try_again": "The order could not be placed. Please try again.",
+        "order_number_only": "Your order was placed, but the details could not be loaded. Please keep your order number:",
         "back": "Back",
         "continue": "Continue",
         "back_to_cart": "Back to cart",

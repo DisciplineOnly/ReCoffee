@@ -1,54 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, ArrowRight, Mail, Truck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { siteConfig } from '../lib/siteConfig';
+import { supabase } from '../lib/supabase';
 import { formatBgn, formatEur, formatPrice } from '../lib/price';
 import { onImageError, productImage } from '../lib/productImage';
+import { useProducts } from '../hooks/useProducts';
 import { useSEO } from '../hooks/useSEO';
-
-// Order lines now come from place_order()'s return value — the server's own
-// names and prices — rather than from the cart snapshot. An order placed just
-// before this shipped can still be sitting in localStorage under the old
-// `{ product: {...} }` shape, so fold that into the new one on read.
-const normalizeOrder = (order) => ({
-    ...order,
-    items: (order?.items ?? []).map((item) =>
-        item.name !== undefined
-            ? item
-            : {
-                name: item.product?.name,
-                quantity: item.quantity,
-                unitPrice: item.product?.price,
-                grindType: item.grindType,
-                images: item.product?.images ?? []
-            }
-    )
-});
 
 export default function CheckoutSuccess() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const location = useLocation();
+    const { products } = useProducts();
     const [order, setOrder] = useState(null);
+    const [failed, setFailed] = useState(false);
 
     useSEO({ title: t('order.confirmed'), noindex: true });
 
+    // ReviewStep hands these over in the history entry. Nothing is read from
+    // localStorage any more: the whole order used to be parked there under
+    // `recoffee_last_order` and never cleared, which left a customer's name,
+    // email, phone and street address readable by the next person to open the
+    // site on a shared machine.
+    const orderNumber = location.state?.order?.orderNumber;
+    const email = location.state?.order?.email;
+
     useEffect(() => {
-        // Try to get the last order from localStorage
-        const lastOrder = localStorage.getItem('recoffee_last_order');
-        if (lastOrder) {
-            setOrder(normalizeOrder(JSON.parse(lastOrder)));
-        } else {
-            // If no order found, redirect to shop
-            navigate('/shop');
+        if (!orderNumber || !email) {
+            navigate('/shop', { replace: true });
+            return undefined;
         }
-    }, [navigate]);
+
+        let cancelled = false;
+        supabase
+            .rpc('lookup_order', { p_order_number: orderNumber, p_email: email })
+            .then(({ data, error }) => {
+                if (cancelled) return;
+                const row = Array.isArray(data) ? data[0] : data;
+                if (error || !row) {
+                    console.error('Could not load the placed order:', error);
+                    setFailed(true);
+                    return;
+                }
+                setOrder(row);
+            })
+            .catch((error) => {
+                if (cancelled) return;
+                console.error('Could not load the placed order:', error);
+                setFailed(true);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [orderNumber, email, navigate]);
+
+    // lookup_order() has no reason to return image URLs, so the thumbnails come
+    // from the live catalog, keyed on the product id the order line kept.
+    const imagesByProductId = useMemo(
+        () => new Map(products.map((product) => [product.id, product.images])),
+        [products]
+    );
+
+    if (failed) {
+        return (
+            <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center px-6">
+                <div className="text-center max-w-md">
+                    <h1 className="text-2xl font-serif text-slate-900 mb-3">{t('order.confirmed')}</h1>
+                    <p className="text-slate-600 mb-2">{t('checkout.order_number_only')}</p>
+                    <p className="text-lg font-bold text-brand-primary mb-8">{orderNumber}</p>
+                    <Link
+                        to="/shop"
+                        className="inline-flex items-center justify-center gap-3 bg-slate-900 text-white py-4 px-8 text-sm font-bold uppercase tracking-[0.2em] rounded-2xl hover:bg-brand-primary transition-all"
+                    >
+                        {t('order.continue_shopping')}
+                        <ArrowRight className="w-4 h-4" />
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     if (!order) return null;
 
+    const client = order.client_info ?? {};
+    const delivery = order.delivery_info ?? {};
+
     // Estimate delivery date (3-5 business days)
     const getEstimatedDelivery = () => {
-        const date = order.date ? new Date(order.date) : new Date();
+        const date = order.created_at ? new Date(order.created_at) : new Date();
         date.setDate(date.getDate() + 3);
         const start = date.toLocaleDateString('bg-BG', { day: 'numeric', month: 'long' });
         date.setDate(date.getDate() + 2);
@@ -87,7 +129,7 @@ export default function CheckoutSuccess() {
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
                                         {t('order.order_number')}
                                     </p>
-                                    <p className="text-sm font-bold text-slate-900">{order.orderNumber}</p>
+                                    <p className="text-sm font-bold text-slate-900">{order.order_number}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -98,7 +140,7 @@ export default function CheckoutSuccess() {
                                     <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-0.5">
                                         {t('order.email_label')}
                                     </p>
-                                    <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{order.client.email}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{client.email}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -122,27 +164,27 @@ export default function CheckoutSuccess() {
                                 </h3>
                                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                                     <p className="font-bold text-slate-900 mb-3 text-lg">
-                                        {order.client.firstName} {order.client.lastName}
+                                        {client.firstName} {client.lastName}
                                     </p>
                                     <div className="text-slate-600 space-y-1.5 font-medium">
-                                        {order.delivery.type === 'office' ? (
+                                        {delivery.type === 'office' ? (
                                             <>
                                                 <p className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
-                                                    {t(`checkout.courier_${order.delivery.courier}`)}
+                                                    {t(`checkout.courier_${delivery.courier}`)}
                                                 </p>
-                                                <p className="pl-3.5">{order.delivery.courierOffice}, {order.delivery.courierCity}</p>
+                                                <p className="pl-3.5">{delivery.courierOffice}, {delivery.courierCity}</p>
                                             </>
                                         ) : (
                                             <>
                                                 <p className="flex items-center gap-2">
                                                     <span className="w-1.5 h-1.5 bg-brand-accent rounded-full" />
-                                                    {order.delivery.address.street}
+                                                    {delivery.address?.street}
                                                 </p>
-                                                <p className="pl-3.5">{order.delivery.address.postalCode} {order.delivery.address.city}</p>
+                                                <p className="pl-3.5">{delivery.address?.postalCode} {delivery.address?.city}</p>
                                             </>
                                         )}
-                                        <p className="pl-3.5 pt-2 text-sm">{order.client.phone}</p>
+                                        <p className="pl-3.5 pt-2 text-sm">{client.phone}</p>
                                     </div>
                                 </div>
                             </div>
@@ -153,27 +195,35 @@ export default function CheckoutSuccess() {
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {(order.items ?? []).map((item, idx) => (
-                                            <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
-                                                        <img src={productImage(item)} onError={onImageError} alt={item.name} className="w-full h-full object-cover mix-blend-multiply" />
+                                        {(order.items ?? []).map((item, idx) => {
+                                            const lineTotal = Number(item.unit_price) * item.quantity;
+                                            return (
+                                                <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                            <img
+                                                                src={productImage({ images: imagesByProductId.get(item.product_id) })}
+                                                                onError={onImageError}
+                                                                alt={item.product_name}
+                                                                className="w-full h-full object-cover mix-blend-multiply"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-900">{item.product_name}</p>
+                                                            <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {formatPrice(item.unit_price)}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium">{item.quantity} x {formatPrice(item.unitPrice)}</p>
-                                                    </div>
+                                                    <span className="text-right whitespace-nowrap">
+                                                        <span className="block text-sm font-bold text-slate-900">
+                                                            {formatBgn(lineTotal)}
+                                                        </span>
+                                                        <span className="block text-[10px] font-medium text-slate-400">
+                                                            {formatEur(lineTotal)}
+                                                        </span>
+                                                    </span>
                                                 </div>
-                                                <span className="text-right whitespace-nowrap">
-                                                    <span className="block text-sm font-bold text-slate-900">
-                                                        {formatBgn(item.unitPrice * item.quantity)}
-                                                    </span>
-                                                    <span className="block text-[10px] font-medium text-slate-400">
-                                                        {formatEur(item.unitPrice * item.quantity)}
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
 
                                     <div className="pt-6 border-t border-slate-100 space-y-2">
@@ -183,7 +233,7 @@ export default function CheckoutSuccess() {
                                         </div>
                                         <div className="flex justify-between text-sm text-slate-500 font-medium">
                                             <span>{t('cart.delivery')}</span>
-                                            <span>{order.deliveryFee === 0 ? t('order.free_label') : formatPrice(order.deliveryFee)}</span>
+                                            <span>{Number(order.delivery_fee) === 0 ? t('order.free_label') : formatPrice(order.delivery_fee)}</span>
                                         </div>
                                         <div className="flex justify-between items-start gap-3 pt-4">
                                             <span className="font-bold text-xl text-slate-900">{t('cart.total')}</span>

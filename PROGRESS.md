@@ -809,3 +809,77 @@ the shipped anon key:
   re-fetch. The function sorts by `product_name` to at least be stable between calls, but a re-fetched
   order may list its lines in a different order than the confirmation page showed at purchase time.
   Adding a `line_no` to `order_items` would fix it; not done here as it is outside T6.
+
+---
+
+## LOOP T7 COMPLETE — order PII no longer persisted in the browser
+
+**What was built:** the confirmation handoff moved off `localStorage` entirely.
+
+- **`ReviewStep`** no longer writes `recoffee_last_order`. It navigates with router state carrying
+  **only** `{ orderNumber, email }` — and only because `lookup_order()` needs both to return the
+  order. Router state lives in the history entry: scoped to that tab, gone when the entry is, and not
+  readable by a later visit to the origin the way `localStorage` is.
+- **`CheckoutSuccess`** reads that state and fetches the order from T6's `lookup_order()`. Name,
+  phone, address, line items and totals now come from the server on each render and live only in
+  React memory. No storage read, no `JSON.parse`, no PII at rest.
+- **`src/lib/legacyStorage.js` + `main.jsx`** — the part that actually protects existing customers.
+  Removing the code that *writes* a key does nothing for browsers that already have it: on any
+  machine where an order was placed before this shipped, the full name, email, phone and street
+  address are still sitting in `localStorage`. `purgeRetiredStorage()` runs at module load, before
+  React mounts, so every visit on any route deletes it. Wrapped in try/catch because Safari private
+  mode throws on `localStorage` access and this must never break boot.
+- A `failed` branch renders the order number alone if the lookup errors, so a customer whose order
+  *was* placed is never left with nothing. New string `checkout.order_number_only` in both locales.
+- Thumbnails come from `useProducts()` keyed on `product_id`, since `lookup_order()` has no reason to
+  return image URLs. Without this every confirmation line would have silently degraded to the
+  placeholder image.
+
+**Verified by:** a full order through the UI on a dev server (port 5180) against the live project.
+
+- **The purge was tested against planted data, not just asserted.** 282 bytes of realistic PII
+  (`Иван Петров`, `ivan.petrov@example.com`, `+359888777666`, `ул. Раковски 12`) were written to
+  `recoffee_last_order` in the exact shape the old code produced. After one page load:
+  `localStorage.getItem('recoffee_last_order')` → **null**, and the only remaining keys were
+  `recoffee_cart` and `recoffee_wishlist`.
+- **Success page renders fully** — order number `RC-2026-0CJR3Z`, email, estimated delivery, full
+  name, street address, phone, the line item with its name and price, and 79.00 / 5.00 / 84.00. All
+  of it fetched via `lookup_order()`; the DB row matches exactly.
+- **Nothing persisted.** After the order: `localStorage` = `{recoffee_cart: "[]", recoffee_wishlist:
+  "[]"}`, `recoffee_last_order` **null**, `sessionStorage` **empty**, and `history.state.usr` held
+  exactly `{ order: { orderNumber, email } }` — no name, no phone, no address.
+- **Reload works.** Re-navigating to `/checkout/success` kept the history state and re-rendered the
+  full page, so a customer pressing F5 does not lose their confirmation.
+- **Direct visit with no order redirects to `/shop`** — verified by navigating away to `/faq` first
+  so the history entry carried no state, then to `/checkout/success`.
+- Browser console: **0 errors** across the whole run.
+- `npm run lint`: 12 warnings before, **11 after — one fewer**, not one more. The removed warning was
+  the `setState`-in-effect on the old synchronous `localStorage` read. `npm run build` passed in
+  1.18s. Both locale files re-parsed as valid JSON.
+- **Test data removed**: order deleted, `orders`/`order_items` back to 0 rows, browser storage cleared.
+
+**Assumptions made:**
+- **The email still travels through router state.** T7 says "store only the order number", but
+  `lookup_order()` requires both halves by design (T6), so the number alone cannot fetch anything.
+  The email is in the history entry rather than `localStorage` — tab-scoped and not readable by a
+  later visitor — and it is the *only* identifying field that leaves memory. Storing the number alone
+  would have meant either loosening T6's function or keeping the rest of the PII client-side, both
+  worse.
+- **`history.state` is not zero-persistence.** It survives a reload, and a browser doing session
+  restore may keep it. That is what makes reload work. It is a large improvement over `localStorage`
+  — not an absolute guarantee — and it is worth naming rather than implying the data is purely
+  in-memory.
+- **The navigation is still a push, not a replace.** Using `replace` would have been tidier (the back
+  button would skip the emptied checkout) but changes navigation semantics that PROGRESS Task 6's
+  regression test pins, and that is outside T7.
+- **The old `normalizeOrder` compatibility shim from T2 was deleted**, not kept. It existed to read
+  the old `{ product: {...} }` localStorage shape; nothing reads localStorage now, and the purge
+  deletes the key on sight, so keeping it would have been dead code.
+
+**Follow-ups needed:**
+- The **unguarded `JSON.parse` in `CheckoutSuccess`** logged under *Discovered during the loop* is
+  resolved — the component no longer parses stored JSON at all. Marked as such in LOOP.md.
+- `CheckoutSuccess` now depends on the network to render. If `lookup_order` is unreachable the
+  customer sees the order-number-only fallback, which is honest but thinner than before, when the
+  page rendered from local data. Given the alternative was keeping PII at rest, that is the right
+  trade — but a retry button on that branch would be a cheap improvement.

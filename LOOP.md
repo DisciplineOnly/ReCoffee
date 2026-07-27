@@ -253,7 +253,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `feat(recoffee): add guest order lookup by number and email`
 
-- [ ] **T7 — Stop parking customer PII in localStorage**
+- [x] **T7 — Stop parking customer PII in localStorage**
 
   **Problem.** `src/components/checkout/ReviewStep.jsx:192-204` writes the full order — name, email,
   phone, street address — to `localStorage.recoffee_last_order`, and
@@ -593,11 +593,9 @@ out-of-scope findings inline.
   the live catalog) fixes the underlying staleness; if it does not also make the review step quote
   the server, that gap should be closed separately.
 
-- **`CheckoutSuccess` has an unguarded `JSON.parse`.** `src/pages/CheckoutSuccess.jsx:36` parses
-  `recoffee_last_order` with no try/catch. A corrupt value throws inside the effect, so `order` stays
-  null, the component returns null and the customer gets a blank page with no redirect — instead of
-  the `/shop` redirect the missing-value branch gives. Pre-existing, untouched by T2. **T7** rewrites
-  this reader and is the natural place to fix it.
+- ~~**`CheckoutSuccess` has an unguarded `JSON.parse`.**~~ **Resolved by T7.** The component no
+  longer reads or parses `localStorage` at all — it fetches from `lookup_order()` — so the crash
+  path is gone by construction rather than by adding a try/catch.
 
 - **`anon` and `authenticated` hold far more table privilege than they need.** Found while doing
   T3's revoke: on **every** table in `public`, both roles are granted the full

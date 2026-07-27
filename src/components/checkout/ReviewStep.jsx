@@ -157,36 +157,30 @@ export default function ReviewStep() {
             const placed = Array.isArray(data) ? data[0] : data;
             if (!placed) throw new Error('ORDER_NUMBER_EXHAUSTED');
 
-            // Everything money-shaped here is the server's own figure, read
-            // back from the row it just wrote — not the local cart. Line order
-            // is preserved by place_order(), so the cart index still lines up
-            // and can supply the photo the RPC has no reason to return.
-            const successOrder = {
-                orderNumber: placed.order_number,
-                date: placed.created_at,
-                subtotal: Number(placed.subtotal),
-                deliveryFee: Number(placed.delivery_fee),
-                total: Number(placed.total),
-                items: (placed.items ?? []).map((line, index) => ({
-                    name: line.product_name,
-                    quantity: line.quantity,
-                    unitPrice: Number(line.unit_price),
-                    grindType: line.grind_type,
-                    images: cart[index]?.product?.images ?? []
-                })),
-                delivery: checkoutData.delivery, // Required for success page calculation
-                client: checkoutData.client
-            };
-
-            // We use localStorage just to pass data to the success page securely/temporarily
-            localStorage.setItem('recoffee_last_order', JSON.stringify(successOrder));
-
             // Must precede clearCart(): it tells the /checkout guard to stop
             // redirecting to /cart now that emptying the cart is expected.
             markOrderPlaced();
             clearCart();
             resetCheckout();
-            navigate('/checkout/success');
+
+            // Hand off through router state, not localStorage. This used to
+            // write the whole order — name, email, phone, street address — to
+            // `recoffee_last_order` and never clear it, leaving customer PII on
+            // a shared machine for the next visitor. Router state lives in the
+            // history entry: scoped to this tab, gone when the entry is, and
+            // never readable by a later visit to the origin.
+            //
+            // Only the order number and email travel, and only because
+            // lookup_order() needs both to return the order. Everything else
+            // the confirmation page shows is fetched from the server.
+            navigate('/checkout/success', {
+                state: {
+                    order: {
+                        orderNumber: placed.order_number,
+                        email: checkoutData.client.email
+                    }
+                }
+            });
 
         } catch (error) {
             console.error('Order placement failed:', error);
