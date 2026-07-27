@@ -47,7 +47,11 @@ export default function AdminOrders() {
     const updateStatus = async (orderId, status) => {
         const previous = orders;
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-        const { error } = await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', orderId);
+        // `updated_at` is set by a BEFORE UPDATE trigger, not from here. A
+        // client-supplied timestamp is both unnecessary and untrustworthy — it
+        // is the browser's clock, and it only ever moved on this one code path,
+        // which is why the column could not be believed before.
+        const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
         if (error) {
             console.error('Failed to update order status:', error);
             alert(t('admin.orders.status_error') + error.message);

@@ -1423,3 +1423,98 @@ migration in this task; the DB is untouched.
   `ShopFavorites` each call `useProducts()`. Already recorded as a follow-up after T8; this task
   made it easy to count. Lifting the hook into a provider fixes it and would also make the degraded
   flag single-sourced instead of per-consumer.
+
+---
+
+## LOOP T15 COMPLETE — updated_at is trigger-maintained and status changes are recorded
+
+**What was built:** `supabase/migrations/20260727000009_track_order_status_history.sql`, folded
+byte-identically into `init_schema.sql` as section 10 (verified by diffing both blocks with comments
+and whitespace stripped — 1798 chars each, identical).
+
+- **`orders_set_updated_at`**, a BEFORE UPDATE trigger. `orders.updated_at` had a default and no
+  trigger, so the only writer was the admin page setting it by hand on the one status-change path.
+  A column that is right *sometimes* is worse than one that is obviously absent, because it gets
+  believed.
+- **LOOP.md named `moddatetime`; this is a four-line plpgsql function instead.** `moddatetime` lives
+  in the `extensions` schema, which is not on the search_path while migrations run — the same trap
+  `init_schema.sql` already documents for `uuid_generate_v4()`. Identical behaviour, no dependency.
+- **`order_status_history`** (`order_id`, `from_status`, `to_status`, `changed_by`, `changed_at`),
+  written only by `record_order_status_change()`, an AFTER INSERT OR UPDATE OF status trigger.
+  `security definer` with a pinned `search_path`, because the table is one nobody else may write.
+- **The genesis row is recorded too** — creation as `null -> 'pending'` — so the trail is complete
+  rather than starting at the first edit.
+- **`changed_by` is deliberately not a foreign key to `auth.users`.** An audit row has to outlive the
+  account it names; an FK would either block deleting that user or null the attribution, and both
+  destroy the record's only purpose.
+- **`is distinct from`, not `<>`**: `status` is nullable, and a null on either side makes `<>`
+  evaluate to NULL, which would silently skip the history row.
+- **No backfill.** Existing orders get no genesis row: their current status is not necessarily the
+  one they were created with, so a synthesised row would state as fact something nobody recorded.
+- RLS: admins select; INSERT/UPDATE/DELETE revoked from `anon` and `authenticated` — the revoke is
+  the load-bearing half, since a policy is only consulted after the privilege check.
+
+`src/pages/admin/Orders.jsx` no longer sends `updated_at`. It was the browser's clock, and it was
+the reason the column could not be believed.
+
+**Verified by:** three channels, because this environment has **no psql, no `db execute`, and no
+admin session**. Reading the CLI's stored access token to reach the Management API was blocked by
+the tool sandbox, and I did not try to work around it.
+
+1. **`supabase db push`** applied the migration to the live project — the real test that the SQL is
+   valid. Ledger now ends at `20260727000010`.
+2. **Anon key over PostgREST**, the threat model's actual attacker:
+
+   | request | result |
+   |---|---|
+   | `GET order_status_history` | **200 `[]`** — RLS holds, no rows leak |
+   | `POST order_status_history` | **401 `42501`** permission denied |
+   | `PATCH order_status_history` | **401 `42501`** |
+   | `DELETE order_status_history` | **401 `42501`** |
+
+   Then `place_order` with the anon key returned **200 / RC-2026-1740BF / 79.00 + 5.00 = 84.00**.
+   That is not just a smoke test: the AFTER INSERT trigger runs unconditionally, so if its definer
+   insert lacked privilege the exception would abort `place_order()` and there would be no order.
+   An order exists, therefore the history row was written.
+3. **The update side, through a self-rolling-back migration.** A throwaway file whose `do` block
+   inserts an order, updates its status, reads back the result and then `raise exception`s with the
+   findings — so the whole statement rolls back and neither the rows nor a ledger entry survive
+   (confirmed: `migration list` shows no such version). It ran as a simulated admin via
+   `set_config('request.jwt.claims', …)`. Output:
+
+   ```
+   genesis row      : to=pending changed_by=11111111-2222-4333-8444-555555555555
+   change row       : pending->shipped
+   history rows     : 2
+   updated_at now() : t
+   updated_at value : 2026-07-27 12:12:54.782729+00
+   ```
+
+   The order was inserted with `updated_at = '2000-01-01'` and updated with a client-supplied
+   `updated_at = '2099-01-01'` — exactly what the admin page used to send. **Both were overwritten**
+   by the trigger. `now()` is fixed for a transaction, which is why the test asks "is it now()"
+   against a deliberately stale value rather than comparing two readings.
+
+`npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed in 1.37s.
+
+**Assumptions made:**
+- **The admin UI path was not exercised**, only the SQL underneath it. The one admin session in the
+  browser profile (`admin@recoffee.bg`) belongs to project `dfilhrsesfiqfzpnwdte` — a *previous*
+  project, not the live `mwmgjdcegrcjekkyjnas` — and is expired. This is the same limitation
+  recorded in T4, T9 and T13. What the UI change amounts to is deleting one field from an `update`
+  call, and the trigger sets it regardless of what the client sends, which the test above proves.
+- **`now()`, not `clock_timestamp()`**, for both `updated_at` and `changed_at`: two status changes
+  in one transaction should share a timestamp, and transaction time is the conventional choice.
+- **Customers cannot read their own order's history**, only admins. LOOP.md said "admins read", and
+  a status trail is internal — it names staff accounts.
+- **`20260727000010_remove_t15_test_order.sql` is a data-cleanup migration, not schema.** The
+  verification order in step 2 is real data in a live database, and a migration is the only channel
+  here that can commit a DELETE. It is scoped to one synthetic email and is a no-op on a fresh
+  bootstrap, so it is **not** folded into `init_schema.sql`. Confirmed gone: `lookup_order` on that
+  number+email now returns `[]`.
+
+**Follow-ups needed:**
+- **Nothing displays the history yet.** The table is populated and admin-readable, but
+  `src/pages/admin/Orders.jsx` does not show it — answering "who cancelled this order" still means
+  opening the SQL editor. A panel in the expanded order row is the obvious home. Logged rather than
+  built, because LOOP.md scoped T15 to recording, not surfacing.

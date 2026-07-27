@@ -8,7 +8,7 @@
 -- dashboard and never captured in a migration. Everything is folded in here.
 --
 -- Ordering: tables -> is_admin() -> indexes -> RLS -> place_order() -> storage
--- -> public write surface (rate limits).
+-- -> public write surface (rate limits) -> order audit triggers.
 -- Every statement is idempotent, so re-running against a partially migrated
 -- database is safe.
 --
@@ -1060,3 +1060,97 @@ grant  execute on function public.submit_inquiry(text, text, text, text, text, t
 
 revoke all    on function public.subscribe_newsletter(text) from public;
 grant  execute on function public.subscribe_newsletter(text) to anon, authenticated;
+
+
+-- ============================================================================
+-- 10. ORDER AUDIT — updated_at and status history
+--
+-- Kept in step with 20260727000009_track_order_status_history.sql, which
+-- introduced this for databases created before it existed. Same reasoning:
+--
+-- `orders.updated_at` had a default and no trigger, so only the one admin write
+-- path that set it by hand ever moved it — a column that is right sometimes is
+-- worse than one that is obviously absent, because it gets believed.
+--
+-- `order_status_history` records *who* moved an order to 'cancelled' and what
+-- it was before. It is written only by the trigger below: no INSERT policy, and
+-- the privilege revoked. An audit log a caller can write is not an audit log.
+--
+-- This section sits last because its triggers need `orders` (section 2) and its
+-- policy needs is_admin() (section 4).
+-- ============================================================================
+
+create table if not exists order_status_history (
+  id          uuid primary key default gen_random_uuid(),
+  order_id    uuid not null references orders(id) on delete cascade,
+  -- Null on the genesis row: an order's creation is a transition from nothing
+  -- to 'pending', and recording it keeps the trail complete rather than
+  -- starting it at the first edit.
+  from_status text,
+  to_status   text not null,
+  -- Deliberately **not** a foreign key to auth.users. An audit row has to
+  -- outlive the account it names; an FK would either block deleting that user
+  -- or null out the attribution, and both destroy the record's only purpose.
+  -- Null means the change was not made by a logged-in caller (a migration, a
+  -- service_role script, or an order placed by a guest).
+  changed_by  uuid,
+  changed_at  timestamptz not null default now()
+);
+
+create index if not exists order_status_history_order_idx
+  on order_status_history(order_id, changed_at desc);
+
+-- LOOP.md named `moddatetime`. This is the same behaviour written in plpgsql
+-- instead: moddatetime lives in the `extensions` schema, which is not on the
+-- search_path while migrations run — the same trap documented for
+-- uuid_generate_v4() at the top of this file.
+create or replace function set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end
+$$;
+
+drop trigger if exists orders_set_updated_at on orders;
+create trigger orders_set_updated_at
+  before update on orders
+  for each row execute function set_updated_at();
+
+-- security definer so the trigger can write a table nobody else may write.
+create or replace function record_order_status_change()
+returns trigger
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    insert into order_status_history (order_id, from_status, to_status, changed_by)
+    values (new.id, null, new.status, auth.uid());
+  elsif new.status is distinct from old.status then
+    -- `is distinct from` rather than `<>`: status is nullable, and a null on
+    -- either side would make `<>` evaluate to NULL and silently skip the row.
+    insert into order_status_history (order_id, from_status, to_status, changed_by)
+    values (new.id, old.status, new.status, auth.uid());
+  end if;
+  return null;   -- AFTER trigger: the return value is ignored.
+end
+$$;
+
+drop trigger if exists orders_record_status_change on orders;
+create trigger orders_record_status_change
+  after insert or update of status on orders
+  for each row execute function record_order_status_change();
+
+alter table order_status_history enable row level security;
+
+drop policy if exists "Admins can view order status history" on order_status_history;
+create policy "Admins can view order status history"
+  on order_status_history for select using (is_admin());
+
+-- As everywhere else in this file: the revoke is the half that closes the door,
+-- because a policy is only consulted after the privilege check passes.
+revoke insert, update, delete on order_status_history from anon, authenticated;

@@ -454,7 +454,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): surface degraded catalog mode and block checkout in it`
 
-- [ ] **T15 — Maintain `updated_at` and record status changes**
+- [x] **T15 — Maintain `updated_at` and record status changes**
 
   **Problem.** `orders.updated_at` (`init_schema.sql:96`) has a default but no trigger. Only
   `src/pages/admin/Orders.jsx:50` sets it, and only on a status change, so any other write path
@@ -649,3 +649,9 @@ out-of-scope findings inline.
   `crypto.getRandomValues` + unbiased modulus, the absence of any SQL-injection surface (everything
   goes through PostgREST's parameterised builder), and the absence of `dangerouslySetInnerHTML` on
   any DB-sourced value. Do not "fix" these.
+
+- **The order status history is recorded but not shown.** T15 added `order_status_history`, populated
+  by a trigger and readable by admins, but `src/pages/admin/Orders.jsx` renders nothing from it — so
+  "who moved this order to cancelled, and when" still requires the SQL editor. The expanded order row
+  is the obvious place for it. Recorded rather than built: LOOP.md scoped T15 to recording the
+  changes, not surfacing them.

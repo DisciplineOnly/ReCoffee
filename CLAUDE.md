@@ -22,11 +22,12 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by twelve idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by fourteen idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
-1. `20260723000000_init_schema.sql` — 10 tables, `is_admin()`, indexes, RLS, `place_order()`, the
-   public `products` storage bucket. This file is the complete current state and is re-runnable.
+1. `20260723000000_init_schema.sql` — 11 tables, `is_admin()`, indexes, RLS, `place_order()`, the
+   public `products` storage bucket, the order audit triggers. This file is the complete current
+   state and is re-runnable.
 2. `20260723000001_seed_catalog.sql` — the catalog.
 3. `20260723000002_fix_product_names.sql` — one name correction.
 4. `20260727000000_place_order_rpc.sql` — `store_settings`, `order_items.product_name` and
@@ -43,8 +44,13 @@ The whole DB is created by twelve idempotent migrations in `supabase/migrations/
     `on delete set null`, plus its index.
 12. `20260727000008_harden_product_image_bucket.sql` — MIME allowlist and size cap on the
     `products` bucket.
+13. `20260727000009_track_order_status_history.sql` — `updated_at` trigger on `orders` and the
+    `order_status_history` audit table, written only by an AFTER trigger.
+14. `20260727000010_remove_t15_test_order.sql` — data cleanup, not schema: deletes the one synthetic
+    order T15 placed to verify the trigger. A no-op on a fresh project, so it is **not** folded into
+    file 1.
 
-Files 3-12 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
+Files 3-13 are *also* folded into file 1, so a fresh project bootstraps to the identical state from
 file 1 alone. **A change to the schema needs both a new numbered migration and the same change
 folded into `init_schema.sql`** — `db push` will not re-run an already-applied file, so an existing
 database only gets the new file, while a fresh one only gets `init_schema.sql`.
@@ -63,6 +69,12 @@ invisible to everyone but admins. **Do not loosen that policy** — `or user_id 
 every guest order to every anonymous caller. Read one back with
 `lookup_order(p_order_number, p_email)`, a definer function requiring both the order number and the
 exact email stored on that order; every failure mode returns zero rows.
+
+`orders.updated_at` is maintained by a BEFORE UPDATE trigger — **never set it from a client**; a
+value sent in the payload is overwritten. Every status change also writes an `order_status_history`
+row (`from_status`, `to_status`, `changed_by = auth.uid()`) from an AFTER trigger. That table is
+admin-readable and writable by nobody: INSERT/UPDATE/DELETE are revoked from `anon` and
+`authenticated`, so the trail cannot be forged or erased through PostgREST.
 
 `inquiries` and `newsletter_subscribers` are likewise not directly writable. The public submits via
 `submit_inquiry(...)` and `subscribe_newsletter(...)`, definer functions that cap field sizes and
