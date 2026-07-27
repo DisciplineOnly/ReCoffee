@@ -457,8 +457,10 @@
         },
         "upload": {
             "click_to_upload": "Click to upload",
-            "hint": "SVG, PNG, JPG (max. 2MB)",
-            "preview_alt": "Uploaded image preview"
+            "hint": "JPG, PNG, WebP or AVIF (max. 5 MB)",
+            "preview_alt": "Uploaded image preview",
+            "error_type": "Only JPG, PNG, WebP and AVIF images are allowed.",
+            "error_size": "That file is too large. The maximum size is 5 MB."
         },
         "products": {
             "title": "Products",

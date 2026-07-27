@@ -461,8 +461,10 @@
     },
     "upload": {
       "click_to_upload": "Кликнете за качване",
-      "hint": "SVG, PNG, JPG (макс. 2MB)",
-      "preview_alt": "Преглед на качената снимка"
+      "hint": "JPG, PNG, WebP или AVIF (макс. 5 MB)",
+      "preview_alt": "Преглед на качената снимка",
+      "error_type": "Позволени са само JPG, PNG, WebP и AVIF изображения.",
+      "error_size": "Файлът е твърде голям. Максималният размер е 5 MB."
     },
     "products": {
       "title": "Продукти",

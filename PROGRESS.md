@@ -1273,3 +1273,69 @@ null`**, so the line survives and T1's `product_name` snapshot still says what w
 **Follow-ups needed:**
 - A deleted product's **image is still orphaned in storage** — T13 covers upload hardening and names
   orphan cleanup explicitly.
+
+---
+
+## LOOP T13 COMPLETE — product image uploads validated by MIME type and size
+
+**What was built:** `supabase/migrations/20260727000008_harden_product_image_bucket.sql` sets
+`allowed_mime_types = {image/jpeg, image/png, image/webp, image/avif}` and
+`file_size_limit = 5 MB` on the public `products` bucket — both were `null`.
+
+`src/components/admin/ImageUpload.jsx`:
+- **The extension now comes from the validated MIME type**, via an `EXTENSION_BY_MIME` map, never
+  from `file.name`. That was the actual defect: `file.name.split('.').pop()` let the uploader name
+  the stored object's extension.
+- `crypto.randomUUID()` replaces `Math.random().toString(36)`. The latter is not a CSPRNG, and a
+  guessable object name in a *public* bucket lets someone enumerate or pre-empt uploads.
+- `file.type` and `file.size` are checked before upload, and `contentType` is passed explicitly.
+- Both checks are **courtesy only** — they turn a server rejection into a readable message. The
+  bucket columns are the enforcement, and the code says so.
+- The upload hint said "SVG, PNG, JPG (макс. 2MB)", which was wrong on both counts even before this
+  change. Corrected to "JPG, PNG, WebP или AVIF (макс. 5 MB)" in both locales, with two new error
+  strings.
+
+**SVG is deliberately excluded.** It is an image format that can carry `<script>`, and these are
+product photos — nothing here needs vectors.
+
+**Verified by:** requests sent **straight to the storage API**, bypassing the component entirely —
+which is the only test that means anything, since the client checks are not the control.
+
+| upload | result |
+|---|---|
+| `text/html` named `evil.jpg` | **415 `invalid_mime_type`** |
+| `image/svg+xml` | **415 `invalid_mime_type`** |
+| 6 MB `image/png` | **413 `Payload too large`** |
+| valid 1×1 `image/png` | **403 RLS** |
+
+That last row is the one that makes the others meaningful. A *permitted* MIME type gets as far as the
+RLS check and is refused there for lacking an admin session, while the disguised and oversized
+uploads are rejected earlier with `invalid_mime_type` / `Payload too large`. So the MIME and size
+gates fire **independently of who is uploading** — an authenticated admin, or someone holding a
+stolen admin token, hits exactly the same wall.
+
+- Bucket settings confirmed server-side: `file_size_limit 5242880`, 4 allowed MIME types.
+- `npm run lint`: **11 warnings, 0 errors — unchanged.** `npm run build` passed. `init_schema.sql`
+  re-applied cleanly; its bucket upsert now carries the same two columns via `excluded`.
+- No test objects were created — every attempt was rejected.
+
+**Assumptions made:**
+- **A real JPEG/PNG upload through the admin UI was not performed.** It needs a logged-in admin
+  session, which this environment cannot produce (signup rejects made-up domains, creating an
+  `auth.users` row is sandbox-blocked — the same limitation recorded in T4 and T9). The valid-PNG
+  request above proves an allowed type passes the MIME and size gates and stops only at RLS, which
+  is the part T13 changed. The upload-succeeds-and-renders path is unverified and stated as such.
+- **5 MB and the four formats** are a judgement call: large enough for a real product photo, small
+  enough that the quota is not trivially exhausted. AVIF and WebP are included because the codebase
+  already serves modern formats and excluding them would push admins back to JPEG.
+
+**Follow-ups needed:** both logged in *Discovered during the loop* rather than fixed, because both
+change behaviour beyond validation:
+- **Orphaned storage objects on product delete or image replace.** T13 hardened *what* can be
+  uploaded, not cleanup. Doing it safely means deleting by parsed object path in two places, and
+  getting it wrong deletes a live image. Growth is now bounded per object (5 MB) but unbounded in
+  count.
+- **Uploads still do not follow the slug naming convention** in `docs/PRODUCT_IMAGES.md`. Kept
+  random deliberately: `ImageUpload` is a standalone field component that does not know the slug (and
+  on a new product it may not exist yet), and a predictable name in a public bucket is its own small
+  problem.

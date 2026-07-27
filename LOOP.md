@@ -400,7 +400,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): preserve order history when products are deleted`
 
-- [ ] **T13 — Harden product image uploads**
+- [x] **T13 — Harden product image uploads**
 
   **Problem.** `src/components/admin/ImageUpload.jsx:20-27`:
 
@@ -615,6 +615,20 @@ out-of-scope findings inline.
   that finding did not exist. The rating-manipulation half was real and is fixed. **Adding an
   `aggregateRating` to `productSchema` is a genuine SEO opportunity** now that reviews are moderated
   and trustworthy — but it is a feature, not a fix, so it is recorded here rather than done.
+
+- **Uploaded product images are still orphaned on delete.** `src/pages/admin/Products.jsx` deletes
+  the row but never the storage object, so every replaced or deleted product leaves its file in the
+  public `products` bucket forever. T13 hardened *what* can be uploaded but deliberately did not add
+  cleanup: doing it safely means deleting by parsed object path on product delete **and** on image
+  replace, and getting it wrong deletes a live image. The bucket now has a 5 MB cap so the growth is
+  bounded per object, but it is unbounded in count.
+
+- **Admin uploads still do not follow the slug naming convention** in `docs/PRODUCT_IMAGES.md` —
+  objects are named `<uuid>.<ext>`, not `<slug>.jpg`. Carried forward from PROGRESS.md Task 1. T13
+  kept the random name deliberately: the slug is not known to `ImageUpload` (it is a standalone field
+  component, and on the "new product" form the slug may not exist yet), and a predictable name in a
+  public bucket lets someone pre-empt or guess uploads. Closing this properly means passing the slug
+  in and renaming on save.
 
 - **A cart can hold products from a different Supabase project.** Found in the real browser profile
   during T2: `recoffee_cart` contained a `mass-appeal` line whose `id` was a valid uuid and whose

@@ -795,9 +795,17 @@ grant  execute on function public.lookup_order(text, text) to anon, authenticate
 -- Storage -> Policies in the dashboard.
 -- ============================================================================
 
-insert into storage.buckets (id, name, public)
-values ('products', 'products', true)
-on conflict (id) do update set public = true;
+-- SVG is deliberately excluded: it is an image format that can carry <script>,
+-- and these are product photos. The two limit columns are the enforcement —
+-- `accept="image/*"` on the input is a picker hint, and the client-side checks
+-- in ImageUpload.jsx only exist to produce a readable error.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('products', 'products', true, 5242880,
+        array['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
+on conflict (id) do update set
+  public             = true,
+  file_size_limit    = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 do $$
 begin

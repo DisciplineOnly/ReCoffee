@@ -3,6 +3,20 @@ import { Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useTranslation } from '../../lib/translations';
 
+// Extension is derived from the *validated* MIME type, never from the filename
+// — `accept="image/*"` is a picker hint and `file.name` is attacker-controlled.
+// Kept in step with `allowed_mime_types` on the bucket, which is the actual
+// enforcement; this map only decides what the stored object is called.
+const EXTENSION_BY_MIME = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/avif': 'avif',
+};
+
+// Mirrors `file_size_limit` on the bucket.
+const MAX_BYTES = 5 * 1024 * 1024;
+
 export default function ImageUpload({ value, onChange, bucket = 'products' }) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
@@ -18,13 +32,27 @@ export default function ImageUpload({ value, onChange, bucket = 'products' }) {
             }
 
             const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const filePath = `${fileName}`;
+
+            // Both checks are courtesy: they turn a server rejection into a
+            // readable message. The bucket enforces the same two rules.
+            const extension = EXTENSION_BY_MIME[file.type];
+            if (!extension) {
+                setError(t('admin.upload.error_type'));
+                return;
+            }
+            if (file.size > MAX_BYTES) {
+                setError(t('admin.upload.error_size'));
+                return;
+            }
+
+            // crypto.randomUUID() rather than Math.random(): the latter is not a
+            // CSPRNG, and a guessable object name in a public bucket lets
+            // someone enumerate or pre-empt uploads.
+            const filePath = `${crypto.randomUUID()}.${extension}`;
 
             const { error: uploadError } = await supabase.storage
                 .from(bucket)
-                .upload(filePath, file);
+                .upload(filePath, file, { contentType: file.type });
 
             if (uploadError) {
                 throw uploadError;
