@@ -526,7 +526,7 @@ path. Do not reorder; revoking before the frontend switches takes checkout down.
 
   **Commit.** `fix(recoffee): bound jsonb payload sizes on orders and inquiries`
 
-- [ ] **T19 — Add a retention and erasure path**
+- [x] **T19 — Add a retention and erasure path**
 
   **Problem.** `orders.client_info` holds name, email, phone and address indefinitely, admin-readable,
   with no deletion mechanism. `newsletter_subscribers` has no unsubscribe route — insert-only,
@@ -649,6 +649,15 @@ out-of-scope findings inline.
   `.gitignore`, so one distracted `git add -A` commits it. The "Tool scratch directories" block in
   `.gitignore` already lists `.agent/` and `.firecrawl/` and is where it belongs. Found during T16;
   not fixed there because T16 is scoped to `.env`.
+
+- **`inquiries` can never be deleted, by anyone, and the privacy policy says they are kept "up to 2
+  years".** `src/data/legalContent.js:34` (§4) promises `Данните от запитвания се съхраняват до 2
+  години`, but `init_schema.sql` gives `inquiries` only SELECT and UPDATE policies for admins — **no
+  DELETE policy at all** — and `src/pages/admin/Inquiries.jsx` offers only a status change. So there
+  is no mechanism, manual or automatic, to honour that retention limit. Closing it means an admin
+  delete action plus a policy, or a scheduled purge of rows older than two years (`pg_cron` is
+  available on Supabase). Found during T19, which fixed the newsletter and order halves of §4/§6 but
+  is scoped to those.
 
 ## Not in scope
 

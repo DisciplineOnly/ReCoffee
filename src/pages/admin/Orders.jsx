@@ -1,10 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, RefreshCw, UserX } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
 // DB enum values — only their labels are translated, never the stored value.
 const STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+// Stable tokens raised by erase_order_pii(); the human text is in the locale
+// files. Anything unrecognised falls back to the generic message rather than
+// showing a raw Postgres error.
+const ERASE_ERROR_KEYS = {
+    ERASE_ORDER_ACTIVE: 'admin.orders.erase_active',
+    ERASE_NOT_PERMITTED: 'admin.orders.erase_denied',
+    ERASE_ORDER_NOT_FOUND: 'admin.orders.erase_error',
+};
 
 const STATUS_STYLES = {
     pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -57,6 +66,22 @@ export default function AdminOrders() {
             alert(t('admin.orders.status_error') + error.message);
             setOrders(previous);
         }
+    };
+
+    // GDPR erasure. Deliberately not a delete: the privacy policy keeps order
+    // records for the statutory accounting period and removes the person from
+    // them instead. erase_order_pii() enforces both that and the admin check —
+    // this is the button, not the control.
+    const eraseClientData = async (order) => {
+        if (!window.confirm(t('admin.orders.confirm_erase').replace('{{order}}', order.order_number))) return;
+
+        const { error } = await supabase.rpc('erase_order_pii', { p_order_id: order.id });
+        if (error) {
+            console.error('Failed to erase order PII:', error);
+            alert(t(ERASE_ERROR_KEYS[error.message] || 'admin.orders.erase_error'));
+            return;
+        }
+        fetchOrders();
     };
 
     const visibleOrders = statusFilter === 'all'
@@ -141,8 +166,14 @@ export default function AdminOrders() {
                                             {new Date(order.created_at).toLocaleDateString('bg-BG', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900">{client.firstName} {client.lastName}</div>
-                                            <div className="text-xs text-slate-400">{client.email}</div>
+                                            {order.pii_erased_at ? (
+                                                <span className="text-xs italic text-slate-400">{t('admin.orders.erased_label')}</span>
+                                            ) : (
+                                                <>
+                                                    <div className="font-medium text-slate-900">{client.firstName} {client.lastName}</div>
+                                                    <div className="text-xs text-slate-400">{client.email}</div>
+                                                </>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 font-bold text-slate-900">{Number(order.total).toFixed(2)} лв</td>
                                         <td className="px-6 py-4">
@@ -204,6 +235,24 @@ export default function AdminOrders() {
                                                         <p className="text-slate-700">{client.email}</p>
                                                         {order.payment_info?.method && (
                                                             <p className="text-xs text-slate-500 mt-1">{t('admin.orders.payment')}{order.payment_info.method}</p>
+                                                        )}
+
+                                                        {order.pii_erased_at ? (
+                                                            <p className="mt-4 text-xs text-slate-400 italic">
+                                                                {t('admin.orders.erased_on').replace(
+                                                                    '{{date}}',
+                                                                    new Date(order.pii_erased_at).toLocaleDateString('bg-BG')
+                                                                )}
+                                                            </p>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => eraseClientData(order)}
+                                                                className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-primary hover:text-slate-900 transition"
+                                                            >
+                                                                <UserX size={14} />
+                                                                {t('admin.orders.erase')}
+                                                            </button>
                                                         )}
                                                     </div>
                                                 </div>

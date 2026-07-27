@@ -18,6 +18,7 @@ import Faq from './pages/Faq';
 import Delivery from './pages/Delivery';
 import Wishlist from './pages/Wishlist';
 import Account from './pages/Account';
+import Unsubscribe from './pages/Unsubscribe';
 import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
 import Cookies from './pages/legal/Cookies';
@@ -78,6 +79,7 @@ function App() {
                 <Route path="/delivery" element={<Delivery />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/account" element={<Account />} />
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/cookies" element={<Cookies />} />

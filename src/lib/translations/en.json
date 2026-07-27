@@ -423,6 +423,13 @@
         "benefit_3": "Early access to limited coffees",
         "admin_panel": "Admin panel"
     },
+    "unsubscribe": {
+        "title": "Unsubscribe from the newsletter",
+        "done_title": "You have been unsubscribed",
+        "done_message": "You will not receive our newsletter again. If you change your mind, you can subscribe any time from the bottom of the site.",
+        "error_title": "This link is not valid",
+        "error_message": "The unsubscribe link is incomplete or has expired. Email us and we will remove you manually."
+    },
     "catalog": {
         "degraded_title": "Showing a backup catalogue.",
         "degraded_message": "The connection to the shop is down, so prices and availability may be out of date. Ordering is paused."
@@ -576,6 +583,13 @@
             "note": "Note: ",
             "contact_payment": "Contact & payment",
             "payment": "Payment: ",
+            "erase": "Erase personal data",
+            "confirm_erase": "Erase the personal data from order {{order}}? The order number, amounts and dates are kept for accounting. This cannot be undone.",
+            "erased_label": "Personal data erased",
+            "erased_on": "Personal data erased on {{date}}.",
+            "erase_active": "This order is still being fulfilled. Complete or cancel it before erasing the personal data.",
+            "erase_denied": "You do not have permission for this action.",
+            "erase_error": "The personal data was not erased. Please try again.",
             "status": {
                 "pending": "Pending",
                 "processing": "Processing",

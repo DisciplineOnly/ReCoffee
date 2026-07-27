@@ -22,7 +22,7 @@ There is no test runner configured. `lint` is the only automated check.
 
 ### Database (Supabase CLI, not the MCP connector)
 
-The whole DB is created by sixteen idempotent migrations in `supabase/migrations/`, applied with
+The whole DB is created by seventeen idempotent migrations in `supabase/migrations/`, applied with
 `npx supabase db push`:
 
 1. `20260723000000_init_schema.sql` — 11 tables, `is_admin()`, indexes, RLS, `place_order()`, the
@@ -54,8 +54,10 @@ The whole DB is created by sixteen idempotent migrations in `supabase/migrations
     `delivery_info` onto known keys instead of storing the payload it was handed.
 16. `20260727000012_remove_t18_test_order.sql` — the same kind of data cleanup as file 14, for T18's
     verification order. Also not folded into file 1.
+17. `20260727000013_retention_and_erasure.sql` — `newsletter_subscribers.unsubscribe_token` plus
+    `unsubscribe_newsletter()`, and `erase_order_pii()` with the `orders.pii_erased_at/by` columns.
 
-Files 3-13 and 15 are *also* folded into file 1, so a fresh project bootstraps to the identical state
+Files 3-13, 15 and 17 are *also* folded into file 1, so a fresh project bootstraps to the identical state
 from file 1 alone. **`place_order()` now exists in three files** — its own migration
 (`20260727000000`), the reissue in `20260727000011`, and section 7 of `init_schema.sql`. Only the
 latter two are current, and they are kept byte-identical; change both together.
@@ -90,6 +92,15 @@ value sent in the payload is overwritten. Every status change also writes an `or
 row (`from_status`, `to_status`, `changed_by = auth.uid()`) from an AFTER trigger. That table is
 admin-readable and writable by nobody: INSERT/UPDATE/DELETE are revoked from `anon` and
 `authenticated`, so the trail cannot be forged or erased through PostgREST.
+
+**Retention and erasure** follow what `src/data/legalContent.js` promises. Newsletter rows carry an
+`unsubscribe_token`; `/unsubscribe?token=…` calls `unsubscribe_newsletter()`, which deletes the row
+and says nothing about whether it existed — the same non-enumerable contract as signup. The token is
+readable only by admins, so **the unsubscribe URL has to be merged into the newsletter template from
+an admin-side export**; nothing in this app sends email. `erase_order_pii()` anonymises an order's
+`client_info`/`delivery_info` and nulls `user_id` while keeping the order number, amounts and dates —
+the privacy policy commits to an 11-year accounting retention, so an erasure must **never** delete
+the order. It refuses orders that are not `delivered` or `cancelled`.
 
 `inquiries` and `newsletter_subscribers` are likewise not directly writable. The public submits via
 `submit_inquiry(...)` and `subscribe_newsletter(...)`, definer functions that cap field sizes and

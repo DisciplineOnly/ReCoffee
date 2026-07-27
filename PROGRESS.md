@@ -1743,3 +1743,114 @@ changed in this task.
   reissue would make this genuinely error-prone; at that point the function should move to a single
   file that later migrations `\i`-style reference, or the older copies should be marked superseded in
   their headers.
+
+---
+
+## LOOP T19 COMPLETE — newsletter unsubscribe and order PII erasure
+
+**What was built:** `supabase/migrations/20260727000013_retention_and_erasure.sql`, folded into
+`init_schema.sql` as section 11, plus the frontend for both halves.
+
+**The privacy policy was already promising both of these.** Reading `src/data/legalContent.js` first,
+as LOOP.md asked, turned up a real discrepancy rather than a judgement call:
+
+- **§6 already said** `оттегляне на съгласието по всяко време (за бюлетина — чрез линка за отписване
+  или на имейла ни)` — withdrawal via *the unsubscribe link*. There was no link, no route, and no
+  delete path: `newsletter_subscribers` was insert-only with an admin-read policy. The published
+  policy described a feature that did not exist.
+- **§6 also promised** erasure "когато няма законово основание за съхранение", with no mechanism.
+- **§4 is what shapes the erasure design**: order data is kept for as long as accounting law
+  requires (up to 11 years for primary accounting documents). So erasure must **not** delete the
+  order — it removes the person and leaves the financial record. The code was made to match the
+  policy, not the other way round.
+
+*Newsletter.* `unsubscribe_token uuid not null default gen_random_uuid()` with a unique index, and
+`unsubscribe_newsletter(p_token)` — `security definer`, deletes by token, **returns void either
+way**. Already-used, never-existed and just-deleted are indistinguishable, which is the same
+non-enumerable contract T11 established for signup; a page that says "you were not subscribed" is a
+membership oracle. Deleting the row is what makes the link single-use. `src/pages/Unsubscribe.jsx`
+at `/unsubscribe?token=…`, strings in both locales.
+
+*Orders.* `erase_order_pii(p_order_id)` — `security definer` with an explicit `is_admin()` guard
+(RLS is not consulted for a definer's own UPDATE), plus `orders.pii_erased_at` / `pii_erased_by`.
+It replaces `client_info` with an erased marker, strips the address/office/city from `delivery_info`
+while keeping `type` and `courier` (logistics, not personal data), and **nulls `user_id`** — a uuid
+pointing at `auth.users` is still a person. Order number, amounts, dates and line items are
+untouched. The admin action lives in the expanded row in `src/pages/admin/Orders.jsx`, behind the
+same `window.confirm` idiom the other destructive admin actions use, and the client column renders
+"Личните данни са изтрити" afterwards.
+
+**It refuses orders that are not `delivered` or `cancelled`** (`ERASE_ORDER_ACTIVE`). An order still
+being fulfilled needs its delivery address to be fulfilled, and GDPR Art. 17(3)(b) covers exactly
+that. Complete or cancel it first.
+
+**Verified by:** the anon key over real PostgREST, plus behaviour that needs real rows through a
+self-rolling-back migration.
+
+| anon-key call | result |
+|---|---|
+| `subscribe_newsletter` (fresh address) | 204 |
+| `GET newsletter_subscribers` | **200 empty array** — RLS holds, tokens are not readable |
+| `GET ...?select=unsubscribe_token` | **200 empty array** |
+| `unsubscribe_newsletter`, random uuid | **204, empty body** |
+| `unsubscribe_newsletter`, null | **204, empty body** |
+| `erase_order_pii` as anon | **400 `ERASE_NOT_PERMITTED`** |
+
+The end-to-end path is the one worth reporting: a token **issued by the database** to an address
+subscribed over PostgREST, then used from the public RPC with the shipped anon key —
+**204 (462 ms), then 204 again on the same link (205 ms)** — after which a rolled-back check
+confirmed `rows for t19-unsub@example.com = 0, total subscribers = 0`. Single-use, no test data left
+behind, and the second click is indistinguishable from the first.
+
+Erasure, run as a real admin (the test borrows an existing `admin_users` row — `orders.user_id` and
+`admin_users.user_id` are both FKs to `auth.users`, so invented uuids fail with 23503):
+
+```
+non-admin      : refused with ERASE_NOT_PERMITTED
+pending order  : refused with ERASE_ORDER_ACTIVE
+erased order   : number=T19-DELIVERED total=84.00 created_at kept=t
+  client_info  : {"erased": true}
+  delivery     : {"type": "office", "courier": "econt"}     <- address/office/city gone
+  user_id      : null   erased_by: e5733933-...
+```
+
+The `/unsubscribe` page renders correctly for no token, a malformed token and a well-formed one
+(the last shows the success state even for a spent token — deliberate, per the neutrality above).
+
+`npm run lint`: **11 warnings, 0 errors — back to baseline.** `npm run build` passed; both locale
+files re-parse as valid JSON.
+
+**A lint regression I caused and fixed rather than accepted.** The first `Unsubscribe.jsx` set
+`state = 'invalid'` inside the effect when the token was missing or malformed, which took lint to
+**12** warnings (`react-hooks/set-state-in-effect`). Whether the URL carries a well-formed uuid is
+knowable at render, so it is now derived into the `useState` initialiser and the effect only sets
+state from the RPC's promise. 12 back to 11, and one fewer wasted render.
+
+**Assumptions made:**
+- **Nulling `user_id` removes the order from that customer's own account view.** That is the point of
+  an erasure request — the record stops being attributable — but it is a real consequence and is
+  stated here rather than discovered later.
+- **`type` and `courier` survive erasure.** They describe how the parcel moved, not who received it,
+  and the financial record reads better with them.
+- **Line-item preservation was not directly exercised**: the synthetic test order had no
+  `order_items` rows, so the reported count was 0. Erasure never touches that table — the function
+  only UPDATEs `orders` — so preservation is by construction rather than by test, and it is stated
+  that way rather than implied.
+- **No email is sent by this application**, so the unsubscribe *link* has to be merged into whatever
+  tool sends the newsletter, from an admin-side export of `email` + `unsubscribe_token`. The token is
+  admin-readable, which is what makes that possible. Noted in `CLAUDE.md`.
+- **No rate limit on `unsubscribe_newsletter`.** The token is 122 bits of unguessable uuid and the
+  function does one indexed lookup; a limit would mostly punish a customer double-clicking their own
+  link.
+- **Erasure is not logged to `order_status_history`** — that table records status transitions. The
+  `pii_erased_at` / `pii_erased_by` columns carry the who and when.
+
+**Follow-ups needed:**
+- **There is still no admin page listing newsletter subscribers**, so exporting `email` +
+  `unsubscribe_token` to build the links means using the Supabase dashboard. The RPC and the route
+  are done; the operational half is not.
+- **`inquiries` can never be deleted and §4 promises a 2-year retention** — logged in *Discovered
+  during the loop*. `inquiries` has SELECT and UPDATE policies for admins and **no DELETE policy at
+  all**, so nothing can honour that limit. This is the same class of policy-vs-schema gap T19 just
+  closed for the newsletter, and it is left flagged rather than fixed because T19 is scoped to the
+  newsletter and orders.
