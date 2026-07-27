@@ -3,7 +3,7 @@ import { CalendarClock, Flame, PackageCheck, Check, Gift } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { supabase } from '../lib/supabase';
-import { formatPrice } from '../lib/price';
+import { formatEur, formatPrice } from '../lib/price';
 import { SUBSCRIPTION_QUANTITIES, subscriptionPrice } from '../lib/subscription';
 import PageHeader from '../components/ui/PageHeader';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -141,7 +141,7 @@ export default function Subscription() {
                                                 {formatPrice(subPrice(q.regularPrice))}
                                             </span>
                                             <span className="text-xs text-slate-400">
-                                                {t('subscriptionPage.instead_of')} <s>{q.regularPrice.toFixed(2)} лв</s> · {t('subscriptionPage.per_delivery')}
+                                                {t('subscriptionPage.instead_of')} <s>{formatEur(q.regularPrice)}</s> · {t('subscriptionPage.per_delivery')}
                                             </span>
                                         </span>
                                     </div>

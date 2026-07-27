@@ -12,7 +12,7 @@
             "close": "Close"
         },
         "topbar": {
-            "free_shipping": "Free shipping on orders above 50€",
+            "free_shipping": "Free shipping on orders above {{amount}}",
             "faq": "FAQ",
             "delivery": "Delivery",
             "contacts": "Contacts"

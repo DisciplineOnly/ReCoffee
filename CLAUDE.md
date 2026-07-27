@@ -175,9 +175,16 @@ machines → personal/professional). Legacy beans-only category values still exi
 
 - **Company / contact / legal data** → `src/lib/siteConfig.js`. Footer, contact, legal pages, and
   checkout all read from it. Change it in one place.
-- **Prices** always render through `src/lib/price.js`. Bulgaria is mid BGN→EUR changeover, so prices
-  show dual currency (`formatPrice` → "12.90 лв (6.60 €)") at the fixed peg `1.95583`. Never format
-  money inline.
+- **Prices** always render through `src/lib/price.js`, dual currency at the fixed peg `1.95583`.
+  **The euro leads** (`formatPrice` → "6.60 € (12.90 лв)"); on a two-line layout the EUR figure is the
+  prominent one and BGN the muted line beneath. Never format money inline — no `.toFixed(2) лв` in
+  JSX. Money is still **stored** in BGN (`products.price`, `orders.total`, `store_settings`) and all
+  arithmetic runs in stotinki, so currency order is presentation only. **Admin screens stay in lev**:
+  they edit the stored column, and showing an operator a converted number they cannot type back is
+  worse than showing them the column.
+- **Amounts in copy** are interpolated from `siteConfig`, never typed. The free-delivery banner read
+  "над 50€" while the threshold charged at 100 лв — 51.13 € — so a 50.50 € cart was charged delivery
+  against a banner promising otherwise.
 - **UI strings** → `src/lib/translations/{bg,en}.json`, accessed via `useTranslation()`'s `t('a.b.c')`.
   **BG is the default locale**; EN is the fallback. New user-facing strings go into *both* files.
 - **Long-form BG content** (legal text, Learn articles) → `src/data/` (`legalContent.js`,

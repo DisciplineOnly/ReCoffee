@@ -1,6 +1,7 @@
 // Long-form legal content (BG). UI chrome strings live in the translation files;
 // this is page content, kept here so legal texts can be reviewed/edited in one place.
 import { siteConfig } from '../lib/siteConfig';
+import { formatPrice } from '../lib/price';
 
 export const LEGAL_LAST_UPDATED = '18 юли 2026 г.';
 
@@ -83,7 +84,7 @@ export const termsContent = [
     {
         heading: '4. Доставка',
         paragraphs: [
-            `Доставяме с куриерски компании Еконт и Спиди до адрес или до офис на куриер, както и предлагаме безплатно взимане от нашите обекти. Стандартната цена за доставка е ${siteConfig.delivery.standardFeeBgn} лв, а за поръчки над ${siteConfig.delivery.freeOverBgn} лв доставката е безплатна. ${siteConfig.orderCutoff} Обичайният срок за доставка е 1–3 работни дни.`,
+            `Доставяме с куриерски компании Еконт и Спиди до адрес или до офис на куриер, както и предлагаме безплатно взимане от нашите обекти. Стандартната цена за доставка е ${formatPrice(siteConfig.delivery.standardFeeBgn)}, а за поръчки над ${formatPrice(siteConfig.delivery.freeOverBgn)} доставката е безплатна. ${siteConfig.orderCutoff} Обичайният срок за доставка е 1–3 работни дни.`,
         ],
     },
     {

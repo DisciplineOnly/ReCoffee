@@ -87,10 +87,10 @@ export default function CartItem({ item }) {
                     <div className="flex items-center gap-4">
                         <span className="text-right">
                             <span className="block text-xl md:text-2xl font-bold text-brand-accent">
-                                {formatBgn(itemTotal)}
+                                {formatEur(itemTotal)}
                             </span>
                             <span className="block text-xs text-slate-400">
-                                {formatEur(itemTotal)}
+                                {formatBgn(itemTotal)}
                             </span>
                         </span>
                         <button

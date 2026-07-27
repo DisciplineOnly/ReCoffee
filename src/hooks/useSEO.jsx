@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { siteConfig } from '../lib/siteConfig';
+import { formatEur } from '../lib/price';
 
 const DEFAULT_TITLE = 'ReCoffee | Прясно изпечено специално кафе';
-const DEFAULT_DESCRIPTION = `ReCoffee — специално кафе, изпечено в София. Единични произходи, смеси и абонамент с безплатна доставка над ${siteConfig.delivery.freeOverBgn} лв.`;
+const DEFAULT_DESCRIPTION = `ReCoffee — специално кафе, изпечено в София. Единични произходи, смеси и абонамент с безплатна доставка над ${formatEur(siteConfig.delivery.freeOverBgn)}.`;
 const DEFAULT_IMAGE = '/og-image.jpg';
 
 /** Upsert a <meta> by name= or property=, creating it on first use. */

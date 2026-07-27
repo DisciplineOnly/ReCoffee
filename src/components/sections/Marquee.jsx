@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from '../../lib/translations';
 import { siteConfig } from '../../lib/siteConfig';
-import { formatBgn } from '../../lib/price';
+import { formatEur } from '../../lib/price';
 
 export default function Marquee() {
     const { t } = useTranslation();
@@ -9,7 +9,7 @@ export default function Marquee() {
     // The threshold is interpolated rather than baked into the string, so
     // changing siteConfig.delivery actually changes what the banner promises.
     const freeShipping = t('marquee.free_shipping')
-        .replace('{{amount}}', formatBgn(siteConfig.delivery.freeOverBgn));
+        .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverBgn));
 
     const content = (
         <>

@@ -24,9 +24,21 @@ export const fromStotinki = (stotinki) => stotinki / 100;
 
 export const toEur = (bgn) => bgn / BGN_PER_EUR;
 
-// "12.90 лв (6.60 €)" — dual display required during the BGN/EUR transition period.
+/**
+ * "6.60 € (12.90 лв)" — dual display for the changeover period.
+ *
+ * **The euro leads.** It is the currency in circulation; the lev figure is the
+ * informational one shown alongside it. Prices are still *stored* in BGN
+ * (`products.price`, `orders.total`, `store_settings`) and every calculation
+ * happens in stotinki, so this is a presentation decision and nothing else —
+ * converting the columns would be a different and much larger change.
+ *
+ * Admin screens deliberately stay in lev: they edit the stored value, and
+ * showing an operator a converted number they cannot type back is worse than
+ * showing them the column.
+ */
 export const formatPrice = (bgn) =>
-    `${bgn.toFixed(2)} лв (${toEur(bgn).toFixed(2)} €)`;
+    `${toEur(bgn).toFixed(2)} € (${bgn.toFixed(2)} лв)`;
 
 export const formatBgn = (bgn) => `${bgn.toFixed(2)} лв`;
 

@@ -28,9 +28,9 @@ export default function CartSummary() {
                 <span className="text-slate-600">{t('cart.subtotal')}</span>
                 <span className="text-right">
                     <span className="block text-lg font-bold text-slate-900">
-                        {formatBgn(subtotal)}
+                        {formatEur(subtotal)}
                     </span>
-                    <span className="block text-xs text-slate-400">{formatEur(subtotal)}</span>
+                    <span className="block text-xs text-slate-400">{formatBgn(subtotal)}</span>
                 </span>
             </div>
 
@@ -44,9 +44,9 @@ export default function CartSummary() {
                 ) : (
                     <span className="text-right">
                         <span className="block text-lg font-bold text-slate-900">
-                            {formatBgn(delivery)}
+                            {formatEur(delivery)}
                         </span>
-                        <span className="block text-xs text-slate-400">{formatEur(delivery)}</span>
+                        <span className="block text-xs text-slate-400">{formatBgn(delivery)}</span>
                     </span>
                 )}
             </div>
@@ -72,9 +72,9 @@ export default function CartSummary() {
                     <span className="text-lg font-bold text-slate-900">{t('cart.total')}</span>
                     <span className="text-right">
                         <span className="block text-2xl font-bold text-brand-accent">
-                            {formatBgn(total)}
+                            {formatEur(total)}
                         </span>
-                        <span className="block text-xs text-slate-400">{formatEur(total)}</span>
+                        <span className="block text-xs text-slate-400">{formatBgn(total)}</span>
                     </span>
                 </div>
             </div>

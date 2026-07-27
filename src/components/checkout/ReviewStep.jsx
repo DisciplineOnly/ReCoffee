@@ -298,10 +298,10 @@ export default function ReviewStep() {
                             <span className="text-lg font-bold text-slate-900">{t('cart.total')}</span>
                             <span className="text-right">
                                 <span className="block text-lg font-bold text-brand-accent">
-                                    {formatBgn(total)}
+                                    {formatEur(total)}
                                 </span>
                                 <span className="block text-xs font-medium text-slate-400">
-                                    {formatEur(total)}
+                                    {formatBgn(total)}
                                 </span>
                             </span>
                         </div>

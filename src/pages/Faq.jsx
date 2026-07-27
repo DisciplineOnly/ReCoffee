@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { siteConfig } from '../lib/siteConfig';
+import { formatPrice } from '../lib/price';
 import PageHeader from '../components/ui/PageHeader';
 import { faqSchema, breadcrumbSchema } from '../lib/structuredData';
 
@@ -17,7 +18,7 @@ export default function Faq() {
         },
         {
             q: 'Каква е цената на доставката?',
-            a: `Доставката е безплатна за поръчки над 50€ (${siteConfig.delivery.freeOverBgn} лв). За по-малки поръчки таксата е ${siteConfig.delivery.standardFeeBgn} лв, чрез ${siteConfig.delivery.couriers.join(' или ')}.`,
+            a: `Доставката е безплатна за поръчки над ${formatPrice(siteConfig.delivery.freeOverBgn)}. За по-малки поръчки таксата е ${formatPrice(siteConfig.delivery.standardFeeBgn)}, чрез ${siteConfig.delivery.couriers.join(' или ')}.`,
         },
         {
             q: 'В кои населени места доставяте?',

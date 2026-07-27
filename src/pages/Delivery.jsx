@@ -3,7 +3,7 @@ import { Truck, PackageCheck, Clock, Banknote } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { siteConfig } from '../lib/siteConfig';
-import { formatBgn } from '../lib/price';
+import { formatPrice } from '../lib/price';
 import PageHeader from '../components/ui/PageHeader';
 
 export default function Delivery() {
@@ -22,7 +22,7 @@ export default function Delivery() {
         {
             icon: Banknote,
             title: 'Цена на доставката',
-            text: `Безплатна доставка за поръчки над 50€ (${formatBgn(siteConfig.delivery.freeOverBgn)}). За по-малки поръчки — фиксирана такса от ${formatBgn(siteConfig.delivery.standardFeeBgn)}.`,
+            text: `Безплатна доставка за поръчки над ${formatPrice(siteConfig.delivery.freeOverBgn)}. За по-малки поръчки — фиксирана такса от ${formatPrice(siteConfig.delivery.standardFeeBgn)}.`,
         },
         {
             icon: Clock,

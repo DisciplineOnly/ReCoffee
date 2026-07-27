@@ -6,6 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import SearchOverlay from '../ui/SearchOverlay';
 import { siteConfig } from '../../lib/siteConfig';
+import { formatEur } from '../../lib/price';
 import logo from '../../assets/logo.jpg';
 
 const topLinkClass = 'text-xs font-medium tracking-wide text-slate-500 hover:text-brand-primary transition-colors';
@@ -80,7 +81,10 @@ export default function Header() {
                                 {siteConfig.phone}
                             </a>
                             <p className="text-xs font-medium tracking-wide text-slate-500 text-center flex-1">
-                                {t('header.topbar.free_shipping')}
+                                {/* Derived, never typed: this used to read "над 50€" while the
+                                    threshold charged at 100 лв — 51.13 €. */}
+                                {t('header.topbar.free_shipping')
+                                    .replace('{{amount}}', formatEur(siteConfig.delivery.freeOverBgn))}
                             </p>
                             <nav className="flex items-center gap-6 flex-shrink-0">
                                 <Link to="/faq" className={topLinkClass}>{t('header.topbar.faq')}</Link>

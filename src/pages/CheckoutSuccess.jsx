@@ -215,10 +215,10 @@ export default function CheckoutSuccess() {
                                                     </div>
                                                     <span className="text-right whitespace-nowrap">
                                                         <span className="block text-sm font-bold text-slate-900">
-                                                            {formatBgn(lineTotal)}
+                                                            {formatEur(lineTotal)}
                                                         </span>
                                                         <span className="block text-[10px] font-medium text-slate-400">
-                                                            {formatEur(lineTotal)}
+                                                            {formatBgn(lineTotal)}
                                                         </span>
                                                     </span>
                                                 </div>
@@ -239,10 +239,10 @@ export default function CheckoutSuccess() {
                                             <span className="font-bold text-xl text-slate-900">{t('cart.total')}</span>
                                             <span className="text-right">
                                                 <span className="block font-bold text-xl text-brand-primary">
-                                                    {formatBgn(order.total)}
+                                                    {formatEur(order.total)}
                                                 </span>
                                                 <span className="block text-xs font-medium text-slate-400">
-                                                    {formatEur(order.total)}
+                                                    {formatBgn(order.total)}
                                                 </span>
                                             </span>
                                         </div>

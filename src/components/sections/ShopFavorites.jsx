@@ -4,7 +4,7 @@ import { ArrowRight, Plus } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 import { useProducts } from '../../hooks/useProducts';
 import { useCart } from '../../contexts/CartContext';
-import { formatBgn } from '../../lib/price';
+import { formatBgn, formatEur } from '../../lib/price';
 import GrindTypeModal from '../ui/GrindTypeModal';
 import { categoryBadgeKey, hasGrindOptions, isMachine, NO_GRIND } from '../../lib/categories';
 import { PLACEHOLDER_IMAGE, onImageError } from '../../lib/productImage';
@@ -107,10 +107,13 @@ export default function ShopFavorites() {
                                     </p>
                                     <div className="mt-4 flex justify-between items-center border-t border-slate-100 pt-3">
                                         <span className="text-sm font-medium flex items-baseline gap-2">
-                                            {formatBgn(product.price)}
+                                            {formatEur(product.price)}
                                             {product.onSale && (
-                                                <s className="text-xs text-slate-400">{formatBgn(product.originalPrice)}</s>
+                                                <s className="text-xs text-slate-400">{formatEur(product.originalPrice)}</s>
                                             )}
+                                            <span className="text-xs font-normal text-slate-400">
+                                                {formatBgn(product.price)}
+                                            </span>
                                         </span>
                                         <button
                                             onClick={(e) => { e.preventDefault(); handleQuickAdd(product); }}

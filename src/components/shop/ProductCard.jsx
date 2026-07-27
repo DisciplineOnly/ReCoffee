@@ -164,11 +164,11 @@ export default function ProductCard({ product }) {
 
                     <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="text-2xl font-bold text-brand-accent">
-                            {formatBgn(product.price)}
+                            {formatEur(product.price)}
                         </span>
-                        <span className="text-xs text-slate-400">({formatEur(product.price)})</span>
+                        <span className="text-xs text-slate-400">({formatBgn(product.price)})</span>
                         {product.onSale && (
-                            <s className="text-sm text-slate-400">{formatBgn(product.originalPrice)}</s>
+                            <s className="text-sm text-slate-400">{formatEur(product.originalPrice)}</s>
                         )}
                     </div>
 

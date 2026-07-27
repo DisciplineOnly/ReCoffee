@@ -4,7 +4,7 @@ import { User, Package, LogOut, Check, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '../lib/translations';
 import { useSEO } from '../hooks/useSEO';
 import { supabase } from '../lib/supabase';
-import { formatBgn } from '../lib/price';
+import { formatPrice } from '../lib/price';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const STATUS_STYLES = {
@@ -209,7 +209,7 @@ export default function Account() {
                                                 <span className={`px-3 py-1 rounded-full border text-xs font-bold ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}>
                                                     {t(`account.status_${order.status}`)}
                                                 </span>
-                                                <span className="font-bold text-slate-900">{formatBgn(Number(order.total))}</span>
+                                                <span className="font-bold text-slate-900">{formatPrice(Number(order.total))}</span>
                                             </div>
                                         </div>
                                     );
