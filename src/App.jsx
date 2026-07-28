@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
@@ -23,18 +24,33 @@ import Privacy from './pages/legal/Privacy';
 import Terms from './pages/legal/Terms';
 import Cookies from './pages/legal/Cookies';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import LoadingSpinner from './components/ui/LoadingSpinner';
 
-// Admin Imports
-import AdminLogin from './pages/admin/Login';
-import ProtectedRoute from './components/admin/ProtectedRoute';
-import AdminLayout from './components/admin/AdminLayout';
-import ProductList from './pages/admin/Products';
-import ProductForm from './pages/admin/ProductForm';
-import ServiceList from './pages/admin/Services';
-import ServiceForm from './pages/admin/ServiceForm';
-import AdminOrders from './pages/admin/Orders';
-import AdminInquiries from './pages/admin/Inquiries';
-import AdminReviews from './pages/admin/Reviews';
+// Admin Imports. Lazy, so the dashboard stays out of the bundle every shop
+// visitor downloads. All ten go through the barrel in pages/admin/index.js so
+// they land in one chunk: the first of these to resolve fetches it, and the
+// rest are already there. See that file for why it exists.
+const adminChunk = () => import('./pages/admin');
+const pick = (name) => lazy(() => adminChunk().then((m) => ({ default: m[name] })));
+
+const AdminLogin = pick('AdminLogin');
+const ProtectedRoute = pick('ProtectedRoute');
+const AdminLayout = pick('AdminLayout');
+const ProductList = pick('ProductList');
+const ProductForm = pick('ProductForm');
+const ServiceList = pick('ServiceList');
+const ServiceForm = pick('ServiceForm');
+const AdminOrders = pick('AdminOrders');
+const AdminInquiries = pick('AdminInquiries');
+const AdminReviews = pick('AdminReviews');
+
+// Shown while the admin chunk is in flight. A blank screen on a slow connection
+// reads as a broken login, so fill the viewport the dashboard is about to take.
+const adminFallback = (
+  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <LoadingSpinner size="lg" color="slate" />
+  </div>
+);
 
 function App() {
   return (
@@ -43,10 +59,26 @@ function App() {
         <CartProvider>
           <WishlistProvider>
             <Routes>
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
+              {/* Admin Routes. The Suspense boundaries sit on these two
+                  top-level elements; the nested pages render through an Outlet
+                  inside them, so they are covered without a boundary each. */}
+              <Route
+                path="/admin/login"
+                element={
+                  <Suspense fallback={adminFallback}>
+                    <AdminLogin />
+                  </Suspense>
+                }
+              />
 
-              <Route path="/admin" element={<ProtectedRoute />}>
+              <Route
+                path="/admin"
+                element={
+                  <Suspense fallback={adminFallback}>
+                    <ProtectedRoute />
+                  </Suspense>
+                }
+              >
                 <Route element={<AdminLayout />}>
                   <Route index element={<Navigate to="orders" replace />} />
                   <Route path="orders" element={<AdminOrders />} />
