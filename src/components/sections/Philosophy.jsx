@@ -1,16 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Flame, Coffee } from 'lucide-react';
+import { Globe, Flame } from 'lucide-react';
 import { useTranslation } from '../../lib/translations';
 
 export default function Philosophy() {
     const { t } = useTranslation();
     return (
         <section className="grid grid-cols-1 md:grid-cols-2">
-            {/* Awaiting real photography — a brand panel until then, so the
-                two-column composition still holds. */}
-            <div className="relative h-[600px] md:h-auto overflow-hidden bg-brand-primary/5 flex items-center justify-center">
-                <Coffee className="w-20 h-20 text-brand-primary/20" />
+            {/* Portrait shot in a column that goes near-square on desktop, so it is
+                centre-cropped — the cup sits mid-frame and survives the crop. */}
+            <div className="relative h-[600px] md:h-auto overflow-hidden bg-brand-primary/5">
+                <img
+                    src="/ReCoffee_Cup.png"
+                    alt={t('philosophy.image_alt')}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
             </div>
             <div className="bg-[#F6F4F2] px-8 py-20 md:p-24 flex flex-col justify-center">
                 <span className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase mb-4">

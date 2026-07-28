@@ -71,6 +71,7 @@
     },
     "philosophy": {
         "badge": "Our Philosophy",
+        "image_alt": "A branded ReCoffee cup among floating coffee beans",
         "title": "Sourcing with Intentionality",
         "description": "We travel the globe to build sustainable relationships with producers who share our obsession for quality. Every batch is roasted to highlight the unique terroir of its origin.",
         "direct_trade": "Direct Trade",
